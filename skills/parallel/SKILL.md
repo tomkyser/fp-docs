@@ -2,6 +2,8 @@
 name: parallel
 description: Run documentation operations in parallel across multiple files using Agent Teams. Opt-in feature — falls back to sequential if teams are disabled.
 argument-hint: "operation scope flags"
+context: fork
+agent: docs-system
 ---
 
 ## Parallel Documentation Operations
