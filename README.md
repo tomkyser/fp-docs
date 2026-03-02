@@ -1,6 +1,6 @@
 # fp-docs — Documentation Management Plugin
 
-Documentation management system for the Foreign Policy WordPress codebase. Built as a Claude Code plugin using native primitives (subagents, skills, hooks, persistent memory).
+Documentation management system for the Foreign Policy WordPress codebase. Built as a Claude Code plugin using native primitives (subagents, skills, hooks, persistent memory). Distributed via the `fp-tools` plugin marketplace.
 
 ## Overview
 
@@ -9,12 +9,13 @@ Documentation management system for the Foreign Policy WordPress codebase. Built
 - **19 user commands** — `/fp-docs:*` namespace for all documentation operations
 - **5 hooks** — SessionStart (manifest + branch sync), SubagentStop, TeammateIdle, TaskCompleted
 - **Three-repo architecture** — codebase, docs, and plugin each have independent git repos
+- **Marketplace distribution** — install via `/plugin install fp-docs@fp-tools`
 
 ## Three-Repo Model
 
 - **Codebase** (wp-content/) — FP WordPress source code, gitignores docs/
 - **Docs** (themes/foreign-policy-2017/docs/) — nested repo, branch-mirrored with codebase
-- **Plugin** (standalone) — installed separately, one version for all team members
+- **Plugin** (standalone) — distributed via marketplace, cached locally by Claude Code
 
 ## Installation
 
@@ -23,35 +24,48 @@ Documentation management system for the Foreign Policy WordPress codebase. Built
 - Git access to https://github.com/tomkyser/docs-foreignpolicy-com (docs repo)
 - FP codebase checked out at wp-content/
 
-### Step 1: Install the Plugin
-```bash
-# Clone the plugin to your local plugins directory
-git clone https://github.com/tomkyser/fp-docs.git ~/cc-plugins/fp-docs
+### Step 1: Add the Marketplace
 
-# Load the plugin
-claude --plugin-dir ~/cc-plugins/fp-docs
+If the codebase `.claude/settings.json` is present (it should be — it's committed to the repo), you'll be prompted automatically when you open the project. Otherwise, add it manually:
+
+```
+/plugin marketplace add tomkyser/fp-docs
 ```
 
-### Step 2: Set Up the Docs Repo
+### Step 2: Install the Plugin
+
+```
+/plugin install fp-docs@fp-tools
+```
+
+The plugin is copied to `~/.claude/plugins/cache/` and enabled automatically.
+
+### Step 3: Set Up the Docs Repo
 ```bash
 # From your codebase's theme directory
 cd themes/foreign-policy-2017/
 git clone https://github.com/tomkyser/docs-foreignpolicy-com docs
 ```
 
-### Step 3: Verify Codebase .gitignore
-Ensure `themes/foreign-policy-2017/docs/` is in your codebase's `.gitignore`.
-
 ### Step 4: Run Setup Verification
 ```
 /fp-docs:setup
 ```
+This verifies the plugin, docs repo, codebase .gitignore, and branch sync state.
 
 ### Step 5: Sync Docs Branch
 ```
 /fp-docs:sync
 ```
 This creates a docs branch matching your current codebase branch and generates a diff report.
+
+### Development Mode
+
+To load the plugin from a local directory (for plugin development only):
+```bash
+git clone https://github.com/tomkyser/fp-docs.git ~/cc-plugins/fp-docs
+claude --plugin-dir ~/cc-plugins/fp-docs
+```
 
 ## Commands
 
@@ -111,36 +125,50 @@ After any doc modification: Verbosity → Citations → API Refs → Sanity-Chec
 - `/fp-docs:sync` creates/switches branches and generates diff reports
 - `/fp-docs:sync merge` merges docs feature branch to master
 
-## Quick Start for Team Members
+## Team Setup
 
-1. **Install the plugin**:
-   ```bash
-   git clone https://github.com/tomkyser/fp-docs.git ~/cc-plugins/fp-docs
-   ```
-   Add to your Claude Code config or use:
-   ```bash
-   claude --plugin-dir ~/cc-plugins/fp-docs
-   ```
+### Automatic (recommended)
 
-2. **Set up the docs repo** (from your codebase workspace):
-   ```bash
-   cd themes/foreign-policy-2017/
-   git clone https://github.com/tomkyser/docs-foreignpolicy-com docs
-   ```
+The codebase repo includes `.claude/settings.json` with:
+```json
+{
+  "extraKnownMarketplaces": {
+    "fp-tools": {
+      "source": { "source": "github", "repo": "tomkyser/fp-docs" }
+    }
+  },
+  "enabledPlugins": {
+    "fp-docs@fp-tools": true
+  }
+}
+```
 
-3. **Verify your .gitignore** includes `themes/foreign-policy-2017/docs/`
+When a team member opens the project in Claude Code, they are prompted to add the `fp-tools` marketplace. The plugin is auto-enabled.
 
-4. **Run setup**:
-   ```
-   /fp-docs:setup
-   ```
+### Manual
 
-5. **Sync branches**:
-   ```
-   /fp-docs:sync
-   ```
-   This creates a docs branch matching your codebase branch
-   and generates a diff report showing which docs may be stale.
+```
+/plugin marketplace add tomkyser/fp-docs
+/plugin install fp-docs@fp-tools
+```
+
+### Updating
+
+Plugin updates are detected when the `version` in `plugin.json` changes:
+```
+/plugin update fp-docs@fp-tools
+```
+
+## Validation
+
+Validate the plugin structure:
+```bash
+claude plugin validate .
+```
 
 ## For Parallel Mode
 Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` enabled.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
