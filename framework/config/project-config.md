@@ -51,3 +51,33 @@
 - Locals contracts: enabled
 - Verbosity enforcement: enabled
 - Sanity-check: enabled
+
+## Repository Configuration
+
+### Codebase Repo
+- Git root: wp-content/ (relative to workspace)
+- Docs-relevant scope: themes/foreign-policy-2017/
+- Remote: origin (VIP Go deployment repo)
+
+### Docs Repo
+- Git root: themes/foreign-policy-2017/docs/ (nested in codebase workspace)
+- Remote: https://github.com/tomkyser/docs-foreignpolicy-com
+- Visibility: private
+- Branch strategy: mirrors codebase branches
+
+### Plugin Repo
+- Remote: https://github.com/tomkyser/fp-docs
+- Visibility: public
+- Branch strategy: master for all users
+
+### Path Resolution
+- Codebase root detection: `git rev-parse --show-toplevel` from working directory
+- Docs root: {codebase-root}/themes/foreign-policy-2017/docs/
+- Docs is a separate git repo — use `git -C {docs-root}` for all docs git operations
+- NEVER use the codebase repo's git for docs operations
+
+### Diff Reports
+- Location: docs/diffs/
+- Format: {YYYY-MM-DD}_{branch-name}_diff_report.md
+- Accumulate as history (do not clean up)
+- Committed to docs repo on the feature branch

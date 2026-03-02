@@ -1,9 +1,9 @@
-# fp-docs System — Manifest v2.0.0
+# fp-docs System — Manifest v2.1.0
 
 ## Plugin
 - **Name**: fp-docs
 - **Namespace**: /fp-docs:*
-- **Version**: 2.0.0
+- **Version**: 2.1.0
 
 ## Engines
 
@@ -16,7 +16,7 @@
 | docs-locals | agents/docs-locals.md | inherit | annotate, contracts, cross-ref, validate, shapes, coverage |
 | docs-verbosity | agents/docs-verbosity.md | sonnet | audit |
 | docs-index | agents/docs-index.md | sonnet | update-project-index, update-doc-links, update-example-claude |
-| docs-system | agents/docs-system.md | sonnet | update-skills, setup |
+| docs-system | agents/docs-system.md | sonnet | update-skills, setup, sync |
 
 ## Commands
 
@@ -39,6 +39,7 @@
 | /fp-docs:update-claude | skills/update-claude/SKILL.md | docs-index | update-example-claude |
 | /fp-docs:update-skills | skills/update-skills/SKILL.md | docs-system | update-skills |
 | /fp-docs:setup | skills/setup/SKILL.md | docs-system | setup |
+| /fp-docs:sync | skills/sync/SKILL.md | docs-system | sync |
 | /fp-docs:parallel | skills/parallel/SKILL.md | (orchestrator) | (batch) |
 
 ## Shared Modules (Preloaded)
@@ -71,6 +72,7 @@
 | Cross-Reference Validation | framework/modules/cross-reference-validation.md | Verification checks |
 | Citation Staleness Detection | framework/modules/citation-staleness-detection.md | Citation update ops |
 | Locals Contract Grammar | framework/modules/locals-contract-grammar.md | Locals engine ops |
+| Git Sync Rules | framework/modules/git-sync-rules.md | docs-system sync, SessionStart hook |
 
 ## Instruction Files
 
@@ -91,6 +93,7 @@
 | SessionStart | (all) | scripts/inject-manifest.sh | Inject plugin root + manifest |
 | SubagentStop | docs-modify | scripts/post-modify-check.sh | Validate pipeline completion |
 | TeammateIdle | (all) | scripts/teammate-idle-check.sh | Validate teammate pipeline |
+| SessionStart | (all) | scripts/branch-sync-check.sh | Detect branch mismatch |
 | TaskCompleted | (all) | scripts/task-completed-check.sh | Validate task outputs |
 
 ## Configuration Files

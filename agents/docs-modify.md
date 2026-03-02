@@ -104,7 +104,14 @@ On-demand module files to read during pipeline:
 - Changelog: {plugin-root}/framework/modules/changelog-rules.md
 - Index: {plugin-root}/framework/modules/index-rules.md
 
-### Step 5: Report Your Work
+### Step 5: Commit to Docs Repo (Stage 8)
+After the pipeline completes, commit all changes to the docs repo:
+1. Detect docs root: {codebase-root}/themes/foreign-policy-2017/docs/
+2. Verify docs root is a git repo (has .git/)
+3. If it is: `git -C {docs-root} add -A` then `git -C {docs-root} commit -m "fp-docs: {operation} — {summary}"`
+4. If not: skip (docs repo not set up yet — not an error)
+
+### Step 6: Report Your Work
 Return a structured summary:
 
 ## Modification Report
@@ -123,6 +130,7 @@ Return a structured summary:
 - [ ] Verification: {pass|fail — details}
 - [ ] Changelog: {completed}
 - [ ] Index: {completed|skipped (no structural changes)}
+- [ ] Docs Commit: {committed|skipped (no docs repo)}
 
 ### Issues Found
 - {any concerns, flags, or [NEEDS INVESTIGATION] items}
@@ -135,6 +143,14 @@ Update your agent memory when you discover:
 - Codebase-specific conventions not captured in standards
 
 Write concise notes to your memory. Consult it at the start of each session.
+
+## Git Awareness
+The docs directory (themes/foreign-policy-2017/docs/) is a SEPARATE git repository
+nested inside the codebase workspace. The codebase repo gitignores it.
+- For docs git operations: `git -C {docs-root}`
+- For codebase git operations: `git -C {codebase-root}`
+- NEVER mix them up
+- Commit to the docs repo at the end of every pipeline run (Stage 8)
 
 ## Critical Rules
 1. NEVER guess — read actual source code before writing documentation

@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 # Post-Modification Pipeline Module
 
-Defines the 7-stage pipeline that runs after every doc-modifying operation. Only the docs-modify engine preloads this module. Other engines that modify docs (citations, api-refs, locals) run a subset.
+Defines the 8-stage pipeline that runs after every doc-modifying operation. Only the docs-modify engine preloads this module. Other engines that modify docs (citations, api-refs, locals) run a subset.
 
 ## Pipeline Definition
 
@@ -64,21 +64,33 @@ Read `framework/modules/index-rules.md` and:
 - For incremental changes: skip this stage
 - When triggered: update PROJECT-INDEX.md
 
+### Stage 8: Docs Repo Commit
+
+Commit all pipeline changes to the docs repo:
+1. Detect docs root from project-config (themes/foreign-policy-2017/docs/)
+2. Check if docs root has a .git/ directory
+3. If yes:
+   - `git -C {docs-root} add -A`
+   - `git -C {docs-root} commit -m "fp-docs: {operation} — {summary}"`
+4. If no: skip (docs repo not initialized)
+
+Skip condition: NEVER skip — always attempt if docs repo exists.
+
 ## Pipeline Trigger Matrix
 
 | Operation | Stages Run |
 |-----------|-----------|
-| revise | All 7 stages |
-| add | All 7 stages |
-| auto-update | All 7 stages |
-| auto-revise | All 7 stages |
-| deprecate | All 7 stages |
-| citations generate | Stages 4-7 (no verbosity/citation/api-ref — already done) |
-| citations update | Stages 4-7 |
-| api-refs generate | Stages 1, 2, 4-7 (no api-ref stage — already done) |
-| locals annotate | Stages 1, 2, 4-7 |
-| locals contracts | Stages 1, 2, 4-7 |
-| locals shapes | Stages 1, 2, 4-7 |
+| revise | All 8 stages |
+| add | All 8 stages |
+| auto-update | All 8 stages |
+| auto-revise | All 8 stages |
+| deprecate | All 8 stages |
+| citations generate | Stages 4-8 (no verbosity/citation/api-ref — already done) |
+| citations update | Stages 4-8 |
+| api-refs generate | Stages 1, 2, 4-8 (no api-ref stage — already done) |
+| locals annotate | Stages 1, 2, 4-8 |
+| locals contracts | Stages 1, 2, 4-8 |
+| locals shapes | Stages 1, 2, 4-8 |
 
 ## Pipeline Skip Conditions
 
@@ -89,13 +101,14 @@ Read `framework/modules/index-rules.md` and:
 - Stage 5 (Verify): NEVER skip — always runs
 - Stage 6 (Changelog): NEVER skip — always runs
 - Stage 7 (Index): Only runs on structural changes
+- Stage 8 (Docs Commit): NEVER skip — always attempt if docs repo exists
 
 ## Pipeline Completion Marker
 
 When the pipeline completes, output a confirmation line:
 
 ```
-Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: PASS] [changelog: updated]
+Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: PASS] [changelog: updated] [docs-commit: committed|skipped]
 ```
 
 This marker is checked by the SubagentStop hook to validate pipeline execution.

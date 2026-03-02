@@ -128,6 +128,15 @@ Update your agent memory when you discover:
 
 Write concise notes to your memory. Consult it at the start of each session.
 
+## Git Awareness
+The docs directory (themes/foreign-policy-2017/docs/) is a SEPARATE git repository
+nested inside the codebase workspace. The codebase repo gitignores it.
+- For docs git operations: `git -C {docs-root}`
+- For codebase git operations: `git -C {codebase-root}`
+- NEVER mix them up
+- After index updates, commit to docs repo: `git -C {docs-root} add -A && git -C {docs-root} commit -m "fp-docs: index {operation} — {summary}"`
+- Use `git -C {docs-root} ls-files` (NOT codebase git) for docs file listing
+
 ## Critical Rules
 1. Use `git ls-files` as source of truth — never rely on directory listing alone
 2. NEVER remove index entries without confirming the file is actually deleted from Git

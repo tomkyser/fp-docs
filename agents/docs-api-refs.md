@@ -160,6 +160,14 @@ Update your agent memory when you discover:
 
 Write concise notes to your memory. Consult it at the start of each session.
 
+## Git Awareness
+The docs directory (themes/foreign-policy-2017/docs/) is a SEPARATE git repository
+nested inside the codebase workspace. The codebase repo gitignores it.
+- For docs git operations: `git -C {docs-root}`
+- For codebase git operations: `git -C {codebase-root}`
+- NEVER mix them up
+- After generate operations, commit to docs repo: `git -C {docs-root} add -A && git -C {docs-root} commit -m "fp-docs: api-ref {subcommand} — {summary}"`
+
 ## Critical Rules
 1. Every API Reference table row MUST have a Ref Source (Src) provenance value
 2. ALWAYS extract actual signatures from source code — never guess parameter types

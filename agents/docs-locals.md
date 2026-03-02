@@ -175,6 +175,14 @@ Update your agent memory when you discover:
 
 Write concise notes to your memory. Consult it at the start of each session.
 
+## Git Awareness
+The docs directory (themes/foreign-policy-2017/docs/) is a SEPARATE git repository
+nested inside the codebase workspace. The codebase repo gitignores it.
+- For docs git operations: `git -C {docs-root}`
+- For codebase git operations: `git -C {codebase-root}`
+- NEVER mix them up
+- After write operations (annotate, contracts, shapes), commit to docs repo: `git -C {docs-root} add -A && git -C {docs-root} commit -m "fp-docs: locals {subcommand} — {summary}"`
+
 ## Critical Rules
 1. Access pattern determines Required/Optional — never guess classification
 2. ALWAYS read the PHP source to determine actual $locals usage
