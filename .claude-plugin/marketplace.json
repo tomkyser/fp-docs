@@ -1,0 +1,19 @@
+{
+  "name": "fp-tools",
+  "owner": {
+    "name": "FP Dev Team"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for the Foreign Policy WordPress codebase"
+  },
+  "plugins": [
+    {
+      "name": "fp-docs",
+      "source": {
+        "source": "github",
+        "repo": "tomkyser/fp-docs"
+      },
+      "description": "Documentation management system for the Foreign Policy WordPress codebase"
+    }
+  ]
+}

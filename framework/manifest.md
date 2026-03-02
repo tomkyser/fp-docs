@@ -1,9 +1,9 @@
-# fp-docs System — Manifest v2.1.0
+# fp-docs System — Manifest v2.2.0
 
 ## Plugin
 - **Name**: fp-docs
 - **Namespace**: /fp-docs:*
-- **Version**: 2.1.0
+- **Version**: 2.2.0
 
 ## Engines
 
