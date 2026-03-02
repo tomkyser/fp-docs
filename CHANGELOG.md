@@ -2,6 +2,15 @@
 
 All notable changes to the fp-docs plugin will be documented in this file.
 
+## [2.3.0] - 2026-03-02
+
+### Changed
+- Restructured repo: marketplace container at root, plugin moved to `plugins/fp-docs/`
+- marketplace.json source changed from GitHub URL to relative path (`./plugins/fp-docs`)
+- Matches official Claude Code marketplace structure (anthropics/claude-plugins-official)
+- Fixes skill namespace issue: skills now correctly load as `fp-docs:*` instead of unprefixed
+- Version bump to 2.3.0
+
 ## [2.2.0] - 2026-03-02
 
 ### Added

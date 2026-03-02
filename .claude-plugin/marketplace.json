@@ -9,10 +9,7 @@
   "plugins": [
     {
       "name": "fp-docs",
-      "source": {
-        "source": "github",
-        "repo": "tomkyser/fp-docs"
-      },
+      "source": "./plugins/fp-docs",
       "description": "Documentation management system for the Foreign Policy WordPress codebase"
     }
   ]

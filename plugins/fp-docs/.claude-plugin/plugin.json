@@ -1,6 +1,6 @@
 {
   "name": "fp-docs",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Documentation management system for the Foreign Policy WordPress codebase. Three-repo architecture with branch mirroring, 8 engine agents, 19 user commands.",
   "author": {
     "name": "FP Dev Team"

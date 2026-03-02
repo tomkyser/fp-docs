@@ -66,8 +66,10 @@ This creates a docs branch matching your current codebase branch and generates a
 To load the plugin from a local directory (for plugin development only):
 ```bash
 git clone https://github.com/tomkyser/fp-docs.git ~/cc-plugins/fp-docs
-claude --plugin-dir ~/cc-plugins/fp-docs
+claude --plugin-dir ~/cc-plugins/fp-docs/plugins/fp-docs
 ```
+
+Note: point `--plugin-dir` at the `plugins/fp-docs/` subdirectory, not the repo root. The repo root is the marketplace container.
 
 ## Commands
 
@@ -163,7 +165,7 @@ Plugin updates are detected when the `version` in `plugin.json` changes:
 
 Validate the plugin structure:
 ```bash
-claude plugin validate .
+cd plugins/fp-docs && claude plugin validate .
 ```
 
 ## For Parallel Mode
