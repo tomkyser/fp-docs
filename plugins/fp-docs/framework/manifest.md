@@ -1,9 +1,9 @@
-# fp-docs System — Manifest v2.3.0
+# fp-docs System — Manifest v2.4.0
 
 ## Plugin
 - **Name**: fp-docs
-- **Namespace**: /fp-docs:*
-- **Version**: 2.3.0
+- **Namespace**: /fp-docs:docs-* (short form: /docs-*)
+- **Version**: 2.4.0
 
 ## Engines
 
@@ -22,25 +22,25 @@
 
 | Command | Skill File | Engine | Operation |
 |---|---|---|---|
-| /fp-docs:revise | skills/revise/SKILL.md | docs-modify | revise |
-| /fp-docs:add | skills/add/SKILL.md | docs-modify | add |
-| /fp-docs:auto-update | skills/auto-update/SKILL.md | docs-modify | auto-update |
-| /fp-docs:auto-revise | skills/auto-revise/SKILL.md | docs-modify | auto-revise |
-| /fp-docs:deprecate | skills/deprecate/SKILL.md | docs-modify | deprecate |
-| /fp-docs:audit | skills/audit/SKILL.md | docs-validate | audit |
-| /fp-docs:verify | skills/verify/SKILL.md | docs-validate | verify |
-| /fp-docs:sanity-check | skills/sanity-check/SKILL.md | docs-validate | sanity-check |
-| /fp-docs:test | skills/test/SKILL.md | docs-validate | test |
-| /fp-docs:citations | skills/citations/SKILL.md | docs-citations | (subcommand) |
-| /fp-docs:api-ref | skills/api-ref/SKILL.md | docs-api-refs | (subcommand) |
-| /fp-docs:locals | skills/locals/SKILL.md | docs-locals | (subcommand) |
-| /fp-docs:verbosity-audit | skills/verbosity-audit/SKILL.md | docs-verbosity | audit |
-| /fp-docs:update-index | skills/update-index/SKILL.md | docs-index | update-project-index |
-| /fp-docs:update-claude | skills/update-claude/SKILL.md | docs-index | update-example-claude |
-| /fp-docs:update-skills | skills/update-skills/SKILL.md | docs-system | update-skills |
-| /fp-docs:setup | skills/setup/SKILL.md | docs-system | setup |
-| /fp-docs:sync | skills/sync/SKILL.md | docs-system | sync |
-| /fp-docs:parallel | skills/parallel/SKILL.md | (orchestrator) | (batch) |
+| /docs-revise | skills/revise/SKILL.md | docs-modify | revise |
+| /docs-add | skills/add/SKILL.md | docs-modify | add |
+| /docs-auto-update | skills/auto-update/SKILL.md | docs-modify | auto-update |
+| /docs-auto-revise | skills/auto-revise/SKILL.md | docs-modify | auto-revise |
+| /docs-deprecate | skills/deprecate/SKILL.md | docs-modify | deprecate |
+| /docs-audit | skills/audit/SKILL.md | docs-validate | audit |
+| /docs-verify | skills/verify/SKILL.md | docs-validate | verify |
+| /docs-sanity-check | skills/sanity-check/SKILL.md | docs-validate | sanity-check |
+| /docs-test | skills/test/SKILL.md | docs-validate | test |
+| /docs-citations | skills/citations/SKILL.md | docs-citations | (subcommand) |
+| /docs-api-ref | skills/api-ref/SKILL.md | docs-api-refs | (subcommand) |
+| /docs-locals | skills/locals/SKILL.md | docs-locals | (subcommand) |
+| /docs-verbosity-audit | skills/verbosity-audit/SKILL.md | docs-verbosity | audit |
+| /docs-update-index | skills/update-index/SKILL.md | docs-index | update-project-index |
+| /docs-update-claude | skills/update-claude/SKILL.md | docs-index | update-example-claude |
+| /docs-update-skills | skills/update-skills/SKILL.md | docs-system | update-skills |
+| /docs-setup | skills/setup/SKILL.md | docs-system | setup |
+| /docs-sync | skills/sync/SKILL.md | docs-system | sync |
+| /docs-parallel | skills/parallel/SKILL.md | (orchestrator) | (batch) |
 
 ## Shared Modules (Preloaded)
 

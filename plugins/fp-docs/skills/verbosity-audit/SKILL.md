@@ -1,5 +1,5 @@
 ---
-name: verbosity-audit
+name: docs-verbosity-audit
 description: Scan existing documentation for verbosity gaps — missing items, summarization language, unexpanded enumerables.
 argument-hint: "--depth quick|standard|deep [scope]"
 context: fork

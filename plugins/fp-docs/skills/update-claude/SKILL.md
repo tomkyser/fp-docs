@@ -1,5 +1,5 @@
 ---
-name: update-claude
+name: docs-update-claude
 description: Regenerate the CLAUDE.md template with current skill inventory, documentation links, and project configuration.
 argument-hint: ""
 context: fork

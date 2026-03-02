@@ -6,7 +6,7 @@ Documentation management system for the Foreign Policy WordPress codebase. Built
 
 - **8 engine agents** — each owns a domain of responsibility (modify, validate, citations, API refs, locals, verbosity, index, system)
 - **10 shared modules** — preloaded into engines as skill dependencies (standards, project config, pipeline, domain rules)
-- **19 user commands** — `/fp-docs:*` namespace for all documentation operations
+- **19 user commands** — `/docs-*` namespace for all documentation operations
 - **5 hooks** — SessionStart (manifest + branch sync), SubagentStop, TeammateIdle, TaskCompleted
 - **Three-repo architecture** — codebase, docs, and plugin each have independent git repos
 - **Marketplace distribution** — install via `/plugin install fp-docs@fp-tools`
@@ -51,13 +51,13 @@ Ensure `themes/foreign-policy-2017/docs/` is in your codebase's `.gitignore` so 
 
 ### Step 5: Run Setup Verification
 ```
-/fp-docs:setup
+/docs-setup
 ```
 This verifies the plugin, docs repo, codebase .gitignore, and branch sync state.
 
 ### Step 6: Sync Docs Branch
 ```
-/fp-docs:sync
+/docs-sync
 ```
 This creates a docs branch matching your current codebase branch and generates a diff report.
 
@@ -76,43 +76,43 @@ Note: point `--plugin-dir` at the `plugins/fp-docs/` subdirectory, not the repo 
 ### Documentation Modification
 | Command | Description |
 |---------|-------------|
-| `/fp-docs:revise` | Fix specific docs you know are wrong or outdated |
-| `/fp-docs:add` | Create documentation for new code |
-| `/fp-docs:auto-update` | Auto-detect code changes and update affected docs |
-| `/fp-docs:auto-revise` | Batch-process all items in the revision tracker |
-| `/fp-docs:deprecate` | Mark documentation as deprecated |
+| `/docs-revise` | Fix specific docs you know are wrong or outdated |
+| `/docs-add` | Create documentation for new code |
+| `/docs-auto-update` | Auto-detect code changes and update affected docs |
+| `/docs-auto-revise` | Batch-process all items in the revision tracker |
+| `/docs-deprecate` | Mark documentation as deprecated |
 
 ### Validation (Read-Only)
 | Command | Description |
 |---------|-------------|
-| `/fp-docs:audit` | Compare docs against source code |
-| `/fp-docs:verify` | Run 10-point verification checklist |
-| `/fp-docs:sanity-check` | Validate doc claims against source code |
-| `/fp-docs:test` | Runtime validations against local dev environment |
+| `/docs-audit` | Compare docs against source code |
+| `/docs-verify` | Run 10-point verification checklist |
+| `/docs-sanity-check` | Validate doc claims against source code |
+| `/docs-test` | Runtime validations against local dev environment |
 
 ### Specialized Operations
 | Command | Description |
 |---------|-------------|
-| `/fp-docs:citations` | Manage code citations (generate, update, verify, audit) |
-| `/fp-docs:api-ref` | Generate or update API Reference sections |
-| `/fp-docs:locals` | Manage $locals contract documentation |
-| `/fp-docs:verbosity-audit` | Scan docs for verbosity gaps |
+| `/docs-citations` | Manage code citations (generate, update, verify, audit) |
+| `/docs-api-ref` | Generate or update API Reference sections |
+| `/docs-locals` | Manage $locals contract documentation |
+| `/docs-verbosity-audit` | Scan docs for verbosity gaps |
 
 ### System
 | Command | Description |
 |---------|-------------|
-| `/fp-docs:update-index` | Refresh PROJECT-INDEX.md |
-| `/fp-docs:update-claude` | Regenerate CLAUDE.md template |
-| `/fp-docs:update-skills` | Sync skills with prompt definitions |
-| `/fp-docs:setup` | Initialize or verify plugin installation |
-| `/fp-docs:sync` | Sync docs branch with codebase branch, generate diff reports |
-| `/fp-docs:parallel` | Parallel batch processing via Agent Teams |
+| `/docs-update-index` | Refresh PROJECT-INDEX.md |
+| `/docs-update-claude` | Regenerate CLAUDE.md template |
+| `/docs-update-skills` | Sync skills with prompt definitions |
+| `/docs-setup` | Initialize or verify plugin installation |
+| `/docs-sync` | Sync docs branch with codebase branch, generate diff reports |
+| `/docs-parallel` | Parallel batch processing via Agent Teams |
 
 ## Architecture
 
 ### Engine Pattern
 ```
-User types /fp-docs:revise → Skill (context:fork) → docs-modify engine subagent
+User types /docs-revise → Skill (context:fork) → docs-modify engine subagent
   → Reads instruction file → Executes operation → Runs pipeline → Returns report
 ```
 
@@ -126,8 +126,8 @@ After any doc modification: Verbosity → Citations → API Refs → Sanity-Chec
 - Docs `master` = canonical docs for codebase `origin/master`
 - Feature branches in docs mirror codebase feature branches
 - SessionStart hook detects branch mismatches and warns
-- `/fp-docs:sync` creates/switches branches and generates diff reports
-- `/fp-docs:sync merge` merges docs feature branch to master
+- `/docs-sync` creates/switches branches and generates diff reports
+- `/docs-sync merge` merges docs feature branch to master
 
 ## Team Setup
 

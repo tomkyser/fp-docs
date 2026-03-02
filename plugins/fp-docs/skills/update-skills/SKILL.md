@@ -1,5 +1,5 @@
 ---
-name: update-skills
+name: docs-update-skills
 description: Regenerate all plugin skills from the current prompt definitions. Syncs skill files with the source-of-truth prompts.
 argument-hint: ""
 context: fork

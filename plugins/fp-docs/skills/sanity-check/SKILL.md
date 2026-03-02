@@ -1,5 +1,5 @@
 ---
-name: sanity-check
+name: docs-sanity-check
 description: Validate that documentation claims match actual source code. Zero-tolerance mode flags any discrepancy.
 argument-hint: "scope like docs/06-helpers/posts.md"
 context: fork

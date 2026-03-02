@@ -2,6 +2,15 @@
 
 All notable changes to the fp-docs plugin will be documented in this file.
 
+## [2.4.0] - 2026-03-02
+
+### Changed
+- All 19 user skill names prefixed with `docs-` to avoid generic command collisions
+- Commands are now `/docs-revise`, `/docs-sync`, `/docs-add`, etc. instead of `/revise`, `/sync`, `/add`
+- Also accessible as `/fp-docs:docs-revise` etc. via plugin namespace
+- Updated manifest and README to reflect new command names
+- Version bump to 2.4.0
+
 ## [2.3.0] - 2026-03-02
 
 ### Changed

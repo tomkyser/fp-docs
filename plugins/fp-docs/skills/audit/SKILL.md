@@ -1,5 +1,5 @@
 ---
-name: audit
+name: docs-audit
 description: Compare documentation against source code and report discrepancies. Supports quick, standard, and deep audit depths.
 argument-hint: "--depth quick|standard|deep [scope]"
 context: fork
