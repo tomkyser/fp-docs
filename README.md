@@ -45,13 +45,17 @@ cd themes/foreign-policy-2017/
 git clone https://github.com/tomkyser/docs-foreignpolicy-com docs
 ```
 
-### Step 4: Run Setup Verification
+### Step 4: Verify Codebase .gitignore
+
+Ensure `themes/foreign-policy-2017/docs/` is in your codebase's `.gitignore` so the docs repo is not tracked by the codebase repo.
+
+### Step 5: Run Setup Verification
 ```
 /fp-docs:setup
 ```
 This verifies the plugin, docs repo, codebase .gitignore, and branch sync state.
 
-### Step 5: Sync Docs Branch
+### Step 6: Sync Docs Branch
 ```
 /fp-docs:sync
 ```
