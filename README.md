@@ -26,8 +26,6 @@ Documentation management system for the Foreign Policy WordPress codebase. Built
 
 ### Step 1: Add the Marketplace
 
-If the codebase `.claude/settings.json` is present (it should be — it's committed to the repo), you'll be prompted automatically when you open the project. Otherwise, add it manually:
-
 ```
 /plugin marketplace add tomkyser/fp-docs
 ```
@@ -38,7 +36,7 @@ If the codebase `.claude/settings.json` is present (it should be — it's commit
 /plugin install fp-docs@fp-tools
 ```
 
-The plugin is copied to `~/.claude/plugins/cache/` and enabled automatically.
+The plugin is copied to `~/.claude/plugins/cache/` and enabled.
 
 ### Step 3: Set Up the Docs Repo
 ```bash
@@ -127,9 +125,8 @@ After any doc modification: Verbosity → Citations → API Refs → Sanity-Chec
 
 ## Team Setup
 
-### Automatic (recommended)
+Each team member maintains their own `.claude/settings.json`. To enable auto-prompt for the marketplace and plugin, add the following to your local `.claude/settings.json` (or `.claude/settings.local.json`):
 
-The codebase repo includes `.claude/settings.json` with:
 ```json
 {
   "extraKnownMarketplaces": {
@@ -143,10 +140,9 @@ The codebase repo includes `.claude/settings.json` with:
 }
 ```
 
-When a team member opens the project in Claude Code, they are prompted to add the `fp-tools` marketplace. The plugin is auto-enabled.
+With this in place, Claude Code will auto-prompt you to add the marketplace and enable the plugin when you open the project.
 
-### Manual
-
+Without the settings above, install manually:
 ```
 /plugin marketplace add tomkyser/fp-docs
 /plugin install fp-docs@fp-tools
