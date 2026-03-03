@@ -11,9 +11,10 @@
 
 3. For each skill file:
    a. Read the YAML frontmatter
-   b. Verify `name`, `description`, `agent`, and `context: fork` fields exist
+   b. Verify `description`, `agent`, and `context: fork` fields exist
    c. Verify the referenced agent exists in `{plugin-root}/agents/`
    d. Check that `argument-hint` is present for user-facing skills
+   e. Verify there is NO `name:` field in the frontmatter — the skill name is derived from the directory name (e.g., `skills/revise/` → `revise`). Including `name:` causes Claude Code to bypass the plugin namespace prefix ([GitHub #22063](https://github.com/anthropics/claude-code/issues/22063)). If `name:` is found, remove it and report as a fix.
 
 4. Compare discovered skills against the manifest's Commands table.
    - Missing from manifest → report as "unregistered skill"
