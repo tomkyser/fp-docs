@@ -2,6 +2,15 @@
 
 All notable changes to the fp-docs plugin will be documented in this file.
 
+## [2.5.0] - 2026-03-03
+
+### Changed
+- Moved 10 shared modules from `skills/` to dedicated `modules/` directory
+- Renamed all 19 user skill directories to match their `name:` field (e.g., `skills/revise/` → `skills/docs-revise/`)
+- Added `"skills": "./modules/"` to plugin.json so modules remain discoverable for agent preloading
+- Updated manifest with new paths
+- Version bump to 2.5.0
+
 ## [2.4.0] - 2026-03-02
 
 ### Changed

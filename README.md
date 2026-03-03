@@ -117,7 +117,7 @@ User types /docs-revise → Skill (context:fork) → docs-modify engine subagent
 ```
 
 ### Shared Module Deduplication
-Each rule lives in exactly one module. Engines preload modules; modules don't know about engines. FP-specific values live in the project module, not in domain modules.
+Each rule lives in exactly one module in the `modules/` directory. Engines preload modules via `skills:` frontmatter; modules don't know about engines. FP-specific values live in the project module, not in domain modules.
 
 ### Post-Modification Pipeline
 After any doc modification: Verbosity → Citations → API Refs → Sanity-Check → Verify → Changelog → Index → Docs Commit
