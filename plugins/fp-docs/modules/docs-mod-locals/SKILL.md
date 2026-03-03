@@ -33,9 +33,32 @@ Format rules:
 - Nested keys use dot notation: `attachment_data.src: string`
 - Array-indexed locals documented as: `[0]: array — Required. Primary article config.`
 
+## @locals Block Grammar
+
+Formal token-level grammar for @locals blocks:
+
+```
+@locals {
+  {key_name}:{spaces}{type}{spaces}—{spaces}{requirement}.{spaces}{description}.{spaces}[Default: {value}]
+}
+```
+
+Token rules:
+- `key_name`: snake_case identifier, or `[N]` for integer-indexed
+- `type`: PHP type (`int`, `string`, `bool`, `array`, `string|bool`, `string|false`)
+- `requirement`: `Required` or `Optional`
+- `description`: Free text, ends with period
+- `Default`: Only present for Optional keys, value in square brackets
+
+Nested keys use dot notation: `attachment_data.src: string — Required. Image source URL.`
+
 ## @controller Format (HTMX Components)
 
-HTMX components (`components/htmx/`) use a `$cmp` controller object. These use `@controller`, `@state`, and `@methods` PHPDoc blocks.
+HTMX components (`components/htmx/`) use a `$cmp` controller object with these PHPDoc blocks:
+
+- `@controller {ClassName}` — controller class identifier
+- `@state { key: type — description }` — component state definition
+- `@methods { method_name(): return_type }` — available methods
 
 ## Locals Contracts Section in Docs
 
@@ -73,6 +96,16 @@ Commonly-passed `$locals` structures defined in `docs/05-components/_locals-shap
 - **Ad Promo Config** — Promotional banner/ad parameters
 - **Trending Config** — Trending posts widget parameters
 - **Insider Recirc Config** — Insider recirculation widget parameters
+
+## Shape Definition Grammar
+
+Shapes defined in `docs/05-components/_locals-shapes.md` use the standard table format from the Locals Contracts section.
+
+### Shape Reference Syntax
+
+In component docs, reference shared shapes with:
+- **Exact match**: `**Shape**: [{Shape Name}](_locals-shapes.md#{shape-anchor})`
+- **Subset**: `**Shape**: Subset of [{Shape Name}](_locals-shapes.md#{shape-anchor})`
 
 ## Integer-Indexed $locals
 

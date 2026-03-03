@@ -37,8 +37,8 @@
 2. Read `framework/modules/citation-rules.md` → generate citations for API ref entries
 4. Read `framework/modules/validation-rules.md` → sanity-check
 5. Read `framework/modules/validation-rules.md` → verify
-6. Read `framework/modules/changelog-rules.md` → changelog
-7. Read `framework/modules/index-rules.md` → index if needed
+6. Follow changelog rules from the docs-mod-changelog module → changelog
+7. Follow index rules from the docs-mod-index module → index if needed
 
 ## Output
 

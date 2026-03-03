@@ -44,6 +44,8 @@ skills:
   - docs-mod-standards
   - docs-mod-project
   - docs-mod-pipeline
+  - docs-mod-changelog
+  - docs-mod-index
 model: inherit
 color: green
 maxTurns: 75
@@ -101,8 +103,8 @@ On-demand module files to read during pipeline:
 - Citations: {plugin-root}/framework/modules/citation-rules.md
 - API Refs: {plugin-root}/framework/modules/api-ref-rules.md
 - Validation: {plugin-root}/framework/modules/validation-rules.md
-- Changelog: {plugin-root}/framework/modules/changelog-rules.md
-- Index: {plugin-root}/framework/modules/index-rules.md
+- Changelog: Follow rules from your preloaded docs-mod-changelog module
+- Index: Follow rules from your preloaded docs-mod-index module
 
 ### Step 5: Commit to Docs Repo (Stage 8)
 After the pipeline completes, commit all changes to the docs repo:

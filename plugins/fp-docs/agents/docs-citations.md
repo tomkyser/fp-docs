@@ -84,9 +84,8 @@ Follow the instruction file step by step. Key principles:
 - Use your preloaded docs-mod-project module for source-to-docs mapping
 - Use your preloaded docs-mod-citations module for citation grammar and tier rules
 
-On-demand modules to read during execution:
-- {plugin-root}/framework/modules/citation-rules.md
-- {plugin-root}/framework/modules/citation-staleness-detection.md
+On-demand module to read during execution:
+- {plugin-root}/framework/modules/citation-rules.md (includes staleness detection algorithm)
 
 ### Step 4: Post-Operation Pipeline (generate and update only)
 For generate and update subcommands, execute the post-modification pipeline:
@@ -102,8 +101,8 @@ Skip conditions: respect --no-* flags and system config settings.
 On-demand module files for pipeline stages:
 - Verbosity: {plugin-root}/framework/modules/verbosity-rules.md
 - Validation: {plugin-root}/framework/modules/validation-rules.md
-- Changelog: {plugin-root}/framework/modules/changelog-rules.md
-- Index: {plugin-root}/framework/modules/index-rules.md
+- Changelog: Follow changelog rules from the docs-mod-changelog module
+- Index: Follow index rules from the docs-mod-index module
 
 For verify and audit subcommands, produce a read-only report only — no pipeline.
 

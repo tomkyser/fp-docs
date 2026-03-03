@@ -59,68 +59,14 @@ You will be invoked with a prompt containing:
 
 Parse the operation and flags from the prompt.
 
-### Step 2: Execute the Operation
+### Step 2: Load the Instruction File
 
-#### For update-skills
-Regenerate plugin skill SKILL.md files from their source definitions.
+Read the instruction file for your operation from the plugin:
+- update-skills → {plugin-root}/framework/instructions/system/update-skills.md
+- setup → {plugin-root}/framework/instructions/system/setup.md
+- sync → {plugin-root}/framework/instructions/system/sync.md
 
-1. Read the skill source definitions from {plugin-root}/framework/config/skill-definitions.md (or equivalent source of truth)
-2. For each skill definition:
-   a. Read the current SKILL.md file if it exists
-   b. Compare against the source definition
-   c. If differences are found, regenerate the SKILL.md file
-   d. Preserve any manual customizations marked with `<!-- custom -->` blocks
-3. Validate all regenerated skills have required frontmatter fields:
-   - name
-   - description (with example blocks for user skills)
-   - For shared modules: `disable-model-invocation: true`
-4. Report what was regenerated and what was unchanged
-
-#### For setup
-Verify the plugin installation is complete and functional.
-
-1. Check plugin manifest exists: {plugin-root}/.claude-plugin/plugin.json
-2. Validate manifest JSON structure
-3. Verify all required directories exist:
-   - {plugin-root}/agents/
-   - {plugin-root}/skills/
-   - {plugin-root}/hooks/
-   - {plugin-root}/scripts/
-   - {plugin-root}/framework/
-   - {plugin-root}/framework/instructions/
-   - {plugin-root}/framework/modules/
-   - {plugin-root}/framework/config/
-4. Verify all engine agent files exist (8 engines)
-5. Verify all skill files exist (18 user skills + 10 shared modules)
-6. Verify hook registrations in {plugin-root}/hooks/hooks.json
-7. Verify hook scripts are executable
-8. Check framework instruction files for completeness
-9. Check framework module files for completeness
-10. Report overall installation health
-
-#### For sync
-Synchronize the docs repo branch with the codebase branch.
-
-1. Read `{plugin-root}/framework/modules/git-sync-rules.md` for the full sync rules
-2. Detect codebase root: `git rev-parse --show-toplevel` from working directory
-3. Detect docs root: `{codebase-root}/themes/foreign-policy-2017/docs/`
-4. Get codebase branch: `git -C {codebase-root} branch --show-current`
-5. Get docs branch: `git -C {docs-root} branch --show-current`
-6. If subcommand is "merge":
-   a. Verify current docs branch is not master
-   b. Switch to master: `git -C {docs-root} checkout master`
-   c. Merge feature branch: `git -C {docs-root} merge {feature-branch}`
-   d. Push: `git -C {docs-root} push`
-   e. Delete feature branch: `git -C {docs-root} branch -d {feature-branch}`
-   f. Report merge result
-7. If no subcommand (default sync):
-   a. Check if docs has a branch matching the codebase branch
-   b. If not: create from master: `git -C {docs-root} checkout -b {codebase-branch}`
-   c. If exists but not current: switch: `git -C {docs-root} checkout {codebase-branch}`
-   d. Generate diff report (follow algorithm in git-sync-rules.md)
-   e. Write report to `{docs-root}/diffs/{YYYY-MM-DD}_{codebase-branch}_diff_report.md`
-   f. Commit the diff report to the docs repo
-   g. Present options to user: exclude stale docs, update/revise them, or do nothing
+Follow the steps in the instruction file to complete the operation.
 
 ### Step 3: Report Your Work
 

@@ -65,40 +65,13 @@ Parse the operation and mode from the prompt. Default mode is "update" (incremen
 Read the instruction file for your operation from the plugin:
 - update-project-index → {plugin-root}/framework/instructions/index/update.md
 - update-doc-links → {plugin-root}/framework/instructions/index/links.md
-- update-example-claude → {plugin-root}/framework/instructions/index/claude-md.md
+- update-example-claude → {plugin-root}/framework/instructions/index/update-example-claude.md
 
 Follow the steps in the instruction file to complete the operation.
 
 ### Step 3: Execute the Operation
-Follow the instruction file step by step. Key principles:
-- Use `git ls-files` as the source of truth for what files exist
-- Use your preloaded docs-mod-standards module for formatting rules
-- Use your preloaded docs-mod-project module for directory structure mapping
-- Use your preloaded docs-mod-index module for index format and conventions
-
-On-demand module to read during execution:
-- {plugin-root}/framework/modules/index-rules.md
-
-#### For update-project-index (incremental)
-1. Read the current PROJECT-INDEX.md
-2. Run `git ls-files` on the docs/ directory to get current file list
-3. Compare current files against index entries
-4. Add entries for new files
-5. Remove entries for deleted files
-6. Update metadata for modified files (check git log for recent changes)
-
-#### For update-project-index (full)
-1. Run `git ls-files` on the docs/ directory
-2. For each file, extract: path, title (from first heading), section, line count
-3. Generate the complete PROJECT-INDEX.md from scratch
-4. Preserve any manual annotations that exist in the current index
-
-#### For update-example-claude
-1. Read the current CLAUDE.md template
-2. Read the plugin manifest and current skill list
-3. Regenerate the documentation skills table
-4. Update the quick reference section
-5. Preserve all non-documentation sections (architecture, commands, integrations, etc.)
+Follow the steps in your loaded instruction file.
+Use update modes and git consistency rules from your preloaded docs-mod-index module.
 
 ### Step 4: Report Your Work
 

@@ -23,6 +23,9 @@ tools:
   - Grep
   - Glob
   - Bash
+disallowedTools:
+  - Write
+  - Edit
 skills:
   - docs-mod-standards
   - docs-mod-project
@@ -71,18 +74,7 @@ Follow the instruction file step by step. Key principles:
 On-demand module to read during scan:
 - {plugin-root}/framework/modules/verbosity-rules.md
 
-### Banned Phrase Categories
-These categories of phrases are NEVER acceptable in documentation:
-
-1. **Summarization hedges**: "such as", "including but not limited to", "for example" (when used to avoid enumerating), "like" (as a list substitute), "among others", "and similar"
-2. **Trailing abbreviators**: "etc.", "et cetera", "and more", "and so on", "and others", "..."
-3. **Vague quantifiers**: "various", "several", "many", "numerous", "a number of", "multiple" (when the actual count is knowable)
-4. **Lazy references**: "the usual", "standard", "typical", "common" (when specific items should be listed)
-
-### Severity Classification
-- **HIGH**: Banned phrases present — these MUST be fixed
-- **MEDIUM**: Incomplete lists — items are partially enumerated but trail off
-- **LOW**: Style issues — vague language that could be more precise but is not a banned phrase
+Follow the steps in your loaded instruction file. Use banned phrases and severity classification from your preloaded docs-mod-verbosity module.
 
 ### Step 4: Report Your Findings
 Return a structured verbosity report:

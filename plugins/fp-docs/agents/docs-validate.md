@@ -37,6 +37,9 @@ tools:
   - Grep
   - Glob
   - Bash
+disallowedTools:
+  - Write
+  - Edit
 skills:
   - docs-mod-standards
   - docs-mod-project

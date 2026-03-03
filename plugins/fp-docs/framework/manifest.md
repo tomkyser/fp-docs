@@ -1,9 +1,9 @@
-# fp-docs System — Manifest v2.5.0
+# fp-docs System — Manifest v2.6.0
 
 ## Plugin
 - **Name**: fp-docs
 - **Namespace**: /docs-* (also accessible as /fp-docs:docs-*)
-- **Version**: 2.5.0
+- **Version**: 2.6.0
 
 ## Engines
 
@@ -54,24 +54,18 @@
 | Locals | modules/docs-mod-locals/SKILL.md | docs-modify, docs-locals |
 | Verbosity | modules/docs-mod-verbosity/SKILL.md | docs-modify, docs-verbosity |
 | Validation | modules/docs-mod-validation/SKILL.md | docs-modify, docs-validate |
-| Changelog | modules/docs-mod-changelog/SKILL.md | docs-modify |
-| Index | modules/docs-mod-index/SKILL.md | docs-modify, docs-index |
+| Changelog | modules/docs-mod-changelog/SKILL.md | docs-modify (preloaded) |
+| Index | modules/docs-mod-index/SKILL.md | docs-modify (preloaded), docs-index |
 
 ## On-Demand Framework Modules
 
 | Module | Path | Loaded By |
 |---|---|---|
-| Verbosity Rules | framework/modules/verbosity-rules.md | Pipeline stage 1 |
-| Citation Rules | framework/modules/citation-rules.md | Pipeline stage 2 |
-| API Ref Rules | framework/modules/api-ref-rules.md | Pipeline stage 3 |
-| Validation Rules | framework/modules/validation-rules.md | Pipeline stages 4-5 |
-| Changelog Rules | framework/modules/changelog-rules.md | Pipeline stage 6 |
-| Index Rules | framework/modules/index-rules.md | Pipeline stage 7 |
-| Post-Modify Checklist | framework/modules/post-modify-checklist.md | SubagentStop hook |
+| Verbosity Algorithm | framework/modules/verbosity-rules.md | Pipeline stage 1 |
+| Citation Algorithm | framework/modules/citation-rules.md | Pipeline stage 2 |
+| API Ref Algorithm | framework/modules/api-ref-rules.md | Pipeline stage 3 |
+| Validation Algorithm | framework/modules/validation-rules.md | Pipeline stages 4-5 |
 | Codebase Analysis Guide | framework/modules/codebase-analysis-guide.md | Engines scanning source |
-| Cross-Reference Validation | framework/modules/cross-reference-validation.md | Verification checks |
-| Citation Staleness Detection | framework/modules/citation-staleness-detection.md | Citation update ops |
-| Locals Contract Grammar | framework/modules/locals-contract-grammar.md | Locals engine ops |
 | Git Sync Rules | framework/modules/git-sync-rules.md | docs-system sync, SessionStart hook |
 
 ## Instruction Files
@@ -84,7 +78,8 @@
 | docs-api-refs | api-refs/generate.md, api-refs/audit.md |
 | docs-locals | locals/annotate.md, locals/contracts.md, locals/cross-ref.md, locals/validate.md, locals/shapes.md, locals/coverage.md |
 | docs-verbosity | verbosity/audit.md |
-| docs-index | index/update.md |
+| docs-index | index/update.md, index/update-example-claude.md |
+| docs-system | system/update-skills.md, system/setup.md, system/sync.md |
 
 ## Hooks
 

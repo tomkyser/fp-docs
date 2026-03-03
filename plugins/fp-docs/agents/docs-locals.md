@@ -91,8 +91,7 @@ Follow the instruction file step by step. Key principles:
 - Use your preloaded docs-mod-project module for component-to-docs mapping
 - Use your preloaded docs-mod-locals module for contract grammar and conventions
 
-On-demand module to read during execution:
-- {plugin-root}/framework/modules/locals-contract-grammar.md
+Grammar rules are in your preloaded docs-mod-locals module (no on-demand file needed).
 
 ### Step 4: Post-Operation Pipeline (annotate, contracts, shapes only)
 For write operations, execute the post-modification pipeline:
@@ -108,8 +107,8 @@ Skip conditions: respect --no-* flags and system config settings.
 On-demand module files for pipeline stages:
 - Verbosity: {plugin-root}/framework/modules/verbosity-rules.md
 - Validation: {plugin-root}/framework/modules/validation-rules.md
-- Changelog: {plugin-root}/framework/modules/changelog-rules.md
-- Index: {plugin-root}/framework/modules/index-rules.md
+- Changelog: Follow changelog rules from the docs-mod-changelog module
+- Index: Follow index rules from the docs-mod-index module
 
 For cross-ref, validate, and coverage subcommands, produce a read-only report only — no pipeline.
 

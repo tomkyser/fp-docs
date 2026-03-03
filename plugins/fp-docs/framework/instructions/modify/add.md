@@ -33,8 +33,8 @@ Execute the post-modification pipeline:
 3. Read `framework/modules/api-ref-rules.md` → verify API reference completeness
 4. Read `framework/modules/validation-rules.md` → run sanity-check
 5. Read `framework/modules/validation-rules.md` → run 10-point verification
-6. Read `framework/modules/changelog-rules.md` → append changelog entry
-7. Read `framework/modules/index-rules.md` → update PROJECT-INDEX (structural change)
+6. Follow changelog rules from the docs-mod-changelog module → append changelog entry
+7. Follow index rules from the docs-mod-index module → update PROJECT-INDEX (structural change)
 
 ## Output
 

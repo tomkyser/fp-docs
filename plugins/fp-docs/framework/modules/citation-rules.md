@@ -1,76 +1,54 @@
-# Citation Rules
+# Citation Pipeline Algorithm
 
-Complete algorithm for generating and updating code citations. Loaded on-demand by engines during pipeline execution.
+Execute these steps during Pipeline Stage 2 (Citations).
+All format rules, tier definitions, and freshness states are in your preloaded docs-mod-citations module.
 
 ## When to Generate New Citations
 
-Generate new citations when:
-- A new doc is created (all documentable elements need citations)
-- A doc is revised and new code claims are added
-- The `citations generate` operation is invoked
-- A doc element lacks a citation block (gap detected during pipeline)
+Generate citations when:
+1. New documentation file created (add operation)
+2. New function/hook/route added to existing doc (revise operation)
+3. Doc element exists without a citation block
+4. Deprecated citation removed and replacement needed
 
 ## When to Update Existing Citations
 
-Update existing citations when:
-- Source code has changed (drifted citations)
-- Functions have moved to different line numbers (stale citations)
-- The `citations update` operation is invoked
-- Pipeline stage 2 detects stale citations
+Update citations when:
+1. Source code modified since last citation update
+2. Staleness detection finds Stale, Drifted, or Broken citations
+3. Function renamed or moved to different file
+4. Line numbers shifted due to edits above/below the function
 
 ## Staleness Detection Algorithm
 
-For each existing `> **Citation**` block:
+For each existing `> **Citation**` block in the doc:
 
-1. **Parse the marker**: Extract file_path, symbol_name, line_range
-2. **Symbol lookup**: Search the cited source file for the symbol
-   - NOT found → **Broken** (symbol removed/renamed)
-   - Found → continue
-3. **Line range check**: Is symbol at the cited line range?
-   - YES → check excerpt
-   - NO → record new line range → **Stale**
-4. **Excerpt check** (Full and Signature tiers):
-   - Matches current source → **Fresh** (no update needed)
-   - Different from current source → **Drifted** (code changed)
+1. **Parse Citation Marker** — extract `file_path`, `symbol_name`, `line_range`
+2. **Locate Current Source** — read cited file
+   - If file missing → classify as **Broken** (High severity)
+3. **Symbol Search** — search for `function {name}(` or `add_action`/`add_filter` with the symbol name
+   - If not found → classify as **Broken** (High severity)
+4. **Line Range Comparison** — compare `L{start}-{end}` against actual location
+   - If lines differ but code matches → classify as **Stale** (Low severity)
+5. **Excerpt Comparison** (Full and Signature tiers only) — compare code block against current source
+   - If code changed → classify as **Drifted** (Medium severity)
+   - If code matches → classify as **Fresh** (No action)
 
-## Update Actions by State
-
-| State | Action |
-|-------|--------|
-| Fresh | No action |
-| Stale | Update line range only. Keep excerpt. |
-| Drifted | Update line range AND regenerate excerpt from current source. Re-apply tier rules. |
-| Broken | Add `[NEEDS INVESTIGATION — cited symbol no longer exists]` marker. Do NOT remove citation. |
+Apply the action for each state from your preloaded docs-mod-citations freshness model.
 
 ## Tier Selection Logic
 
-Count lines in the source element body:
-
-| Line Count | Tier | Content |
-|-----------|------|---------|
-| ≤ 15 lines | Full | Complete code excerpt, verbatim |
-| 16–100 lines | Signature | Function signature + `// ... N lines: <summary>` + closing brace |
-| > 100 lines | Reference | Marker only — file + symbol + line range, no code block |
-
+Apply tier selection from your preloaded docs-mod-citations module.
 Special cases:
 - Hook registrations (`add_action`/`add_filter`): always Full tier
-- Shortcode `shortcode_atts`: always Full tier
-- REST `register_rest_route`: always Full tier
-- Meta field tables from long methods: always Reference tier
-
-## Citation Format Template
-
-```markdown
-> **Citation** · `{file_path}` · `{symbol_name}` · L{start}–{end}
-> ```php
-> {verbatim code excerpt}
-> ```
-```
+- Shortcode attribute defaults: always Full tier
+- REST route registrations: always Full tier
+- Meta field tables derived from long methods: always Reference tier
 
 ## Batch Processing Rules
 
-When processing multiple files:
-1. Group citations by source file to minimize file reads
-2. Process one doc at a time — don't interleave citation updates across docs
-3. After updating citations in a doc, verify format before moving to next doc
-4. Aggregate results for the batch report
+When processing multiple files in a single operation:
+1. Collect all unique source file paths from citations across all target docs
+2. Read each source file ONCE and cache in working memory
+3. For each citation in each doc, run detection/generation using the cached source
+4. Report results grouped by state (Fresh/Stale/Drifted/Broken) across all docs

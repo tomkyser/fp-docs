@@ -15,7 +15,8 @@ After completing the core operation steps, execute these stages in order:
 
 ### Stage 1: Verbosity Enforcement
 
-Read `framework/modules/verbosity-rules.md` and enforce:
+Read `framework/modules/verbosity-rules.md` for the execution algorithm.
+Apply rules from your preloaded docs-mod-verbosity module.
 - Build scope manifest: count every enumerable item in source
 - Check output coverage: verify every item appears in generated doc
 - Scan for banned summarization phrases
@@ -23,28 +24,32 @@ Read `framework/modules/verbosity-rules.md` and enforce:
 
 ### Stage 2: Citation Generation/Update
 
-Read `framework/modules/citation-rules.md` and enforce:
+Read `framework/modules/citation-rules.md` for the execution algorithm.
+Apply rules from your preloaded docs-mod-citations module.
 - For new docs: generate all citations
 - For revised docs: update stale citations, generate missing ones
 - Verify citation format matches standard
 
 ### Stage 3: API Reference Sync
 
-Read `framework/modules/api-ref-rules.md` and enforce:
+Read `framework/modules/api-ref-rules.md` for the execution algorithm.
+Apply rules from your preloaded docs-mod-api-refs module.
 - If doc type requires API Reference (per system-config): verify section exists
 - Update table rows for any functions that changed
 - Ensure provenance column is populated for every row
 
 ### Stage 4: Sanity Check
 
-Read `framework/modules/validation-rules.md` and execute the sanity-check algorithm:
+Read `framework/modules/validation-rules.md` for the execution algorithm.
+Apply rules from your preloaded docs-mod-validation module.
 - Cross-reference every factual claim against source code
 - Classify claims as VERIFIED, MISMATCH, HALLUCINATION, or UNVERIFIED
 - If confidence is LOW: resolve issues before proceeding
 
 ### Stage 5: Verify
 
-Read `framework/modules/validation-rules.md` and execute the 10-point verification checklist:
+Read `framework/modules/validation-rules.md` for the verification algorithm.
+Apply check definitions from your preloaded docs-mod-validation module.
 - File existence, orphan check, index completeness, appendix spot-check
 - Link validation, changelog check, citation format, API ref provenance
 - Locals contracts, verbosity compliance
@@ -52,14 +57,14 @@ Read `framework/modules/validation-rules.md` and execute the 10-point verificati
 
 ### Stage 6: Changelog Update
 
-Read `framework/modules/changelog-rules.md` and:
+Follow the changelog rules from your preloaded docs-mod-changelog module:
 - Append entry to `docs/changelog.md`
 - List every file created, modified, or removed
 - Include summary of why the change was made
 
 ### Stage 7: Index Update
 
-Read `framework/modules/index-rules.md` and:
+Follow the rules from your preloaded docs-mod-index module:
 - Only trigger when structural changes occurred (new sections, major reorganization)
 - For incremental changes: skip this stage
 - When triggered: update PROJECT-INDEX.md
@@ -112,3 +117,21 @@ Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: P
 ```
 
 This marker is checked by the SubagentStop hook to validate pipeline execution.
+
+## Completion Validation
+
+The SubagentStop hook validates pipeline completion using these rules:
+
+- Missing `[changelog: updated]` → hook emits warning
+- `[verify: FAIL]` → hook emits warning with issue count
+- `[sanity: LOW]` → hook emits warning
+- All SKIP markers are acceptable (stage was legitimately skipped)
+- Missing markers indicate incomplete pipeline — hook emits warning
+
+### Files That Must Change
+
+For any doc-modify operation, these files MUST have been modified:
+- At least one file in `docs/` (the target documentation)
+- `docs/changelog.md` (the changelog entry)
+
+If neither changed, the operation may have failed silently.

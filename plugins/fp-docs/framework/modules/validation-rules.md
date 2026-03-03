@@ -1,78 +1,55 @@
-# Validation Rules
+# Validation Pipeline Algorithm
 
-Complete 10-point verification checklist and sanity-check algorithm. Loaded on-demand by engines during pipeline execution.
+Execute these steps during Pipeline Stages 4 (Sanity-Check) and 5 (Verify).
+All check definitions, classification systems, and report formats are in your preloaded docs-mod-validation module.
 
-## 10-Point Verification Checklist
+## Sanity-Check Execution (Stage 4)
 
-### Check 1: File Existence
-Read `docs/About.md`. Extract every relative markdown link. Verify each linked file exists on disk. Report missing files.
+### Step 1: Identify Modified Sections
+List all doc sections modified by the primary operation.
+Map each to its source file(s) via the project module.
 
-### Check 2: Orphan Check
-List all `.md` files in `docs/` recursively. Confirm each is linked from `docs/About.md` or its parent `_index.md`. Exceptions: `docs-management.md`, `changelog.md`, `needs-revision-tracker.md`, `docs/claude-code-docs-system/`, `docs/claude-code-config/`.
+### Step 2: Cross-Reference Source Code
+For each modified doc section:
+1. If doc has citations: use as evidence anchors — verify excerpts match current source
+2. Compare every factual claim against source: function signatures, hook names/priorities, file paths, meta keys, REST routes, shortcode attributes, defaults, constants
+3. Classify each claim using the classification system from your preloaded docs-mod-validation module
 
-### Check 3: Index Completeness
-Find every `_index.md`. For each, list all `.md` siblings and confirm each is linked.
+### Step 3: Deep Verification (for UNVERIFIABLE claims)
+1. Trace call chains from the function outward
+2. Check related files (parent classes, included files, trait uses)
+3. Search codebase with Grep for the specific claim
+4. Reclassify as VERIFIED, MISMATCH, HALLUCINATION, or UNVERIFIED
 
-### Check 4: Appendix Spot-Check
-If operation touched code registering hooks/shortcodes/REST/constants/deps/ACF/features, verify corresponding appendix was updated. Skip if standalone verify.
+### Step 4: Cross-Reference Related Docs
+Check for contradictions between modified doc and siblings/linked docs.
+Use the link validation algorithm below for relative path resolution.
 
-### Check 5: Link Validation
-Validate all relative markdown links in modified docs resolve to real files.
+### Step 5: Determine Confidence
+Apply confidence levels from your preloaded docs-mod-validation module.
+If LOW: resolve all issues before proceeding. Tag unresolvable claims with `[NEEDS INVESTIGATION]`.
 
-### Check 6: Changelog Check
-Confirm `docs/changelog.md` has an entry for today's date. Skip if standalone verify.
+## Verification Execution (Stage 5)
 
-### Check 7: Citation Format Validation
-Parse `> **Citation**` blocks. Verify format: `> **Citation** · \`{file}\` · \`{symbol}\` · L{start}–{end}`. Verify file paths exist. Verify symbols exist in files. Report FORMAT, MISSING, or BROKEN issues.
+Run ALL 10 checks from your preloaded docs-mod-validation module.
+For each check, report PASS, FAIL (with details), or SKIP (with reason).
+Do NOT modify any files during verification — report only.
 
-### Check 8: API Reference Provenance
-For doc types requiring API Reference: verify section exists, every row has valid `Src` value, Ref Source legend is present. Report MISSING or INVALID.
+## Link Validation Algorithm (used by Check 5)
 
-### Check 9: Locals Contracts Completeness
-For `docs/05-components/` docs: verify `## Locals Contracts` section exists, every `.php` file in corresponding `components/` dir has an entry, `_locals-shapes.md` is linked.
+For each relative markdown link `[text](target)`:
+1. Extract the link target path
+2. Resolve path relative to the containing file's directory
+3. Normalize: `../06-helpers/posts.md` from `docs/02-post-types/post.md` resolves to `docs/06-helpers/posts.md`
+4. Check if resolved path exists on disk
+5. For anchor links (`#section`): verify the file exists; optionally verify heading slug
+6. Report broken links with: source file, line number, target path, category
 
-### Check 10: Verbosity Compliance
-Select 3 docs from scope. Count source functions vs API Reference rows. Scan for banned phrases. Flag gaps exceeding tolerance.
+### Broken Link Categories
 
-## Report Format
-
-```
-## Verification Report — YYYY-MM-DD
-### Check N: [Name]
-[PASS | FAIL | SKIP — details]
----
-**Overall: [PASS | FAIL]**
-```
-
-Run ALL 10 checks — do not stop at first failure. Report every issue. Do NOT modify files.
-
-## Sanity-Check Algorithm
-
-### Zero-Tolerance Principle
-Every factual claim must be verifiable against source code. Unverified claims silently accepted = same as errors.
-
-### Classification System
-
-| Classification | Meaning |
-|---------------|---------|
-| VERIFIED | Claim exactly matches source code |
-| MISMATCH | Claim contradicts source code |
-| HALLUCINATION | Claim has no basis in source code |
-| UNVERIFIED | Claim cannot be confirmed after deep investigation |
-| CONTRADICTION | Claim conflicts with another doc |
-
-### Deep Verification Steps (for UNVERIFIABLE claims)
-1. Trace call chain — read calling and called functions
-2. Check related files — imports, shared hooks, trait definitions
-3. Search codebase — Grep/Glob for identifiers
-4. Reclassify: VERIFIED, MISMATCH, HALLUCINATION, or UNVERIFIED
-
-### Confidence Levels
-- **HIGH**: Every claim VERIFIED, no issues
-- **LOW**: One or more HALLUCINATION, MISMATCH, UNVERIFIED, or CONTRADICTION
-
-### Required Actions for LOW Confidence
-- HALLUCINATION → remove fabricated claim
-- MISMATCH → correct to match source
-- UNVERIFIED → find proof or tag `[NEEDS INVESTIGATION]`
-- CONTRADICTION → resolve conflict between docs
+| Category | Description | Severity |
+|----------|-------------|----------|
+| MISSING_FILE | Target file does not exist on disk | High |
+| WRONG_PATH | Path syntax error or wrong relative depth | High |
+| BROKEN_ANCHOR | File exists but anchor heading not found | Medium |
+| ORPHANED | File exists but not linked from any _index.md | Low |

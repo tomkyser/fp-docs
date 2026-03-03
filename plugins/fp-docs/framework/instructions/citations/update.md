@@ -12,7 +12,7 @@
 
 3. Read current source files for each unique cited file path.
 
-4. Compare each citation against current source using the staleness detection algorithm from `framework/modules/citation-staleness-detection.md`:
+4. Compare each citation against current source using the staleness detection algorithm from `framework/modules/citation-rules.md`:
    - Symbol lookup → if not found: Broken
    - Line range check → if different: Stale
    - Excerpt check → if different: Drifted, if same: Fresh

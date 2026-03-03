@@ -20,7 +20,12 @@
 
 5. Check for undocumented keys (keys accessed in PHP but not in contract).
 
-6. Generate validation report.
+6. Cross-reference validation:
+   a. Every shape reference in a component doc must resolve to a shape in `_locals-shapes.md`
+   b. Every key in a contract table must exist in the component's PHP file
+   c. Required/Optional classification must match the access pattern in code
+
+7. Generate validation report.
 
 ## Output
 

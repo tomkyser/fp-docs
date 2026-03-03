@@ -86,8 +86,8 @@ Skip conditions: respect --no-* flags and system config settings.
 On-demand module files for pipeline stages:
 - Verbosity: {plugin-root}/framework/modules/verbosity-rules.md
 - Validation: {plugin-root}/framework/modules/validation-rules.md
-- Changelog: {plugin-root}/framework/modules/changelog-rules.md
-- Index: {plugin-root}/framework/modules/index-rules.md
+- Changelog: Follow changelog rules from the docs-mod-changelog module
+- Index: Follow index rules from the docs-mod-index module
 
 For the audit subcommand, produce a read-only report only — no pipeline.
 
