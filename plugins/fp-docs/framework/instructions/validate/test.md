@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: Test scope (rest-api|cli|templates|all)
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-validation
+- Preloaded modules: mod-standards, mod-project, mod-validation
 
 ## Steps
 

@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: Scope (file path or section)
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-validation
+- Preloaded modules: mod-standards, mod-project, mod-validation
 
 ## Steps
 

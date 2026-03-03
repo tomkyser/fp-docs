@@ -1,7 +1,7 @@
 # Verbosity Pipeline Algorithm
 
 Execute these steps during Pipeline Stage 1 (Verbosity Enforcement).
-All rule definitions are in your preloaded docs-mod-verbosity module.
+All rule definitions are in your preloaded mod-verbosity module.
 
 ## Step 1: Build Scope Manifest
 

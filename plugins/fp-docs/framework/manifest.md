@@ -2,60 +2,60 @@
 
 ## Plugin
 - **Name**: fp-docs
-- **Namespace**: /docs-* (also accessible as /fp-docs:docs-*)
+- **Namespace**: /fp-docs:* (e.g., /fp-docs:revise, /fp-docs:citations)
 - **Version**: 2.6.0
 
 ## Engines
 
 | Engine | Agent File | Model | Operations |
 |---|---|---|---|
-| docs-modify | agents/docs-modify.md | inherit | revise, add, auto-update, auto-revise, deprecate |
-| docs-validate | agents/docs-validate.md | inherit | audit, verify, sanity-check, test |
-| docs-citations | agents/docs-citations.md | inherit | generate, update, verify, audit |
-| docs-api-refs | agents/docs-api-refs.md | inherit | generate, audit |
-| docs-locals | agents/docs-locals.md | inherit | annotate, contracts, cross-ref, validate, shapes, coverage |
-| docs-verbosity | agents/docs-verbosity.md | sonnet | audit |
-| docs-index | agents/docs-index.md | sonnet | update-project-index, update-doc-links, update-example-claude |
-| docs-system | agents/docs-system.md | sonnet | update-skills, setup, sync |
+| modify | agents/modify.md | inherit | revise, add, auto-update, auto-revise, deprecate |
+| validate | agents/validate.md | inherit | audit, verify, sanity-check, test |
+| citations | agents/citations.md | inherit | generate, update, verify, audit |
+| api-refs | agents/api-refs.md | inherit | generate, audit |
+| locals | agents/locals.md | inherit | annotate, contracts, cross-ref, validate, shapes, coverage |
+| verbosity | agents/verbosity.md | sonnet | audit |
+| index | agents/index.md | sonnet | update-project-index, update-doc-links, update-example-claude |
+| system | agents/system.md | sonnet | update-skills, setup, sync |
 
 ## Commands
 
 | Command | Skill File | Engine | Operation |
 |---|---|---|---|
-| /docs-revise | skills/docs-revise/SKILL.md | docs-modify | revise |
-| /docs-add | skills/docs-add/SKILL.md | docs-modify | add |
-| /docs-auto-update | skills/docs-auto-update/SKILL.md | docs-modify | auto-update |
-| /docs-auto-revise | skills/docs-auto-revise/SKILL.md | docs-modify | auto-revise |
-| /docs-deprecate | skills/docs-deprecate/SKILL.md | docs-modify | deprecate |
-| /docs-audit | skills/docs-audit/SKILL.md | docs-validate | audit |
-| /docs-verify | skills/docs-verify/SKILL.md | docs-validate | verify |
-| /docs-sanity-check | skills/docs-sanity-check/SKILL.md | docs-validate | sanity-check |
-| /docs-test | skills/docs-test/SKILL.md | docs-validate | test |
-| /docs-citations | skills/docs-citations/SKILL.md | docs-citations | (subcommand) |
-| /docs-api-ref | skills/docs-api-ref/SKILL.md | docs-api-refs | (subcommand) |
-| /docs-locals | skills/docs-locals/SKILL.md | docs-locals | (subcommand) |
-| /docs-verbosity-audit | skills/docs-verbosity-audit/SKILL.md | docs-verbosity | audit |
-| /docs-update-index | skills/docs-update-index/SKILL.md | docs-index | update-project-index |
-| /docs-update-claude | skills/docs-update-claude/SKILL.md | docs-index | update-example-claude |
-| /docs-update-skills | skills/docs-update-skills/SKILL.md | docs-system | update-skills |
-| /docs-setup | skills/docs-setup/SKILL.md | docs-system | setup |
-| /docs-sync | skills/docs-sync/SKILL.md | docs-system | sync |
-| /docs-parallel | skills/docs-parallel/SKILL.md | (orchestrator) | (batch) |
+| /revise | skills/revise/SKILL.md | modify | revise |
+| /add | skills/add/SKILL.md | modify | add |
+| /auto-update | skills/auto-update/SKILL.md | modify | auto-update |
+| /auto-revise | skills/auto-revise/SKILL.md | modify | auto-revise |
+| /deprecate | skills/deprecate/SKILL.md | modify | deprecate |
+| /audit | skills/audit/SKILL.md | validate | audit |
+| /verify | skills/verify/SKILL.md | validate | verify |
+| /sanity-check | skills/sanity-check/SKILL.md | validate | sanity-check |
+| /test | skills/test/SKILL.md | validate | test |
+| /citations | skills/citations/SKILL.md | citations | (subcommand) |
+| /api-ref | skills/api-ref/SKILL.md | api-refs | (subcommand) |
+| /locals | skills/locals/SKILL.md | locals | (subcommand) |
+| /verbosity-audit | skills/verbosity-audit/SKILL.md | verbosity | audit |
+| /update-index | skills/update-index/SKILL.md | index | update-project-index |
+| /update-claude | skills/update-claude/SKILL.md | index | update-example-claude |
+| /update-skills | skills/update-skills/SKILL.md | system | update-skills |
+| /setup | skills/setup/SKILL.md | system | setup |
+| /sync | skills/sync/SKILL.md | system | sync |
+| /parallel | skills/parallel/SKILL.md | (orchestrator) | (batch) |
 
 ## Shared Modules (Preloaded)
 
 | Module | Location | Preloaded By |
 |---|---|---|
-| Standards | modules/docs-mod-standards/SKILL.md | ALL engines |
-| Project Config | modules/docs-mod-project/SKILL.md | ALL engines |
-| Pipeline | modules/docs-mod-pipeline/SKILL.md | docs-modify |
-| Citations | modules/docs-mod-citations/SKILL.md | docs-modify, docs-citations |
-| API Refs | modules/docs-mod-api-refs/SKILL.md | docs-modify, docs-api-refs |
-| Locals | modules/docs-mod-locals/SKILL.md | docs-modify, docs-locals |
-| Verbosity | modules/docs-mod-verbosity/SKILL.md | docs-modify, docs-verbosity |
-| Validation | modules/docs-mod-validation/SKILL.md | docs-modify, docs-validate |
-| Changelog | modules/docs-mod-changelog/SKILL.md | docs-modify (preloaded) |
-| Index | modules/docs-mod-index/SKILL.md | docs-modify (preloaded), docs-index |
+| Standards | modules/mod-standards/SKILL.md | ALL engines |
+| Project Config | modules/mod-project/SKILL.md | ALL engines |
+| Pipeline | modules/mod-pipeline/SKILL.md | modify |
+| Citations | modules/mod-citations/SKILL.md | modify, citations |
+| API Refs | modules/mod-api-refs/SKILL.md | modify, api-refs |
+| Locals | modules/mod-locals/SKILL.md | modify, locals |
+| Verbosity | modules/mod-verbosity/SKILL.md | modify, verbosity |
+| Validation | modules/mod-validation/SKILL.md | modify, validate |
+| Changelog | modules/mod-changelog/SKILL.md | modify (preloaded) |
+| Index | modules/mod-index/SKILL.md | modify (preloaded), index |
 
 ## On-Demand Algorithms
 
@@ -66,27 +66,27 @@
 | API Ref Algorithm | framework/algorithms/api-ref-algorithm.md | Pipeline stage 3 |
 | Validation Algorithm | framework/algorithms/validation-algorithm.md | Pipeline stages 4-5 |
 | Codebase Analysis Guide | framework/algorithms/codebase-analysis-guide.md | Engines scanning source |
-| Git Sync Rules | framework/algorithms/git-sync-rules.md | docs-system sync, SessionStart hook |
+| Git Sync Rules | framework/algorithms/git-sync-rules.md | system sync, SessionStart hook |
 
 ## Instruction Files
 
 | Engine | Instructions |
 |---|---|
-| docs-modify | modify/revise.md, modify/add.md, modify/auto-update.md, modify/auto-revise.md, modify/deprecate.md |
-| docs-validate | validate/audit.md, validate/verify.md, validate/sanity-check.md, validate/test.md |
-| docs-citations | citations/generate.md, citations/update.md, citations/verify.md, citations/audit.md |
-| docs-api-refs | api-refs/generate.md, api-refs/audit.md |
-| docs-locals | locals/annotate.md, locals/contracts.md, locals/cross-ref.md, locals/validate.md, locals/shapes.md, locals/coverage.md |
-| docs-verbosity | verbosity/audit.md |
-| docs-index | index/update.md, index/update-example-claude.md |
-| docs-system | system/update-skills.md, system/setup.md, system/sync.md |
+| modify | modify/revise.md, modify/add.md, modify/auto-update.md, modify/auto-revise.md, modify/deprecate.md |
+| validate | validate/audit.md, validate/verify.md, validate/sanity-check.md, validate/test.md |
+| citations | citations/generate.md, citations/update.md, citations/verify.md, citations/audit.md |
+| api-refs | api-refs/generate.md, api-refs/audit.md |
+| locals | locals/annotate.md, locals/contracts.md, locals/cross-ref.md, locals/validate.md, locals/shapes.md, locals/coverage.md |
+| verbosity | verbosity/audit.md |
+| index | index/update.md, index/update-example-claude.md |
+| system | system/update-skills.md, system/setup.md, system/sync.md |
 
 ## Hooks
 
 | Event | Matcher | Script | Purpose |
 |---|---|---|---|
 | SessionStart | (all) | scripts/inject-manifest.sh | Inject plugin root + manifest |
-| SubagentStop | docs-modify | scripts/post-modify-check.sh | Validate pipeline completion |
+| SubagentStop | modify | scripts/post-modify-check.sh | Validate pipeline completion |
 | TeammateIdle | (all) | scripts/teammate-idle-check.sh | Validate teammate pipeline |
 | SessionStart | (all) | scripts/branch-sync-check.sh | Detect branch mismatch |
 | TaskCompleted | (all) | scripts/task-completed-check.sh | Validate task outputs |

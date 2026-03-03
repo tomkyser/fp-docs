@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: Scope (component docs or all)
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-locals
+- Preloaded modules: mod-standards, mod-project, mod-locals
 
 ## Steps
 

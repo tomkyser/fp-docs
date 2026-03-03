@@ -1,7 +1,7 @@
 # Update Skills — Instruction
 
 ## Inputs
-- Preloaded modules: docs-mod-standards, docs-mod-project
+- Preloaded modules: mod-standards, mod-project
 
 ## Steps
 

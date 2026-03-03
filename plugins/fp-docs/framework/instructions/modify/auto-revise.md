@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: Optional flags (--item N, --range N-M, --dry-run)
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-pipeline
+- Preloaded modules: mod-standards, mod-project, mod-pipeline
 
 ## Steps
 

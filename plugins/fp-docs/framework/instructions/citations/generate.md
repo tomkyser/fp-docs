@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: Doc file path, --section NN, or --all
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-citations
+- Preloaded modules: mod-standards, mod-project, mod-citations
 
 ## Steps
 
@@ -33,8 +33,8 @@
 After citations are generated:
 4. Read `framework/algorithms/validation-algorithm.md` → run sanity-check
 5. Read `framework/algorithms/validation-algorithm.md` → run verification
-6. Follow changelog rules from the docs-mod-changelog module → append changelog entry
-7. Follow index rules from the docs-mod-index module → update index if structural changes
+6. Follow changelog rules from the mod-changelog module → append changelog entry
+7. Follow index rules from the mod-index module → update index if structural changes
 
 ## Output
 

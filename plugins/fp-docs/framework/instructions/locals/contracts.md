@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: Component doc path or section scope
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-locals
+- Preloaded modules: mod-standards, mod-project, mod-locals
 
 ## Steps
 
@@ -10,7 +10,7 @@
 
 2. For each component doc in scope: read the doc and the corresponding component PHP files.
 
-3. For each component PHP file: extract $locals keys, types, required/optional, defaults using the grammar from your preloaded docs-mod-locals module.
+3. For each component PHP file: extract $locals keys, types, required/optional, defaults using the grammar from your preloaded mod-locals module.
 
 4. Generate or update the `## Locals Contracts` section in the doc with a subsection per component file containing the key/type/req/default/description table.
 

@@ -1,7 +1,7 @@
 # Setup — Instruction
 
 ## Inputs
-- Preloaded modules: docs-mod-standards, docs-mod-project
+- Preloaded modules: mod-standards, mod-project
 
 ## Steps
 
@@ -19,14 +19,14 @@
 2. Validate `plugin.json` manifest has required fields (name, version, description).
 
 3. Verify all 8 engine agent files exist:
-   - `agents/docs-modify.md`
-   - `agents/docs-validate.md`
-   - `agents/docs-citations.md`
-   - `agents/docs-api-refs.md`
-   - `agents/docs-locals.md`
-   - `agents/docs-verbosity.md`
-   - `agents/docs-index.md`
-   - `agents/docs-system.md`
+   - `agents/modify.md`
+   - `agents/validate.md`
+   - `agents/citations.md`
+   - `agents/api-refs.md`
+   - `agents/locals.md`
+   - `agents/verbosity.md`
+   - `agents/index.md`
+   - `agents/system.md`
 
 4. Verify all 19 user skill files and 10 shared modules exist.
 

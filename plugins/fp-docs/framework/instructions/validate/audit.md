@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: --depth quick|standard|deep [--section NN]
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-validation
+- Preloaded modules: mod-standards, mod-project, mod-validation
 
 ## Steps
 

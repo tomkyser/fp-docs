@@ -1,12 +1,12 @@
 # API Reference Pipeline Algorithm
 
 Execute these steps during Pipeline Stage 3 (API References).
-All format rules, column definitions, provenance values, and scope tables are in your preloaded docs-mod-api-refs module.
+All format rules, column definitions, provenance values, and scope tables are in your preloaded mod-api-refs module.
 
 ## API Reference Table Generation
 
 ### Step 1: Identify Source File
-Use the source-to-docs mapping from your preloaded docs-mod-project module.
+Use the source-to-docs mapping from your preloaded mod-project module.
 Resolve the source file(s) for the doc being generated/updated.
 
 ### Step 2: Extract Functions
@@ -26,7 +26,7 @@ Exclude private/internal helpers unless called by other documented code.
 | Provenance | PHPDoc if from docblock, Verified if hand-written from source reading |
 
 ### Step 4: Build Table
-Build the API Reference table following column definitions from your preloaded docs-mod-api-refs module.
+Build the API Reference table following column definitions from your preloaded mod-api-refs module.
 Rows ordered by source file line number (declaration order), not alphabetically.
 
 ### Step 5: Handle Complex Parameters

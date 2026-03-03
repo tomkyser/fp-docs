@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: Doc file path, --layer name, or --all
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-api-refs
+- Preloaded modules: mod-standards, mod-project, mod-api-refs
 
 ## Steps
 
@@ -37,8 +37,8 @@
 2. Read `framework/algorithms/citation-algorithm.md` → generate citations for API ref entries
 4. Read `framework/algorithms/validation-algorithm.md` → sanity-check
 5. Read `framework/algorithms/validation-algorithm.md` → verify
-6. Follow changelog rules from the docs-mod-changelog module → changelog
-7. Follow index rules from the docs-mod-index module → index if needed
+6. Follow changelog rules from the mod-changelog module → changelog
+7. Follow index rules from the mod-index module → index if needed
 
 ## Output
 

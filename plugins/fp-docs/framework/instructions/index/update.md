@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: update|full
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-index
+- Preloaded modules: mod-standards, mod-project, mod-index
 
 ## Steps
 

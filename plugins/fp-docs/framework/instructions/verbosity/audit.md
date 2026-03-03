@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: --depth quick|standard|deep [scope]
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-verbosity
+- Preloaded modules: mod-standards, mod-project, mod-verbosity
 
 ## Steps
 

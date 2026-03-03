@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: User's description of what needs fixing
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-pipeline
+- Preloaded modules: mod-standards, mod-project, mod-pipeline
 
 ## Steps
 
@@ -31,8 +31,8 @@ After completing the steps above, execute the post-modification pipeline:
 3. Read `framework/algorithms/api-ref-algorithm.md` → verify API reference is current
 4. Read `framework/algorithms/validation-algorithm.md` → run sanity-check (skip if --no-sanity-check)
 5. Read `framework/algorithms/validation-algorithm.md` → run 10-point verification
-6. Follow changelog rules from the docs-mod-changelog module → append changelog entry
-7. Follow index rules from the docs-mod-index module → update PROJECT-INDEX if structural changes occurred
+6. Follow changelog rules from the mod-changelog module → append changelog entry
+7. Follow index rules from the mod-index module → update PROJECT-INDEX if structural changes occurred
 
 ## Output
 

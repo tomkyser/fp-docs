@@ -1,7 +1,7 @@
 # Citation Pipeline Algorithm
 
 Execute these steps during Pipeline Stage 2 (Citations).
-All format rules, tier definitions, and freshness states are in your preloaded docs-mod-citations module.
+All format rules, tier definitions, and freshness states are in your preloaded mod-citations module.
 
 ## When to Generate New Citations
 
@@ -34,11 +34,11 @@ For each existing `> **Citation**` block in the doc:
    - If code changed → classify as **Drifted** (Medium severity)
    - If code matches → classify as **Fresh** (No action)
 
-Apply the action for each state from your preloaded docs-mod-citations freshness model.
+Apply the action for each state from your preloaded mod-citations freshness model.
 
 ## Tier Selection Logic
 
-Apply tier selection from your preloaded docs-mod-citations module.
+Apply tier selection from your preloaded mod-citations module.
 Special cases:
 - Hook registrations (`add_action`/`add_filter`): always Full tier
 - Shortcode attribute defaults: always Full tier

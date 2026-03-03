@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: Doc file path, --section NN, or --all
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-citations
+- Preloaded modules: mod-standards, mod-project, mod-citations
 
 ## Steps
 

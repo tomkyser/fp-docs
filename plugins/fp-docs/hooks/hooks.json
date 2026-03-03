@@ -16,7 +16,7 @@
     ],
     "SubagentStop": [
       {
-        "matcher": "docs-modify",
+        "matcher": "modify",
         "hooks": [
           {
             "type": "command",

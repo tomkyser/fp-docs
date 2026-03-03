@@ -2,7 +2,7 @@
 
 ## Inputs
 - `$ARGUMENTS`: Doc file path or --layer name
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-api-refs
+- Preloaded modules: mod-standards, mod-project, mod-api-refs
 
 ## Steps
 

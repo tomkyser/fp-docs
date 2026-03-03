@@ -3,7 +3,7 @@
 ## Inputs
 - `$ARGUMENTS`: Optional scope restriction
 - `$CHANGED_FILES`: Output from `git diff --name-only` (injected dynamically by skill)
-- Preloaded modules: docs-mod-standards, docs-mod-project, docs-mod-pipeline
+- Preloaded modules: mod-standards, mod-project, mod-pipeline
 
 ## Steps
 
@@ -34,8 +34,8 @@ Execute the post-modification pipeline for all affected docs:
 3. Read `framework/algorithms/api-ref-algorithm.md` → verify API reference is current
 4. Read `framework/algorithms/validation-algorithm.md` → run sanity-check (skip if --no-sanity-check)
 5. Read `framework/algorithms/validation-algorithm.md` → run 10-point verification
-6. Follow changelog rules from the docs-mod-changelog module → append changelog entry
-7. Follow index rules from the docs-mod-index module → update PROJECT-INDEX if structural changes occurred
+6. Follow changelog rules from the mod-changelog module → append changelog entry
+7. Follow index rules from the mod-index module → update PROJECT-INDEX if structural changes occurred
 
 ## Output
 
