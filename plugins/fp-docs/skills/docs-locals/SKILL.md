@@ -1,6 +1,6 @@
 ---
 name: docs-locals
-description: Manage $locals contract documentation for WordPress template components. Subcommands: annotate, contracts, cross-ref, validate, shapes, coverage.
+description: "Manage locals contract documentation for WordPress template components. Subcommands: annotate, contracts, cross-ref, validate, shapes, coverage."
 argument-hint: "annotate|contracts|cross-ref|validate|shapes|coverage [scope]"
 context: fork
 agent: docs-locals

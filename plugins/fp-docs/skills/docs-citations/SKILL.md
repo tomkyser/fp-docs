@@ -1,6 +1,6 @@
 ---
 name: docs-citations
-description: Manage code citations in documentation files. Subcommands: generate (create new), update (refresh stale), verify (check format), audit (deep accuracy check).
+description: "Manage code citations in documentation files. Subcommands: generate (create new), update (refresh stale), verify (check format), audit (deep accuracy check)."
 argument-hint: "generate|update|verify|audit [scope]"
 context: fork
 agent: docs-citations

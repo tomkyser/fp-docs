@@ -2,15 +2,14 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/inject-manifest.sh"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/inject-manifest.sh\""
           },
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/branch-sync-check.sh"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/branch-sync-check.sh\""
           }
         ]
       }
@@ -21,29 +20,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/post-modify-check.sh"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/post-modify-check.sh\""
           }
         ]
       }
     ],
     "TeammateIdle": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/teammate-idle-check.sh"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/teammate-idle-check.sh\""
           }
         ]
       }
     ],
     "TaskCompleted": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/task-completed-check.sh"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/task-completed-check.sh\""
           }
         ]
       }
