@@ -108,6 +108,7 @@ nested inside the codebase workspace. The codebase repo gitignores it.
 - For codebase git operations: `git -C {codebase-root}`
 - NEVER mix them up
 - After index updates, commit to docs repo: `git -C {docs-root} add -A && git -C {docs-root} commit -m "fp-docs: index {operation} — {summary}"`
+- Then push to remote: `git -C {docs-root} push` (skip push if `--no-push` flag was passed; push failure is a warning, not an error)
 - Use `git -C {docs-root} ls-files` (NOT codebase git) for docs file listing
 
 ## Critical Rules

@@ -181,6 +181,7 @@ nested inside the codebase workspace. The codebase repo gitignores it.
 - For codebase git operations: `git -C {codebase-root}`
 - NEVER mix them up
 - After write operations (annotate, contracts, shapes), commit to docs repo: `git -C {docs-root} add -A && git -C {docs-root} commit -m "fp-docs: locals {subcommand} — {summary}"`
+- Then push to remote: `git -C {docs-root} push` (skip push if `--no-push` flag was passed; push failure is a warning, not an error)
 
 ## Critical Rules
 1. Access pattern determines Required/Optional — never guess classification

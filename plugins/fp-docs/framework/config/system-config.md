@@ -79,7 +79,19 @@
 
 ---
 
-## 4. Verbosity Engine
+## 4. Git Push
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `push.enabled` | `true` | Master switch — whether to push to remote after docs commits |
+| `push.on_commit` | `true` | Push after every pipeline commit (Stage 8) |
+| `push.on_merge` | `true` | Push after sync merge operations |
+
+Push behavior: when enabled, push runs automatically after every successful docs commit. Use `--no-push` flag on any operation to suppress for a single invocation. Push failure is a warning, not an error.
+
+---
+
+## 5. Verbosity Engine
 
 | Variable | Value | Description |
 |----------|-------|-------------|

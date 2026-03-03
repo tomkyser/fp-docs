@@ -1,7 +1,7 @@
 # Sync — Instruction
 
 ## Inputs
-- `$ARGUMENTS`: [merge] [--force]
+- `$ARGUMENTS`: [merge] [--force] [--no-push]
 - Framework module: `{plugin-root}/framework/algorithms/git-sync-rules.md`
 
 ## Steps
@@ -25,7 +25,7 @@
    a. Verify current docs branch is NOT master
    b. Switch to docs master
    c. Merge the feature branch into master
-   d. Push docs master
+   d. Push docs master (skip if `--no-push` was passed)
    e. Delete the merged feature branch (local)
 
 5. `--force` flag: force branch switch even with uncommitted changes in docs repo.

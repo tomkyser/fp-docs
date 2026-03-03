@@ -69,17 +69,20 @@ Follow the rules from your preloaded mod-index module:
 - For incremental changes: skip this stage
 - When triggered: update PROJECT-INDEX.md
 
-### Stage 8: Docs Repo Commit
+### Stage 8: Docs Repo Commit & Push
 
-Commit all pipeline changes to the docs repo:
+Commit and push all pipeline changes to the docs repo:
 1. Detect docs root from project-config (themes/foreign-policy-2017/docs/)
 2. Check if docs root has a .git/ directory
 3. If yes:
-   - `git -C {docs-root} add -A`
-   - `git -C {docs-root} commit -m "fp-docs: {operation} — {summary}"`
+   a. `git -C {docs-root} add -A`
+   b. `git -C {docs-root} commit -m "fp-docs: {operation} — {summary}"`
+   c. `git -C {docs-root} push` (push to remote)
 4. If no: skip (docs repo not initialized)
 
-Skip condition: NEVER skip — always attempt if docs repo exists.
+Skip conditions:
+- Commit: NEVER skip — always attempt if docs repo exists
+- Push: Skip if `--no-push` flag was passed, or if `push.enabled` is `false` in system-config. Push failure is a warning, not an error — the commit is safe locally.
 
 ## Pipeline Trigger Matrix
 
@@ -106,14 +109,15 @@ Skip condition: NEVER skip — always attempt if docs repo exists.
 - Stage 5 (Verify): NEVER skip — always runs
 - Stage 6 (Changelog): NEVER skip — always runs
 - Stage 7 (Index): Only runs on structural changes
-- Stage 8 (Docs Commit): NEVER skip — always attempt if docs repo exists
+- Stage 8 Commit: NEVER skip — always attempt if docs repo exists
+- Stage 8 Push: Skip if `--no-push` flag was passed or `push.enabled` is `false`
 
 ## Pipeline Completion Marker
 
 When the pipeline completes, output a confirmation line:
 
 ```
-Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: PASS] [changelog: updated] [docs-commit: committed|skipped]
+Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: PASS] [changelog: updated] [docs-commit: committed|skipped] [docs-push: pushed|skipped|failed]
 ```
 
 This marker is checked by the SubagentStop hook to validate pipeline execution.

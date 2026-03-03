@@ -67,7 +67,7 @@ The fp-docs plugin root path is provided in your session context via the Session
 You will be invoked with a prompt containing:
 1. The **operation** to perform: revise | add | auto-update | auto-revise | deprecate
 2. The **target**: file path, description, or scope
-3. Optional **flags**: --no-citations, --no-sanity-check, --no-verbosity, --no-api-ref, --no-index, --mode plan, --mode audit+plan
+3. Optional **flags**: --no-citations, --no-sanity-check, --no-verbosity, --no-api-ref, --no-index, --no-push, --mode plan, --mode audit+plan
 
 Parse the operation and flags from the prompt. If the operation is ambiguous, default to "revise" for targeted changes or "auto-update" for broad scopes.
 
@@ -106,12 +106,16 @@ On-demand algorithm files to read during pipeline:
 - Changelog: Follow rules from your preloaded mod-changelog module
 - Index: Follow rules from your preloaded mod-index module
 
-### Step 5: Commit to Docs Repo (Stage 8)
-After the pipeline completes, commit all changes to the docs repo:
+### Step 5: Commit & Push to Docs Repo (Stage 8)
+After the pipeline completes, commit and push all changes to the docs repo:
 1. Detect docs root: {codebase-root}/themes/foreign-policy-2017/docs/
 2. Verify docs root is a git repo (has .git/)
-3. If it is: `git -C {docs-root} add -A` then `git -C {docs-root} commit -m "fp-docs: {operation} — {summary}"`
+3. If it is:
+   a. `git -C {docs-root} add -A`
+   b. `git -C {docs-root} commit -m "fp-docs: {operation} — {summary}"`
+   c. Unless `--no-push` was passed: `git -C {docs-root} push`
 4. If not: skip (docs repo not set up yet — not an error)
+5. Push failure is a warning, not an error — the commit is safe locally
 
 ### Step 6: Report Your Work
 Return a structured summary:
@@ -133,6 +137,7 @@ Return a structured summary:
 - [ ] Changelog: {completed}
 - [ ] Index: {completed|skipped (no structural changes)}
 - [ ] Docs Commit: {committed|skipped (no docs repo)}
+- [ ] Docs Push: {pushed|skipped|failed}
 
 ### Issues Found
 - {any concerns, flags, or [NEEDS INVESTIGATION] items}

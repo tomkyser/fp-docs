@@ -93,24 +93,29 @@ Docs root: the `docs/` path from project-config.md resolved to absolute.
 - [ ] Handle STRUCTURAL CHANGES (add/deprecate docs)
 ```
 
-### Committing to Docs Repo
+### Committing and Pushing to Docs Repo
 
-All doc-modifying operations (revise, add, auto-update, etc.) should commit their changes to the docs repo on the current docs branch:
+All doc-modifying operations (revise, add, auto-update, etc.) should commit and push their changes to the docs repo on the current docs branch:
 
 ```bash
 cd {docs-root}
 git add -A
 git commit -m "fp-docs: {operation} — {summary of changes}"
+git push
 ```
 
 This happens at the END of the post-modification pipeline, AFTER changelog update.
+
+Push behavior:
+- Default: push is enabled after every commit
+- `--no-push` flag: suppresses the push (commit still runs)
+- Push failure: treated as a warning, not an error — the commit is safe locally
+- No remote configured: push is silently skipped
 
 ## Merge Flow
 
 When a codebase branch merges to master:
 1. Switch docs repo to the matching feature branch
 2. Merge docs feature branch into docs master
-3. Push docs master
+3. Push docs master (skip if `--no-push` flag was passed)
 4. Delete the docs feature branch (cleanup)
-
-This is currently manual/plugin-assisted via `/fp-docs:sync merge`.
