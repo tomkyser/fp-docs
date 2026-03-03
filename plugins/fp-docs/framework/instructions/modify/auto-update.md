@@ -15,25 +15,25 @@
 
 4. If no changed files map to any documentation targets: report "No documentation-relevant changes found" and exit.
 
-5. Build scope manifests: for each doc to be created or modified, read `framework/modules/verbosity-rules.md`, count items, establish binding targets.
+5. Build scope manifests: for each doc to be created or modified, read `framework/algorithms/verbosity-algorithm.md`, count items, establish binding targets.
 
 6. Execute updates:
    - For modified source files: read current source, read existing doc, update doc to reflect changes, preserve accurate content.
    - For new source files without docs: find sibling doc for format, read new source, create documentation.
    - For removed source files: add REMOVED notice to the doc.
 
-7. If doc types require API Reference: maintain API Reference sections per `framework/modules/api-ref-rules.md`.
+7. If doc types require API Reference: maintain API Reference sections per `framework/algorithms/api-ref-algorithm.md`.
 
 8. Update links for any docs created or removed.
 
 ## Pipeline Trigger
 
 Execute the post-modification pipeline for all affected docs:
-1. Read `framework/modules/verbosity-rules.md` → enforce verbosity against scope manifest
-2. Read `framework/modules/citation-rules.md` → update citations for changed sections
-3. Read `framework/modules/api-ref-rules.md` → verify API reference is current
-4. Read `framework/modules/validation-rules.md` → run sanity-check (skip if --no-sanity-check)
-5. Read `framework/modules/validation-rules.md` → run 10-point verification
+1. Read `framework/algorithms/verbosity-algorithm.md` → enforce verbosity against scope manifest
+2. Read `framework/algorithms/citation-algorithm.md` → update citations for changed sections
+3. Read `framework/algorithms/api-ref-algorithm.md` → verify API reference is current
+4. Read `framework/algorithms/validation-algorithm.md` → run sanity-check (skip if --no-sanity-check)
+5. Read `framework/algorithms/validation-algorithm.md` → run 10-point verification
 6. Follow changelog rules from the docs-mod-changelog module → append changelog entry
 7. Follow index rules from the docs-mod-index module → update PROJECT-INDEX if structural changes occurred
 

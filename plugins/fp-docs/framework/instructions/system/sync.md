@@ -2,11 +2,11 @@
 
 ## Inputs
 - `$ARGUMENTS`: [merge] [--force]
-- Framework module: `{plugin-root}/framework/modules/git-sync-rules.md`
+- Framework module: `{plugin-root}/framework/algorithms/git-sync-rules.md`
 
 ## Steps
 
-1. Read `framework/modules/git-sync-rules.md` for the full sync flow and diff report format.
+1. Read `framework/algorithms/git-sync-rules.md` for the full sync flow and diff report format.
 
 2. Detect current branch state from session context (injected by SessionStart hook).
 

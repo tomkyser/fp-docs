@@ -107,7 +107,7 @@ For setup:
 - [ ] hooks/: {present|missing}
 - [ ] scripts/: {present|missing}
 - [ ] framework/instructions/: {present ({N} files)|missing}
-- [ ] framework/modules/: {present ({N} files)|missing}
+- [ ] framework/algorithms/: {present ({N} files)|missing}
 - [ ] framework/config/: {present|missing}
 
 ### Component Inventory

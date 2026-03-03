@@ -31,8 +31,8 @@
 ## Pipeline Trigger
 
 After citations are generated:
-4. Read `framework/modules/validation-rules.md` → run sanity-check
-5. Read `framework/modules/validation-rules.md` → run verification
+4. Read `framework/algorithms/validation-algorithm.md` → run sanity-check
+5. Read `framework/algorithms/validation-algorithm.md` → run verification
 6. Follow changelog rules from the docs-mod-changelog module → append changelog entry
 7. Follow index rules from the docs-mod-index module → update index if structural changes
 

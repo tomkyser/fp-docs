@@ -6,7 +6,7 @@
 
 ## Steps
 
-1. Run all 10 verification checks from `framework/modules/validation-rules.md`:
+1. Run all 10 verification checks from `framework/algorithms/validation-algorithm.md`:
    - Check 1: File Existence
    - Check 2: Orphan Check
    - Check 3: Index Completeness

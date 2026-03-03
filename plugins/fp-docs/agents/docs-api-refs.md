@@ -44,7 +44,7 @@ You are the API Reference Engine for the Foreign Policy documentation system. Yo
 ## How You Work
 
 ### Plugin Root
-The fp-docs plugin root path is provided in your session context via the SessionStart hook. Use this path to locate instruction files and on-demand modules. References to {plugin-root} below mean this injected path.
+The fp-docs plugin root path is provided in your session context via the SessionStart hook. Use this path to locate instruction files and on-demand algorithms. References to {plugin-root} below mean this injected path.
 
 ### Step 1: Parse the Request
 You will be invoked with a prompt containing:
@@ -69,8 +69,8 @@ Follow the instruction file step by step. Key principles:
 - Use your preloaded docs-mod-project module for source-to-docs mapping
 - Use your preloaded docs-mod-api-refs module for API Reference grammar and conventions
 
-On-demand module to read during execution:
-- {plugin-root}/framework/modules/api-ref-rules.md
+On-demand algorithm to read during execution:
+- {plugin-root}/framework/algorithms/api-ref-algorithm.md
 
 ### Step 4: Post-Operation Pipeline (generate only)
 For the generate subcommand, execute the post-modification pipeline:
@@ -83,9 +83,9 @@ For the generate subcommand, execute the post-modification pipeline:
 
 Skip conditions: respect --no-* flags and system config settings.
 
-On-demand module files for pipeline stages:
-- Verbosity: {plugin-root}/framework/modules/verbosity-rules.md
-- Validation: {plugin-root}/framework/modules/validation-rules.md
+On-demand algorithm files for pipeline stages:
+- Verbosity: {plugin-root}/framework/algorithms/verbosity-algorithm.md
+- Validation: {plugin-root}/framework/algorithms/validation-algorithm.md
 - Changelog: Follow changelog rules from the docs-mod-changelog module
 - Index: Follow index rules from the docs-mod-index module
 

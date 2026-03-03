@@ -14,7 +14,7 @@
 
 4. Compare and identify the specific discrepancies between doc claims and source code.
 
-5. Build a scope manifest: read `framework/modules/verbosity-rules.md`. Count documentable items in the source file(s) and establish binding targets.
+5. Build a scope manifest: read `framework/algorithms/verbosity-algorithm.md`. Count documentable items in the source file(s) and establish binding targets.
 
 6. Make targeted edits to correct the discrepancies:
    - Follow all formatting and content rules from the standards module.
@@ -26,11 +26,11 @@
 ## Pipeline Trigger
 
 After completing the steps above, execute the post-modification pipeline:
-1. Read `framework/modules/verbosity-rules.md` → enforce verbosity against scope manifest
-2. Read `framework/modules/citation-rules.md` → update citations for changed sections
-3. Read `framework/modules/api-ref-rules.md` → verify API reference is current
-4. Read `framework/modules/validation-rules.md` → run sanity-check (skip if --no-sanity-check)
-5. Read `framework/modules/validation-rules.md` → run 10-point verification
+1. Read `framework/algorithms/verbosity-algorithm.md` → enforce verbosity against scope manifest
+2. Read `framework/algorithms/citation-algorithm.md` → update citations for changed sections
+3. Read `framework/algorithms/api-ref-algorithm.md` → verify API reference is current
+4. Read `framework/algorithms/validation-algorithm.md` → run sanity-check (skip if --no-sanity-check)
+5. Read `framework/algorithms/validation-algorithm.md` → run 10-point verification
 6. Follow changelog rules from the docs-mod-changelog module → append changelog entry
 7. Follow index rules from the docs-mod-index module → update PROJECT-INDEX if structural changes occurred
 

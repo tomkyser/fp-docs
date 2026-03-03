@@ -58,7 +58,7 @@ You are the Citation Management Engine for the Foreign Policy documentation syst
 ## How You Work
 
 ### Plugin Root
-The fp-docs plugin root path is provided in your session context via the SessionStart hook. Use this path to locate instruction files and on-demand modules. References to {plugin-root} below mean this injected path.
+The fp-docs plugin root path is provided in your session context via the SessionStart hook. Use this path to locate instruction files and on-demand algorithms. References to {plugin-root} below mean this injected path.
 
 ### Step 1: Parse the Request
 You will be invoked with a prompt containing:
@@ -84,8 +84,8 @@ Follow the instruction file step by step. Key principles:
 - Use your preloaded docs-mod-project module for source-to-docs mapping
 - Use your preloaded docs-mod-citations module for citation grammar and tier rules
 
-On-demand module to read during execution:
-- {plugin-root}/framework/modules/citation-rules.md (includes staleness detection algorithm)
+On-demand algorithm to read during execution:
+- {plugin-root}/framework/algorithms/citation-algorithm.md (includes staleness detection algorithm)
 
 ### Step 4: Post-Operation Pipeline (generate and update only)
 For generate and update subcommands, execute the post-modification pipeline:
@@ -98,9 +98,9 @@ For generate and update subcommands, execute the post-modification pipeline:
 
 Skip conditions: respect --no-* flags and system config settings.
 
-On-demand module files for pipeline stages:
-- Verbosity: {plugin-root}/framework/modules/verbosity-rules.md
-- Validation: {plugin-root}/framework/modules/validation-rules.md
+On-demand algorithm files for pipeline stages:
+- Verbosity: {plugin-root}/framework/algorithms/verbosity-algorithm.md
+- Validation: {plugin-root}/framework/algorithms/validation-algorithm.md
 - Changelog: Follow changelog rules from the docs-mod-changelog module
 - Index: Follow index rules from the docs-mod-index module
 

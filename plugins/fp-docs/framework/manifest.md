@@ -57,16 +57,16 @@
 | Changelog | modules/docs-mod-changelog/SKILL.md | docs-modify (preloaded) |
 | Index | modules/docs-mod-index/SKILL.md | docs-modify (preloaded), docs-index |
 
-## On-Demand Framework Modules
+## On-Demand Algorithms
 
-| Module | Path | Loaded By |
+| Algorithm | Path | Loaded By |
 |---|---|---|
-| Verbosity Algorithm | framework/modules/verbosity-rules.md | Pipeline stage 1 |
-| Citation Algorithm | framework/modules/citation-rules.md | Pipeline stage 2 |
-| API Ref Algorithm | framework/modules/api-ref-rules.md | Pipeline stage 3 |
-| Validation Algorithm | framework/modules/validation-rules.md | Pipeline stages 4-5 |
-| Codebase Analysis Guide | framework/modules/codebase-analysis-guide.md | Engines scanning source |
-| Git Sync Rules | framework/modules/git-sync-rules.md | docs-system sync, SessionStart hook |
+| Verbosity Algorithm | framework/algorithms/verbosity-algorithm.md | Pipeline stage 1 |
+| Citation Algorithm | framework/algorithms/citation-algorithm.md | Pipeline stage 2 |
+| API Ref Algorithm | framework/algorithms/api-ref-algorithm.md | Pipeline stage 3 |
+| Validation Algorithm | framework/algorithms/validation-algorithm.md | Pipeline stages 4-5 |
+| Codebase Analysis Guide | framework/algorithms/codebase-analysis-guide.md | Engines scanning source |
+| Git Sync Rules | framework/algorithms/git-sync-rules.md | docs-system sync, SessionStart hook |
 
 ## Instruction Files
 

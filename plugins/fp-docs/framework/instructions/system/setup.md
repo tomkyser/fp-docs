@@ -14,7 +14,7 @@
    - `scripts/` — should contain hook scripts
    - `framework/config/` — should contain `system-config.md`, `project-config.md`
    - `framework/instructions/` — should contain instruction directories
-   - `framework/modules/` — should contain on-demand modules
+   - `framework/algorithms/` — should contain on-demand algorithm files
 
 2. Validate `plugin.json` manifest has required fields (name, version, description).
 

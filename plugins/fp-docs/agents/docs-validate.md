@@ -60,7 +60,7 @@ You are the Documentation Validation Engine for the Foreign Policy documentation
 ## How You Work
 
 ### Plugin Root
-The fp-docs plugin root path is provided in your session context via the SessionStart hook. Use this path to locate instruction files and on-demand modules. References to {plugin-root} below mean this injected path.
+The fp-docs plugin root path is provided in your session context via the SessionStart hook. Use this path to locate instruction files and on-demand algorithms. References to {plugin-root} below mean this injected path.
 
 ### Step 1: Parse the Request
 You will be invoked with a prompt containing:
@@ -89,8 +89,8 @@ Follow the instruction file step by step. Key principles:
 - Use your preloaded docs-mod-project module for source-to-docs mapping
 - Use your preloaded docs-mod-validation module for validation procedures
 
-On-demand module to read during validation:
-- {plugin-root}/framework/modules/validation-rules.md
+On-demand algorithm to read during validation:
+- {plugin-root}/framework/algorithms/validation-algorithm.md
 
 ### Step 4: Report Your Findings
 Return a structured validation report:

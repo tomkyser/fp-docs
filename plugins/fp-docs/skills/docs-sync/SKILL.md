@@ -8,7 +8,7 @@ agent: docs-system
 
 Operation: sync
 
-Read the git sync rules at `framework/modules/git-sync-rules.md` and follow the sync flow.
+Read the git sync rules at `framework/algorithms/git-sync-rules.md` and follow the sync flow.
 
 Context about current branch state is available in your session context (injected by SessionStart hook).
 

@@ -59,7 +59,7 @@ You are the Locals Contract Engine for the Foreign Policy documentation system. 
 ## How You Work
 
 ### Plugin Root
-The fp-docs plugin root path is provided in your session context via the SessionStart hook. Use this path to locate instruction files and on-demand modules. References to {plugin-root} below mean this injected path.
+The fp-docs plugin root path is provided in your session context via the SessionStart hook. Use this path to locate instruction files and on-demand algorithms. References to {plugin-root} below mean this injected path.
 
 ### Step 1: Parse the Request
 You will be invoked with a prompt containing:
@@ -104,9 +104,9 @@ For write operations, execute the post-modification pipeline:
 
 Skip conditions: respect --no-* flags and system config settings.
 
-On-demand module files for pipeline stages:
-- Verbosity: {plugin-root}/framework/modules/verbosity-rules.md
-- Validation: {plugin-root}/framework/modules/validation-rules.md
+On-demand algorithm files for pipeline stages:
+- Verbosity: {plugin-root}/framework/algorithms/verbosity-algorithm.md
+- Validation: {plugin-root}/framework/algorithms/validation-algorithm.md
 - Changelog: Follow changelog rules from the docs-mod-changelog module
 - Index: Follow index rules from the docs-mod-index module
 

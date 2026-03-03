@@ -19,8 +19,8 @@
 ## Pipeline Trigger
 
 After annotating:
-1. Read `framework/modules/verbosity-rules.md` → enforce completeness
-2. Read `framework/modules/citation-rules.md` → update citations
+1. Read `framework/algorithms/verbosity-algorithm.md` → enforce completeness
+2. Read `framework/algorithms/citation-algorithm.md` → update citations
 4-7. Sanity-check, verify, changelog, index
 
 ## Output
