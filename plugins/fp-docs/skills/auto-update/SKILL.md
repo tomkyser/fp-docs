@@ -1,5 +1,4 @@
 ---
-name: auto-update
 description: Auto-detect code changes since last documentation update and handle everything. Scans git diff, identifies affected docs, and updates them.
 argument-hint: "optional scope restriction"
 context: fork

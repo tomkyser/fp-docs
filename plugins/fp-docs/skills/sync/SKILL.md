@@ -1,5 +1,4 @@
 ---
-name: sync
 description: Synchronize the docs repo branch with the codebase branch. Creates or switches docs branches, generates diff reports, and optionally merges docs branches.
 argument-hint: "[merge] [--force]"
 context: fork

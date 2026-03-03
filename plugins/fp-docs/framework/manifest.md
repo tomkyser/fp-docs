@@ -3,7 +3,7 @@
 ## Plugin
 - **Name**: fp-docs
 - **Namespace**: /fp-docs:* (e.g., /fp-docs:revise, /fp-docs:citations)
-- **Version**: 2.6.0
+- **Version**: 2.6.1
 
 ## Engines
 

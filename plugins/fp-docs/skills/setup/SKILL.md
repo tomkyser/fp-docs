@@ -1,5 +1,4 @@
 ---
-name: setup
 description: Initialize or verify the fp-docs plugin installation. Checks plugin structure, docs repo setup, codebase gitignore, and branch sync state.
 argument-hint: ""
 context: fork
