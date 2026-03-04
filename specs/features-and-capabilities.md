@@ -6,7 +6,7 @@ fp-docs is a Claude Code plugin that provides a complete documentation managemen
 
 The plugin is distributed via the `fp-tools` marketplace and operates entirely through Claude Code's native plugin primitives: subagents (engines), skills (commands), hooks (lifecycle events), and modules (shared rule sets).
 
-**Version**: 2.6.1
+**Version**: 2.6.2
 **Author**: Tom Kyser
 **License**: MIT
 

@@ -1,4 +1,4 @@
-# fp-docs System — Manifest v2.6.0
+# fp-docs System — Manifest v2.6.2
 
 ## Plugin
 - **Name**: fp-docs
