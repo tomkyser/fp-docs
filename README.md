@@ -826,6 +826,42 @@ The verbosity engine has zero tolerance by default. If a source file has 12 func
 
 `/fp-docs:parallel` requires the `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` environment variable to be set. Without it, the command falls back to sequential execution. It also falls back for scopes under 3 files.
 
+### Plugin Not Updating to Latest Version
+
+Claude Code's plugin update mechanism may not pull the latest version due to stale local cache or marketplace clones. The `plugin update` command sometimes does not fetch the latest commit from the remote repository before checking for updates.
+
+**Manual git pull in the marketplace directory** (recommended workaround):
+
+1. Navigate to the local marketplace clone in your terminal:
+
+   ```bash
+   cd ~/.claude/plugins/marketplaces/<marketplace-name>
+   ```
+
+   Replace `<marketplace-name>` with the marketplace that hosts the plugin. For fp-docs, this is the `fp-tools` marketplace directory (check `~/.claude/plugins/marketplaces/` for the exact folder name).
+
+2. Pull the latest changes:
+
+   ```bash
+   git pull origin main
+   ```
+
+   Use `master` instead of `main` if the repository's default branch is `master`.
+
+3. After pulling, run the plugin update command again or reinstall the plugin to apply the changes:
+
+   ```
+   /plugin update fp-docs
+   ```
+
+   If that still does not pick up the new version, reinstall:
+
+   ```
+   /plugin install fp-docs@fp-tools
+   ```
+
+This is a known Claude Code issue — the marketplace clone is a local git repository, and the update command does not always run `git fetch` before comparing versions.
+
 ### Docs Repo Not Found
 
 If engines report they cannot find the docs repo, run:
