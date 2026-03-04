@@ -19,7 +19,7 @@ fp-docs/                              # Git root (marketplace container)
 └── plugins/
     └── fp-docs/                      # THE ACTUAL PLUGIN (install target)
         ├── .claude-plugin/
-        │   └── plugin.json           # Plugin manifest v2.6.2
+        │   └── plugin.json           # Plugin manifest v2.7.0
         ├── settings.json             # Default permissions
         ├── hooks/
         │   └── hooks.json            # 4 hook event definitions
@@ -71,7 +71,7 @@ fp-docs/                              # Git root (marketplace container)
         │   ├── task-completed-check.sh
         │   └── docs-commit.sh
         └── framework/
-            ├── manifest.md           # System manifest v2.6.2
+            ├── manifest.md           # System manifest v2.7.0
             ├── config/
             │   ├── system-config.md  # Feature flags, thresholds
             │   └── project-config.md # FP-specific paths and mappings
@@ -104,7 +104,7 @@ Key distinction: The repo root (`fp-docs/`) is the marketplace container. The in
 ```json
 {
   "name": "fp-docs",
-  "version": "2.6.2",
+  "version": "2.7.0",
   "description": "Documentation management system for the Foreign Policy WordPress codebase...",
   "author": { "name": "Tom Kyser" },
   "repository": "https://github.com/tomkyser/fp-docs",
@@ -803,7 +803,7 @@ Here is a complete trace of what happens when a user runs `/fp-docs:revise "fix 
 
 ## 13. System Manifest (framework/manifest.md)
 
-The manifest is a comprehensive reference document (v2.6.2) that catalogs every component in the system:
+The manifest is a comprehensive reference document (v2.7.0) that catalogs every component in the system:
 
 - **Plugin identity**: name, namespace, version
 - **Engine table**: all 8 engines with agent file, model, operations

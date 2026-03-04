@@ -1,9 +1,9 @@
-# fp-docs System — Manifest v2.6.2
+# fp-docs System — Manifest v2.7.0
 
 ## Plugin
 - **Name**: fp-docs
 - **Namespace**: /fp-docs:* (e.g., /fp-docs:revise, /fp-docs:citations)
-- **Version**: 2.6.2
+- **Version**: 2.7.0
 
 ## Engines
 
@@ -66,7 +66,7 @@
 | API Ref Algorithm | framework/algorithms/api-ref-algorithm.md | Pipeline stage 3 |
 | Validation Algorithm | framework/algorithms/validation-algorithm.md | Pipeline stages 4-5 |
 | Codebase Analysis Guide | framework/algorithms/codebase-analysis-guide.md | Engines scanning source |
-| Git Sync Rules | framework/algorithms/git-sync-rules.md | system sync, SessionStart hook |
+| Git Sync Rules | framework/algorithms/git-sync-rules.md | system sync, SessionStart hook, all write engines |
 
 ## Instruction Files
 
@@ -88,8 +88,14 @@
 | SessionStart | (all) | scripts/inject-manifest.sh | Inject plugin root + manifest |
 | SubagentStop | modify | scripts/post-modify-check.sh | Validate pipeline completion |
 | TeammateIdle | (all) | scripts/teammate-idle-check.sh | Validate teammate pipeline |
-| SessionStart | (all) | scripts/branch-sync-check.sh | Detect branch mismatch |
+| SessionStart | (all) | scripts/branch-sync-check.sh | Detect branch mismatch + verify remote + pull latest |
 | TaskCompleted | (all) | scripts/task-completed-check.sh | Validate task outputs |
+
+## Utility Scripts
+
+| Script | Sourced By | Purpose |
+|---|---|---|
+| scripts/remote-check.sh | branch-sync-check.sh, docs-commit.sh | Remote accessibility check, pull/fetch, diagnostic formatting |
 
 ## Configuration Files
 

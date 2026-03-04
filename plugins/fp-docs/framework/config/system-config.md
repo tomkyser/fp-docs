@@ -79,15 +79,19 @@
 
 ---
 
-## 4. Git Push
+## 4. Git Remote Sync
 
 | Variable | Value | Description |
 |----------|-------|-------------|
+| `remote.source_of_truth` | `true` | Remote origin is authoritative for docs repo |
+| `remote.pull_on_session_start` | `true` | Fetch and pull from remote at session start |
+| `remote.pull_before_commit` | `true` | Pull latest before committing (Stage 8) |
+| `remote.halt_on_failure` | `true` | Halt operations when remote ops fail |
 | `push.enabled` | `true` | Master switch — whether to push to remote after docs commits |
 | `push.on_commit` | `true` | Push after every pipeline commit (Stage 8) |
 | `push.on_merge` | `true` | Push after sync merge operations |
 
-Push behavior: when enabled, push runs automatically after every successful docs commit. Use `--no-push` flag on any operation to suppress for a single invocation. Push failure is a warning, not an error.
+Remote sync behavior: remote origin is the source of truth for the docs repo. Always fetch/pull before work and before commit. Always push after commit. Remote sync failures halt operations with diagnostic guidance. Use `--offline` flag to skip all remote operations (fetch, pull, push) for disconnected work. Use `--no-push` flag to skip push only (pull still happens).
 
 ---
 

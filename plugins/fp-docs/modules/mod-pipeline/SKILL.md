@@ -71,18 +71,20 @@ Follow the rules from your preloaded mod-index module:
 
 ### Stage 8: Docs Repo Commit & Push
 
-Commit and push all pipeline changes to the docs repo:
+Pull latest, commit, and push all pipeline changes to the docs repo:
 1. Detect docs root from project-config (themes/foreign-policy-2017/docs/)
 2. Check if docs root has a .git/ directory
 3. If yes:
-   a. `git -C {docs-root} add -A`
-   b. `git -C {docs-root} commit -m "fp-docs: {operation} — {summary}"`
-   c. `git -C {docs-root} push` (push to remote)
+   a. If not `--offline`: `git -C {docs-root} fetch origin && git -C {docs-root} pull --ff-only`. **Halt** if pull fails (diverged, uncommitted changes, or unreachable).
+   b. `git -C {docs-root} add -A`
+   c. `git -C {docs-root} commit -m "fp-docs: {operation} — {summary}"`
+   d. If not `--no-push` and not `--offline`: `git -C {docs-root} push` (push to remote). **Halt** if push fails with diagnostic guidance.
 4. If no: skip (docs repo not initialized)
 
 Skip conditions:
+- Pull: Skip if `--offline` flag was passed, or if `remote.pull_before_commit` is `false` in system-config. Pull failure **halts** the operation.
 - Commit: NEVER skip — always attempt if docs repo exists
-- Push: Skip if `--no-push` flag was passed, or if `push.enabled` is `false` in system-config. Push failure is a warning, not an error — the commit is safe locally.
+- Push: Skip if `--no-push` or `--offline` flag was passed, or if `push.enabled` is `false` in system-config. Push failure **halts** the operation with diagnostic guidance.
 
 ## Pipeline Trigger Matrix
 
@@ -117,7 +119,7 @@ Skip conditions:
 When the pipeline completes, output a confirmation line:
 
 ```
-Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: PASS] [changelog: updated] [docs-commit: committed|skipped] [docs-push: pushed|skipped|failed]
+Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: PASS] [changelog: updated] [docs-pull: pulled|skipped|HALTED] [docs-commit: committed|skipped] [docs-push: pushed|skipped|HALTED]
 ```
 
 This marker is checked by the SubagentStop hook to validate pipeline execution.

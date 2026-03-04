@@ -15,6 +15,48 @@ The fp-docs system operates across three independent git repositories:
 3. **Plugin repo** — standalone at the plugin install location
    - This plugin. Not nested in either repo.
 
+## Remote Origin as Source of Truth
+
+Remote origin is the authoritative source for the docs repo. All local work must incorporate remote changes before starting and push results after completing.
+
+### Lifecycle
+Every docs-modifying session follows this remote sync lifecycle:
+1. **Verify** — confirm remote origin is accessible
+2. **Fetch** — `git fetch origin` to update remote tracking refs
+3. **Pull** — `git pull --ff-only` to incorporate remote changes
+4. **Work** — execute the documentation operation
+5. **Commit** — `git add -A && git commit`
+6. **Push** — `git push` to share changes with remote
+
+### Pull Rules
+- Pull always uses `--ff-only` — never create merge commits automatically
+- If `--ff-only` fails (branches diverged): **halt** with diagnostic guidance showing local vs remote commit counts and resolution options
+- If pull fails due to uncommitted changes: **halt** with guidance to stash or commit first
+- If remote branch does not exist yet: skip pull (new branch scenario)
+
+### Push Rules
+- Push is mandatory after every commit (unless `--no-push` or `--offline`)
+- Push failure: **halt** the operation with diagnostic guidance (do NOT continue silently)
+
+### Flag Behavior
+
+| Flag | Fetch | Pull | Work | Commit | Push |
+|------|-------|------|------|--------|------|
+| (default) | Yes | Yes | Yes | Yes | Yes |
+| `--no-push` | Yes | Yes | Yes | Yes | **Skip** |
+| `--offline` | **Skip** | **Skip** | Yes | Yes | **Skip** |
+
+- `--offline` skips ALL remote operations (fetch, pull, push) — use for disconnected work
+- `--no-push` skips push only — pull still happens to ensure local is current
+- `--offline` implies `--no-push`
+
+### Remote Accessibility
+- Verified at session start by the SessionStart hook (`branch-sync-check.sh`)
+- Uses `timeout 10 git ls-remote --exit-code origin HEAD`
+- If unreachable: halt with diagnostic (network, VPN, GitHub status)
+- If auth failure: halt with diagnostic (SSH key, token, remote URL)
+- If no remote configured: warn and continue (first-time setup scenario, suggest `/fp-docs:setup`)
+
 ## Branch Mirroring Rules
 
 ### Principle
@@ -38,14 +80,20 @@ the git root containing `.gitignore` with `themes/foreign-policy-2017/docs/`.
 Docs root: the `docs/` path from project-config.md resolved to absolute.
 
 ### Sync Flow
-1. Detect codebase branch name
-2. Check if docs repo has a branch with the same name
-3. If no matching branch exists:
-   a. Create it from docs `master`
-   b. Switch to it
-4. If matching branch exists but docs is on a different branch:
+0. Verify remote is accessible (halt if not, unless `--offline`)
+1. Fetch from remote: `git -C {docs-root} fetch origin`
+2. Pull latest on current branch: `git -C {docs-root} pull --ff-only` (halt if diverged)
+3. Detect codebase branch name
+4. Check if docs repo has a branch with the same name
+5. If no matching branch exists:
+   a. Pull latest on master first: `git -C {docs-root} checkout master && git -C {docs-root} pull --ff-only`
+   b. Create branch from master and switch to it
+6. If matching branch exists but docs is on a different branch:
    a. Switch docs to the matching branch
-5. Run diff report generation
+   b. Pull latest on the target branch: `git -C {docs-root} pull --ff-only`
+7. Run diff report generation
+
+Steps 0-2 are skipped when `--offline` flag is passed.
 
 ### Diff Report Generation
 
@@ -99,23 +147,33 @@ All doc-modifying operations (revise, add, auto-update, etc.) should commit and 
 
 ```bash
 cd {docs-root}
+# Pull before commit (unless --offline)
+git fetch origin && git pull --ff-only
+# Commit
 git add -A
 git commit -m "fp-docs: {operation} — {summary of changes}"
+# Push (unless --no-push or --offline)
 git push
 ```
 
 This happens at the END of the post-modification pipeline, AFTER changelog update.
 
-Push behavior:
-- Default: push is enabled after every commit
-- `--no-push` flag: suppresses the push (commit still runs)
-- Push failure: treated as a warning, not an error — the commit is safe locally
-- No remote configured: push is silently skipped
+Remote sync behavior:
+- Default: pull before commit, push after commit
+- `--no-push` flag: suppresses push only (pull still happens)
+- `--offline` flag: skips all remote operations (fetch, pull, push)
+- Pull failure (diverged): **halt** the operation with diagnostic guidance
+- Push failure: **halt** the operation with diagnostic guidance
+- No remote configured: warn and skip remote operations (suggest `/fp-docs:setup`)
 
 ## Merge Flow
 
 When a codebase branch merges to master:
-1. Switch docs repo to the matching feature branch
-2. Merge docs feature branch into docs master
-3. Push docs master (skip if `--no-push` flag was passed)
-4. Delete the docs feature branch (cleanup)
+1. Fetch from remote: `git -C {docs-root} fetch origin` (skip if `--offline`)
+2. Pull latest on both branches before merge (skip if `--offline`):
+   a. `git -C {docs-root} checkout master && git -C {docs-root} pull --ff-only`
+   b. `git -C {docs-root} checkout {feature-branch} && git -C {docs-root} pull --ff-only`
+3. Switch docs repo to master
+4. Merge docs feature branch into docs master
+5. Push docs master (skip if `--no-push` or `--offline`; push failure **halts** with diagnostics)
+6. Delete the docs feature branch (cleanup)

@@ -42,7 +42,7 @@ claude --plugin-dir ~/cc-plugins/fp-docs/plugins/fp-docs
 
 From `plugins/fp-docs/.claude-plugin/plugin.json`:
 - Name: `fp-docs`
-- Version: `2.6.2`
+- Version: `2.7.0`
 - License: MIT
 - Repository: `https://github.com/tomkyser/fp-docs`
 - All 19 user commands are namespaced as `/fp-docs:*`

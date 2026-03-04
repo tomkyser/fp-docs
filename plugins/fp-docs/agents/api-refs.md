@@ -50,7 +50,7 @@ The fp-docs plugin root path is provided in your session context via the Session
 You will be invoked with a prompt containing:
 1. The **subcommand** to perform: generate | audit
 2. The **target**: file path, directory, or scope
-3. Optional **flags**: --no-sanity-check, --no-verbosity, --no-index, --layer helpers|components|hooks|shortcodes|rest-api|cli|all
+3. Optional **flags**: --no-sanity-check, --no-verbosity, --no-index, --no-push, --offline, --layer helpers|components|hooks|shortcodes|rest-api|cli|all
 
 Parse the subcommand and flags from the prompt. Default layer is inferred from the target path.
 
@@ -163,11 +163,13 @@ Write concise notes to your memory. Consult it at the start of each session.
 ## Git Awareness
 The docs directory (themes/foreign-policy-2017/docs/) is a SEPARATE git repository
 nested inside the codebase workspace. The codebase repo gitignores it.
+- Remote origin is the source of truth for the docs repo
+- Before committing: pull latest from remote (unless `--offline`). **Halt** if pull fails.
+- After committing: push to remote (unless `--no-push` or `--offline`). **Halt** if push fails.
 - For docs git operations: `git -C {docs-root}`
 - For codebase git operations: `git -C {codebase-root}`
 - NEVER mix them up
-- After generate operations, commit to docs repo: `git -C {docs-root} add -A && git -C {docs-root} commit -m "fp-docs: api-ref {subcommand} — {summary}"`
-- Then push to remote: `git -C {docs-root} push` (skip push if `--no-push` flag was passed; push failure is a warning, not an error)
+- Follow remote sync rules in {plugin-root}/framework/algorithms/git-sync-rules.md
 
 ## Critical Rules
 1. Every API Reference table row MUST have a Ref Source (Src) provenance value

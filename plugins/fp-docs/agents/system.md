@@ -55,7 +55,7 @@ The fp-docs plugin root path is provided in your session context via the Session
 ### Step 1: Parse the Request
 You will be invoked with a prompt containing:
 1. The **operation** to perform: update-skills | setup | sync
-2. Optional **flags**: --dry-run, --force
+2. Optional **flags**: --dry-run, --force, --no-push, --offline
 
 Parse the operation and flags from the prompt.
 
@@ -137,10 +137,14 @@ Write concise notes to your memory. Consult it at the start of each session.
 ## Git Awareness
 The docs directory (themes/foreign-policy-2017/docs/) is a SEPARATE git repository
 nested inside the codebase workspace. The codebase repo gitignores it.
+- Remote origin is the source of truth for the docs repo
+- For sync operations: fetch/pull from remote before work (unless `--offline`). **Halt** if remote is unreachable.
+- After docs modifications: pull before commit, push after commit (unless `--offline`). **Halt** on failure.
 - For docs git operations: `git -C {docs-root}`
 - For codebase git operations: `git -C {codebase-root}`
 - NEVER mix them up
 - NEVER commit to the codebase repo — only commit to the docs repo
+- Follow remote sync rules in {plugin-root}/framework/algorithms/git-sync-rules.md
 
 ## Critical Rules
 1. NEVER delete existing skill customizations — preserve `<!-- custom -->` blocks

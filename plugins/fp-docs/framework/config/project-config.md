@@ -64,6 +64,9 @@
 - Remote: https://github.com/tomkyser/docs-foreignpolicy-com
 - Visibility: private
 - Branch strategy: mirrors codebase branches
+- Source of truth: remote origin
+- Pull behavior: always fetch/pull before work and before commit
+- Offline work: requires explicit --offline flag
 
 ### Plugin Repo
 - Remote: https://github.com/tomkyser/fp-docs

@@ -67,7 +67,7 @@ The fp-docs plugin root path is provided in your session context via the Session
 You will be invoked with a prompt containing:
 1. The **operation** to perform: revise | add | auto-update | auto-revise | deprecate
 2. The **target**: file path, description, or scope
-3. Optional **flags**: --no-citations, --no-sanity-check, --no-verbosity, --no-api-ref, --no-index, --no-push, --mode plan, --mode audit+plan
+3. Optional **flags**: --no-citations, --no-sanity-check, --no-verbosity, --no-api-ref, --no-index, --no-push, --offline, --mode plan, --mode audit+plan
 
 Parse the operation and flags from the prompt. If the operation is ambiguous, default to "revise" for targeted changes or "auto-update" for broad scopes.
 
@@ -107,15 +107,15 @@ On-demand algorithm files to read during pipeline:
 - Index: Follow rules from your preloaded mod-index module
 
 ### Step 5: Commit & Push to Docs Repo (Stage 8)
-After the pipeline completes, commit and push all changes to the docs repo:
+After the pipeline completes, pull latest, commit, and push all changes to the docs repo:
 1. Detect docs root: {codebase-root}/themes/foreign-policy-2017/docs/
 2. Verify docs root is a git repo (has .git/)
 3. If it is:
-   a. `git -C {docs-root} add -A`
-   b. `git -C {docs-root} commit -m "fp-docs: {operation} — {summary}"`
-   c. Unless `--no-push` was passed: `git -C {docs-root} push`
+   a. Unless `--offline`: pull latest from remote (`git -C {docs-root} fetch origin && git -C {docs-root} pull --ff-only`). **Halt** if pull fails.
+   b. `git -C {docs-root} add -A`
+   c. `git -C {docs-root} commit -m "fp-docs: {operation} — {summary}"`
+   d. Unless `--no-push` or `--offline`: `git -C {docs-root} push`. **Halt** if push fails with diagnostic guidance.
 4. If not: skip (docs repo not set up yet — not an error)
-5. Push failure is a warning, not an error — the commit is safe locally
 
 ### Step 6: Report Your Work
 Return a structured summary:
@@ -154,10 +154,13 @@ Write concise notes to your memory. Consult it at the start of each session.
 ## Git Awareness
 The docs directory (themes/foreign-policy-2017/docs/) is a SEPARATE git repository
 nested inside the codebase workspace. The codebase repo gitignores it.
+- Remote origin is the source of truth for the docs repo
+- Before committing: pull latest from remote (unless `--offline`). **Halt** if pull fails.
+- After committing: push to remote (unless `--no-push` or `--offline`). **Halt** if push fails.
 - For docs git operations: `git -C {docs-root}`
 - For codebase git operations: `git -C {codebase-root}`
 - NEVER mix them up
-- Commit to the docs repo at the end of every pipeline run (Stage 8)
+- Follow remote sync rules in {plugin-root}/framework/algorithms/git-sync-rules.md
 
 ## Critical Rules
 1. NEVER guess — read actual source code before writing documentation
