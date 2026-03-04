@@ -2,6 +2,26 @@
 
 All notable changes to the fp-docs plugin will be documented in this file.
 
+## [2.8.0] - 2026-03-04
+
+### Added
+- **Ephemeral WP-CLI `fp-locals` tool** — restored the `token_get_all()`-based PHP CLI that provides 100% accurate `$locals` extraction, previously lost during the plugin conversion
+- `framework/tools/class-locals-cli.php` — the WP-CLI command source (~750 lines) with 4 subcommands: `extract`, `validate`, `cross-ref`, `coverage`
+- `scripts/locals-cli-setup.sh` — ephemeral CLI installation: copies PHP file to theme, registers in `functions.php`, verifies with `ddev wp fp-locals --help`
+- `scripts/locals-cli-teardown.sh` — ephemeral CLI removal: unregisters from `functions.php`, deletes file, verifies cleanup
+- `scripts/locals-cli-cleanup-check.sh` — SubagentStop safety-net hook for locals engine, auto-cleans orphaned CLI artifacts
+- SubagentStop hook entry in `hooks.json` for locals engine (matcher: "locals")
+- §7 "Locals CLI Tool" in `system-config.md` with 4 config variables (`cli_enabled`, `cli_auto_teardown`, `cli_source`, `cli_target`), ephemeral lifecycle, and subcommand-to-CLI mapping table
+- "Tools" section in `manifest.md` documenting `class-locals-cli.php`
+- Design decision #17 in architecture spec: ephemeral CLI tool pattern
+
+### Changed
+- All 5 CLI-dependent locals instruction files rewritten with CLI-first approach + manual fallback: `annotate.md`, `contracts.md`, `cross-ref.md`, `validate.md`, `coverage.md`
+- `agents/locals.md` — added "Step 3: Install the CLI Tool (Ephemeral)" with setup/teardown instructions and CLI subcommands table; updated Critical Rules to make CLI usage unconditional rather than "when available"
+- `modules/mod-locals/SKILL.md` — expanded "Ground Truth Engine" section with CLI tool location/lifecycle, CLI subcommands table, extraction capabilities (type inference, guard detection, de-duplication, caller detection), and fallback documentation
+- `manifest.md` — added locals SubagentStop hook, locals CLI utility scripts, new Tools section
+- Specs updated (architecture.md, features-and-capabilities.md, usage-and-workflows.md) to document ephemeral CLI integration
+
 ## [2.7.2] - 2026-03-04
 
 ### Added

@@ -32,6 +32,15 @@
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/post-orchestrate-check.sh\""
           }
         ]
+      },
+      {
+        "matcher": "locals",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/locals-cli-cleanup-check.sh\""
+          }
+        ]
       }
     ],
     "TeammateIdle": [

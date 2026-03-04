@@ -175,3 +175,34 @@ scope_files > team_threshold → TEAM (TeamCreate + batched teammates)
 | Write Phase | Primary op + Stages 1-3 | Primary engine (delegated) | Needs write access + fresh context |
 | Review Phase | Stages 4-5 | Validate engine | Independent quality review |
 | Finalize Phase | Stages 6-8 | Orchestrator | Administrative finalization |
+
+---
+
+## 7. Locals CLI Tool
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `locals.cli_enabled` | `true` | Whether to use the WP-CLI `fp-locals` tool for ground-truth extraction (falls back to manual if false or unavailable) |
+| `locals.cli_auto_teardown` | `true` | Whether the SubagentStop hook auto-cleans orphaned CLI artifacts |
+| `locals.cli_source` | `framework/tools/class-locals-cli.php` | CLI PHP file location relative to plugin root |
+| `locals.cli_target` | `inc/cli/class-locals-cli.php` | Installation target relative to theme root |
+
+### Ephemeral CLI Lifecycle
+
+The `wp fp-locals` WP-CLI command is NOT permanently registered in the theme. It is installed ephemerally for each locals operation:
+
+1. **Setup**: `scripts/locals-cli-setup.sh` copies CLI file from plugin → theme, registers in `functions.php`, verifies
+2. **Execute**: Locals engine runs `ddev wp fp-locals <subcommand>` for ground-truth extraction
+3. **Teardown**: `scripts/locals-cli-teardown.sh` removes registration and deletes file
+4. **Safety net**: SubagentStop hook (`locals-cli-cleanup-check.sh`) auto-cleans if teardown was missed
+
+### Subcommands Requiring CLI
+
+| Subcommand | Needs CLI | Fallback |
+|---|:---:|---|
+| `annotate` | Yes | Manual Read/Grep extraction |
+| `contracts` | Yes | Manual Read/Grep extraction |
+| `cross-ref` | Yes | Grep-based caller search (limited) |
+| `validate` | Yes | Manual PHPDoc vs code comparison |
+| `coverage` | Yes | Glob + Read scan for @locals blocks |
+| `shapes` | No | Reads documentation only |

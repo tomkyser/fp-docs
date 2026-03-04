@@ -1,9 +1,9 @@
-# fp-docs System — Manifest v2.7.2
+# fp-docs System — Manifest v2.8.0
 
 ## Plugin
 - **Name**: fp-docs
 - **Namespace**: /fp-docs:* (e.g., /fp-docs:revise, /fp-docs:citations)
-- **Version**: 2.7.2
+- **Version**: 2.8.0
 
 ## Engines
 
@@ -91,6 +91,7 @@
 | SessionStart | (all) | scripts/inject-manifest.sh | Inject plugin root + manifest |
 | SubagentStop | modify | scripts/post-modify-check.sh | Validate pipeline completion |
 | SubagentStop | orchestrate | scripts/post-orchestrate-check.sh | Validate orchestration completion |
+| SubagentStop | locals | scripts/locals-cli-cleanup-check.sh | Auto-clean orphaned CLI artifacts after locals engine stops |
 | TeammateIdle | (all) | scripts/teammate-idle-check.sh | Validate teammate delegation results |
 | SessionStart | (all) | scripts/branch-sync-check.sh | Detect branch mismatch + verify remote + pull latest |
 | TaskCompleted | (all) | scripts/task-completed-check.sh | Validate task outputs |
@@ -100,6 +101,14 @@
 | Script | Sourced By | Purpose |
 |---|---|---|
 | scripts/remote-check.sh | branch-sync-check.sh, docs-commit.sh | Remote accessibility check, pull/fetch, diagnostic formatting |
+| scripts/locals-cli-setup.sh | locals engine (instruction files) | Ephemeral CLI install: copy PHP file into theme, register in functions.php |
+| scripts/locals-cli-teardown.sh | locals engine (instruction files) | Ephemeral CLI removal: unregister, delete PHP file |
+
+## Tools
+
+| File | Purpose |
+|---|---|
+| framework/tools/class-locals-cli.php | WP-CLI `fp-locals` command source — ephemeral tool for token-based $locals extraction |
 
 ## Configuration Files
 

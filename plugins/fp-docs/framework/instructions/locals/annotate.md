@@ -6,15 +6,88 @@
 
 ## Steps
 
-1. Parse scope from $ARGUMENTS. Identify target component files.
+### Phase A: CLI Setup
 
-2. For each component PHP file: scan for `$locals` access patterns using the patterns from the locals module.
+1. Run the setup script to install the ephemeral CLI tool:
+   ```bash
+   bash "{plugin-root}/scripts/locals-cli-setup.sh"
+   ```
+   If setup fails (ddev not running, path resolution error), fall back to **Phase A-Fallback** below.
 
-3. Classify each key as Required or Optional based on access pattern.
+### Phase B: CLI Extraction (Ground Truth)
 
-4. Generate `@locals` PHPDoc block for each component file that lacks one.
+2. Run the WP-CLI extraction tool to get authoritative contract data:
+   ```bash
+   ddev wp fp-locals extract "<file_or_dir>" --format=json --recursive
+   ```
+   For `--all` scope:
+   ```bash
+   ddev wp fp-locals extract "components/" --recursive --format=json
+   ```
+   Parse the JSON output. This is the ground-truth source — `token_get_all()` achieves 100% extraction accuracy.
 
-5. Insert the annotation at the top of the PHP file, after the opening `<?php` tag.
+### Phase C: Annotate
+
+3. For each component PHP file in the CLI output:
+
+   a. Read the target file. Check if a `@locals { ... }` PHPDoc block already exists.
+
+   b. **If no block exists**: Generate a new `@locals` block from CLI data using the format from mod-locals.
+
+   c. **If a block exists**: Merge — preserve any human-authored descriptions from the existing block, update keys/types/required from CLI data. CLI data takes priority for key names, types, and Required/Optional classification.
+
+4. Generate the `@locals` PHPDoc block per mod-locals format rules:
+   ```php
+   <?php
+   /**
+    * [existing file-level comment if present]
+    *
+    * @locals {
+    *   key_name:  type  — Required|Optional. Description. [Default: value.]
+    * }
+    */
+   ```
+   For HTMX components (`components/htmx/`), use the `@controller`/`@state`/`@methods` format per mod-locals.
+
+5. Insert the annotation:
+   - If the file has a file-level PHPDoc comment (`/** ... */` before any code), insert `@locals` inside it.
+   - If no file-level comment exists, add one after the opening `<?php` tag.
+   - Do NOT modify any code — only add/update the PHPDoc block.
+
+### Phase D: Validate
+
+6. Run CLI validation to confirm annotations match actual usage:
+   ```bash
+   ddev wp fp-locals validate "<file_or_dir>" --recursive
+   ```
+   Report any discrepancies.
+
+### Phase E: CLI Teardown (MANDATORY)
+
+7. **CRITICAL**: Run teardown even if earlier steps failed:
+   ```bash
+   bash "{plugin-root}/scripts/locals-cli-teardown.sh"
+   ```
+   The CLI file and functions.php registration must NOT persist after this operation.
+
+---
+
+## Phase A-Fallback: Manual Extraction (No CLI)
+
+If the CLI setup fails (ddev unavailable, path error, WP environment broken):
+
+1. Report to the user: "CLI tool unavailable — falling back to manual extraction. Results may be less accurate."
+
+2. For each component PHP file: read the source with the Read tool and scan for `$locals` access patterns using the classification rules from mod-locals:
+   - `$locals['key']` bare access → Required
+   - `$locals['key'] ?? default` → Optional
+   - `isset($locals['key'])` / `!empty($locals['key'])` → Optional
+
+3. Classify each key as Required or Optional. Infer types from wrapping functions (esc_url→string, intval→int, etc.), cast operators, and default values.
+
+4. Continue with Phase C above using the manually extracted data.
+
+---
 
 ## Pipeline Trigger
 
@@ -25,4 +98,4 @@ After annotating:
 
 ## Output
 
-Report: files annotated, keys discovered per file, Required vs Optional counts.
+Report: files annotated, keys discovered per file, Required vs Optional counts, extraction method (CLI or manual fallback).

@@ -128,7 +128,39 @@ In component docs, reference shared shapes with:
 
 ## Ground Truth Engine
 
-The WP-CLI command `wp fp-locals` is the authoritative source. It uses `token_get_all()` for PHP tokenization, achieving 100% extraction accuracy. The CLI tool is ephemeral — installed during docs operations, removed after.
+The WP-CLI command `wp fp-locals` is the authoritative source. It uses `token_get_all()` for PHP tokenization, achieving 100% extraction accuracy for all 447 component files. The CLI tool is ephemeral — installed during docs operations, removed after.
+
+### CLI Tool Location and Lifecycle
+
+- **Source file**: `{plugin-root}/framework/tools/class-locals-cli.php`
+- **Setup script**: `{plugin-root}/scripts/locals-cli-setup.sh` — copies CLI into theme, registers in `functions.php`, verifies
+- **Teardown script**: `{plugin-root}/scripts/locals-cli-teardown.sh` — unregisters, deletes, verifies
+- **Safety net**: SubagentStop hook (`locals-cli-cleanup-check.sh`) auto-cleans orphaned artifacts
+- **Installation target**: `{theme-root}/inc/cli/class-locals-cli.php`
+- **Registration**: `require_once` inside the `if ( defined( 'WP_CLI' ) && WP_CLI )` block in `functions.php`
+- **Invocation prefix**: `ddev wp fp-locals` (per project-config WP-CLI prefix)
+
+### CLI Subcommands
+
+| Subcommand | Purpose | Output Formats |
+|---|---|---|
+| `extract <path> [--recursive] [--format=json\|table\|markdown]` | Extract $locals keys with types, required/optional, defaults | json, table, markdown |
+| `validate <path> [--recursive]` | Compare @locals PHPDoc vs actual code usage | Text warnings |
+| `cross-ref <path> [--recursive]` | Find all callers and compare passed vs consumed keys | Text report |
+| `coverage [--format=json\|table]` | Report @locals PHPDoc coverage across all components | json, table |
+
+### Extraction Capabilities
+
+The CLI tokenizer provides capabilities beyond manual reading:
+- **Type inference**: Detects wrapping functions (esc_url→string, intval→int, absint→int, boolval→bool), cast operators ((int), (string), (bool), (array)), and boolean comparisons
+- **Default value capture**: Extracts right-hand side of `??` coalesce operators
+- **Guard detection**: Scans backward for `isset()`, `empty()`, `array_key_exists()` guards
+- **De-duplication**: Tracks unique keys across multiple access points, upgrades Optional→Required when any unguarded access exists
+- **Caller detection**: Tokenizes entire theme to find `get_template_part()` calls, handles FP namespaced variants and template slug splitting
+
+### Fallback
+
+If the CLI is unavailable (ddev not running, environment issues), instruction files fall back to manual extraction using Read/Grep tools. This fallback is less accurate — it cannot infer types from wrapping functions, detect guards reliably, or tokenize caller argument lists. Always prefer CLI when available.
 
 ## Completeness Rule
 

@@ -1,6 +1,6 @@
 # fp-docs Architecture Research
 
-> **Updated 2026-03-04**: Added multi-agent orchestration architecture (orchestrate engine, mod-orchestration module, pipeline phase delegation, delegation vs standalone modes, git serialization).
+> **Updated 2026-03-04**: Added ephemeral WP-CLI `fp-locals` tool integration — CLI PHP source in `framework/tools/`, setup/teardown/cleanup scripts, SubagentStop safety net hook, locals CLI configuration section, ephemeral CLI design decision. Previously: Added multi-agent orchestration architecture.
 
 Thorough analysis of the fp-docs Claude Code plugin internals: engine-skill routing, module system, pipeline, hooks, algorithms, git model, permissions, and configuration.
 
@@ -21,7 +21,7 @@ fp-docs/                              # Git root (marketplace container)
 └── plugins/
     └── fp-docs/                      # THE ACTUAL PLUGIN (install target)
         ├── .claude-plugin/
-        │   └── plugin.json           # Plugin manifest v2.7.2
+        │   └── plugin.json           # Plugin manifest v2.8.0
         ├── settings.json             # Default permissions
         ├── hooks/
         │   └── hooks.json            # 4 hook event definitions
@@ -67,19 +67,24 @@ fp-docs/                              # Git root (marketplace container)
         │   ├── setup/SKILL.md
         │   ├── sync/SKILL.md
         │   └── parallel/SKILL.md
-        ├── scripts/                  # 7 bash scripts (hooks + utility)
+        ├── scripts/                  # 10 bash scripts (hooks + utility + CLI lifecycle)
         │   ├── inject-manifest.sh
         │   ├── branch-sync-check.sh
         │   ├── post-modify-check.sh
         │   ├── post-orchestrate-check.sh
+        │   ├── locals-cli-setup.sh
+        │   ├── locals-cli-teardown.sh
+        │   ├── locals-cli-cleanup-check.sh
         │   ├── teammate-idle-check.sh
         │   ├── task-completed-check.sh
         │   └── docs-commit.sh
         └── framework/
-            ├── manifest.md           # System manifest v2.7.2
+            ├── manifest.md           # System manifest v2.8.0
             ├── config/
             │   ├── system-config.md  # Feature flags, thresholds
             │   └── project-config.md # FP-specific paths and mappings
+            ├── tools/                # Ephemeral tool resources
+            │   └── class-locals-cli.php  # WP-CLI fp-locals command (token-based $locals extraction)
             ├── algorithms/           # 6 on-demand algorithm files
             │   ├── verbosity-algorithm.md
             │   ├── citation-algorithm.md
@@ -110,7 +115,7 @@ Key distinction: The repo root (`fp-docs/`) is the marketplace container. The in
 ```json
 {
   "name": "fp-docs",
-  "version": "2.7.2",
+  "version": "2.8.0",
   "description": "Documentation management system for the Foreign Policy WordPress codebase...",
   "author": { "name": "Tom Kyser" },
   "repository": "https://github.com/tomkyser/fp-docs",
@@ -625,6 +630,12 @@ The hooks file defines 5 event types with 7 total hook scripts:
         "hooks": [
           { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/post-orchestrate-check.sh\"" }
         ]
+      },
+      {
+        "matcher": "locals",
+        "hooks": [
+          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/locals-cli-cleanup-check.sh\"" }
+        ]
       }
     ],
     "TeammateIdle": [
@@ -671,17 +682,35 @@ The hooks file defines 5 event types with 7 total hook scripts:
 - Purpose: Validates that the orchestrator completed its full delegation cycle, including pipeline phase coordination and git commit serialization
 - Logic: Reads the agent transcript from stdin JSON, checks for pipeline completion markers across all delegated phases. Exit 0 = pass, Exit 2 = warn
 
-**5. TeammateIdle: teammate-idle-check.sh**
+**5. SubagentStop: locals-cli-cleanup-check.sh**
+- Fires: When the `locals` engine subagent stops (matcher: "locals")
+- Purpose: Safety net for the ephemeral WP-CLI `fp-locals` tool. Detects and removes orphaned CLI artifacts (the copied PHP file in the theme's `inc/cli/` and its `require_once` registration in `functions.php`) that should have been cleaned up by the teardown phase but were missed due to errors or interruptions.
+- Logic: Resolves codebase root via `git rev-parse --show-toplevel`, derives theme root. Checks if `inc/cli/class-locals-cli.php` exists or if `functions.php` contains a `class-locals-cli.php` reference. If either is found, removes them (sed for functions.php, rm for the file). Outputs JSON `additionalContext` reporting what was cleaned.
+
+**6. TeammateIdle: teammate-idle-check.sh**
 - Fires: When a teammate agent goes idle during parallel/team operations
 - Purpose: Validates that teammates completed their assigned pipeline phases before going idle
 - Logic: Reads teammate transcript, checks for phase completion markers (Write Phase or Review Phase), warns if a teammate went idle without completing its assigned work
 
-**6. TaskCompleted: task-completed-check.sh**
+**7. TaskCompleted: task-completed-check.sh**
 - Fires: When a task is marked completed during orchestration
 - Purpose: Validates task outputs — checks for empty modifications, missing pipeline markers, and incomplete phase handoffs
 - Logic: Reads task output, verifies the delegated work product contains expected deliverables (modified files, validation results, or pipeline markers depending on the task type)
 
-### 7th Script: docs-commit.sh (Utility, Not a Hook)
+### Utility Scripts (Not Hooks)
+
+**8. locals-cli-setup.sh** (utility, called by locals engine instruction files)
+- Purpose: Ephemeral installation of the WP-CLI `fp-locals` command into the FP theme
+- Steps: (1) Resolve paths: plugin root (`$CLAUDE_PLUGIN_ROOT`), codebase root (`git rev-parse --show-toplevel`), theme root. (2) Pre-flight: verify CLI source exists, theme exists, `functions.php` exists, ddev is running. (3) Copy `framework/tools/class-locals-cli.php` → `{theme-root}/inc/cli/class-locals-cli.php`. (4) Register in `functions.php` by finding the `WP_CLI` block and inserting a `require_once` after the last existing require. (5) Verify with `ddev wp fp-locals --help`. Auto-cleans on verification failure.
+- Idempotent: skips if CLI file already installed.
+
+**9. locals-cli-teardown.sh** (utility, called by locals engine instruction files)
+- Purpose: Remove the ephemeral WP-CLI `fp-locals` command after operation completes
+- Steps: (1) Remove `require_once` line from `functions.php` via sed. (2) Delete `inc/cli/class-locals-cli.php`. (3) Clean empty directory. (4) Verify cleanup.
+- Uses `set -uo pipefail` (no `-e`) so cleanup continues even if individual steps fail.
+- Idempotent: safe to run even if already cleaned.
+
+**10. docs-commit.sh** (utility, called by engines)
 
 `docs-commit.sh` is a utility script called by engines (not a hook). It commits all docs changes to the docs repo:
 1. Detects codebase root via `git rev-parse --show-toplevel`
@@ -798,7 +827,7 @@ Controls system-wide behavior independent of the specific FP project:
 **Section 5 — Verification** (existing):
 - `verify.total_checks`: 10
 
-**Section 6 — Orchestration** (new):
+**Section 6 — Orchestration**:
 - `orchestration.enabled`: true (master switch for multi-agent orchestration)
 - `orchestration.delegation_threshold_docs`: threshold for triggering multi-agent delegation
 - `orchestration.delegation_threshold_stages`: threshold for pipeline phase splitting
@@ -806,6 +835,14 @@ Controls system-wide behavior independent of the specific FP project:
 - `orchestration.git_serialization`: true (only orchestrator commits in delegated mode)
 - `orchestration.fast_path_read_only`: true (read-only commands skip full delegation)
 - Phase assignment rules and specialist-to-phase mapping
+
+**Section 7 — Locals CLI Tool**:
+- `locals.cli_enabled`: true (master switch for using the WP-CLI `fp-locals` tool)
+- `locals.cli_auto_teardown`: true (SubagentStop hook auto-cleans orphaned artifacts)
+- `locals.cli_source`: `framework/tools/class-locals-cli.php` (source in plugin repo)
+- `locals.cli_target`: `inc/cli/class-locals-cli.php` (installation target in theme)
+- Ephemeral CLI lifecycle: setup → execute → teardown → safety net
+- Subcommand-to-CLI mapping table (which subcommands need CLI, fallback methods)
 
 ### project-config.md — FP-Specific Configuration
 
@@ -880,7 +917,7 @@ Here is a complete trace of what happens when a user runs `/fp-docs:revise "fix 
 
 ## 13. System Manifest (framework/manifest.md)
 
-The manifest is a comprehensive reference document (v2.7.2) that catalogs every component in the system:
+The manifest is a comprehensive reference document (v2.8.0) that catalogs every component in the system:
 
 - **Plugin identity**: name, namespace, version
 - **Engine table**: all 9 engines with agent file, model, operations
@@ -888,7 +925,9 @@ The manifest is a comprehensive reference document (v2.7.2) that catalogs every 
 - **Shared modules table**: all 11 modules with location and which engines preload them
 - **On-demand algorithms table**: all 6 with path and which pipeline stage loads them
 - **Instruction files table**: all instruction files grouped by engine
-- **Hooks table**: all 7 hooks with event, matcher, script, purpose
+- **Hooks table**: all 8 hooks with event, matcher, script, purpose
+- **Utility scripts table**: setup, teardown, and remote-check scripts with sourcing info
+- **Tools table**: ephemeral tool resources (WP-CLI fp-locals PHP source)
 - **Configuration files table**: system-config and project-config
 - **Project files table**: files that live in the project (not the plugin) — changelog, tracker, About.md, PROJECT-INDEX.md
 
@@ -947,6 +986,7 @@ This gives engines cross-session learning: an engine that learns "helper docs fr
 14. **Delegation vs Standalone modes**: Engines support both Delegation Mode (orchestrator-coordinated, phase-limited) and Standalone Mode (self-contained, full pipeline). This preserves backward compatibility and enables direct engine invocation for debugging.
 15. **Read-only fast path**: The orchestrator recognizes read-only commands (audit, verify, sanity-check, test, verbosity-audit) and uses a lightweight 2-agent path (orchestrate + specialist) instead of the full 3-phase delegation.
 16. **Batch/team protocol**: When scope exceeds orchestration thresholds, the orchestrator creates Agent Teams with specialist teammates, assigns pipeline phases, and aggregates results. The TeammateIdle and TaskCompleted hooks validate team member work.
+17. **Ephemeral CLI tool pattern**: The WP-CLI `fp-locals` command lives in the plugin repo (`framework/tools/class-locals-cli.php`) but operates in the theme. Setup copies it to the theme and registers it in `functions.php`; teardown reverses both steps. The CLI must never persist after an operation. A SubagentStop safety net auto-cleans orphaned artifacts. This gives the locals engine access to PHP's `token_get_all()` for 100% accurate `$locals` extraction, superior to regex-based inference.
 
 ---
 

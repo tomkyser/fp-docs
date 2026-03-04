@@ -1,6 +1,6 @@
 # fp-docs Features and Capabilities Research
 
-> **Updated 2026-03-04**: Added multi-agent orchestration architecture (orchestrate engine, mod-orchestration module, 3-phase pipeline delegation, delegation/standalone modes).
+> **Updated 2026-03-04**: Added ephemeral WP-CLI `fp-locals` tool integration (locals engine, mod-locals, system-config §7, design choice #10 expanded). Previously: Added multi-agent orchestration architecture.
 
 ## What fp-docs Is
 
@@ -8,7 +8,7 @@ fp-docs is a Claude Code plugin that provides a complete documentation managemen
 
 The plugin is distributed via the `fp-tools` marketplace and operates entirely through Claude Code's native plugin primitives: subagents (engines), skills (commands), hooks (lifecycle events), and modules (shared rule sets).
 
-**Version**: 2.7.2
+**Version**: 2.8.0
 **Author**: Tom Kyser
 **License**: MIT
 
@@ -159,7 +159,7 @@ Each engine is a subagent definition with a specific domain, tool permissions, a
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
 - **Modules**: mod-standards, mod-project, mod-locals
 - **Model**: opus, maxTurns: 75
-- **Key behavior**: WordPress-specific engine for documenting the data shapes passed between PHP template components. Classifies keys as Required (bare `$locals['key']` access) vs Optional (guarded with `isset`/`??`/`empty`). Uses `token_get_all()` via WP-CLI for precise variable tracking. Supports both named keys and integer-indexed `$locals[0]` patterns.
+- **Key behavior**: WordPress-specific engine for documenting the data shapes passed between PHP template components. Classifies keys as Required (bare `$locals['key']` access) vs Optional (guarded with `isset`/`??`/`empty`). Supports both named keys and integer-indexed `$locals[0]` patterns. Uses an **ephemeral WP-CLI tool** (`wp fp-locals`) that leverages PHP's `token_get_all()` for 100% accurate variable extraction — the CLI PHP source lives in the plugin (`framework/tools/class-locals-cli.php`), is ephemerally installed into the theme during operations via setup/teardown scripts, and auto-cleaned by a SubagentStop safety net hook. Falls back to manual Read/Grep extraction when ddev is unavailable.
 
 ### 7. verbosity (color: red)
 - **Domain**: Anti-brevity enforcement and verbosity gap detection
@@ -200,7 +200,7 @@ Modules are preloaded into engines via the `skills:` frontmatter field. They are
 | mod-index | PROJECT-INDEX.md update modes (quick/update/full), git consistency rules | modify, index |
 | mod-citations | Citation block format (3 tiers), marker grammar, placement rules, freshness model (5 states), excerpt rules | modify, citations |
 | mod-api-refs | API Reference table format (5 columns), provenance rules, scope by doc type, completeness rule, ordering | modify, api-refs |
-| mod-locals | @locals PHPDoc format, @controller format (HTMX), contract table columns, Required/Optional classification, shared shapes, ground truth engine | modify, locals |
+| mod-locals | @locals PHPDoc format, @controller format (HTMX), contract table columns, Required/Optional classification, shared shapes, ground truth engine (WP-CLI `wp fp-locals`), ephemeral CLI lifecycle, CLI subcommands, extraction capabilities, fallback rules | modify, locals |
 | mod-verbosity | Anti-compression directives, banned phrases (15+), banned patterns (4 regex), scope manifest format, self-audit protocol, context window management tiers | modify, verbosity |
 | mod-validation | 10-point verification checklist, sanity-check algorithm (zero-tolerance), confidence levels (HIGH/LOW), severity classification (CRITICAL/HIGH/MEDIUM/LOW) | modify, validate |
 | mod-orchestration | Orchestration rules: delegation thresholds, pipeline phase assignments (Write/Review/Finalize), team protocol, git serialization rules, read-only fast-path classification, specialist-to-phase mapping | orchestrate |
@@ -363,7 +363,7 @@ Six algorithm files in `framework/algorithms/` are loaded during pipeline stages
 Every engine includes memory management instructions: update agent memory when discovering recurring patterns, frequently-changing files, common false positives, and codebase-specific conventions. This enables learning across sessions.
 
 ### 10. WordPress-Specific Locals Contracts
-The locals engine addresses a WordPress-specific pattern where template components communicate via `$locals` arrays without formal type contracts. The engine annotates source code, generates contract tables, traces caller chains, and reports coverage -- solving a real problem specific to the FP codebase's architecture.
+The locals engine addresses a WordPress-specific pattern where template components communicate via `$locals` arrays without formal type contracts. The engine annotates source code, generates contract tables, traces caller chains, and reports coverage -- solving a real problem specific to the FP codebase's architecture. Uses an ephemeral WP-CLI tool (`wp fp-locals`) backed by PHP's `token_get_all()` for 100% accurate extraction of keys, types, required/optional status, and default values -- far superior to regex or AI inference. The CLI source lives in the plugin and is copied to the theme during operations, then removed after.
 
 ### 11. Universal Multi-Agent Orchestration
 All 19 commands route through the orchestrate engine, which acts as a universal dispatcher. Write operations use a 3-phase pipeline delegation (Write Phase to specialist, Review Phase to validate engine, Finalize Phase handled by orchestrator). Read-only operations use a 2-agent fast path. Only the orchestrator commits to git in delegated mode, preventing commit conflicts. Engines support both Delegation Mode (orchestrator-coordinated) and Standalone Mode (self-contained) for backward compatibility.
@@ -380,6 +380,7 @@ Controls configurable behavior for the plugin:
 - **Verbosity** (§4): Enabled/disabled, gap tolerance (0 = zero tolerance), chunk-and-delegate thresholds, complete banned phrase and pattern lists
 - **Verification** (§5): 10-check count
 - **Orchestration** (§6): Enabled/disabled, delegation thresholds (docs and stages), max team size, git serialization mode, fast-path read-only classification, phase assignment rules
+- **Locals CLI Tool** (§7): Enabled/disabled, auto-teardown, CLI source path in plugin, CLI target path in theme, ephemeral lifecycle, subcommand-to-CLI mapping
 
 ### project-config.md
 FP-specific configuration:

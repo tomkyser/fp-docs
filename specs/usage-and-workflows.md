@@ -1,6 +1,6 @@
 # fp-docs Usage and Workflows Research
 
-> **Updated 2026-03-04**: Added multi-agent orchestration architecture. All 19 commands now route through the orchestrate engine. Write operations use 3+ agents; read-only uses 2-agent fast path. Batch operations handled natively by orchestrator via teams.
+> **Updated 2026-03-04**: Added ephemeral WP-CLI `fp-locals` tool documentation (§9 expanded with CLI lifecycle, capabilities, and fallback). Previously: Added multi-agent orchestration architecture.
 
 > Research compiled from reading all 19 skill files, 9 engine agents, hooks, scripts, configuration files, instruction files, and the manifest. This document covers installation, setup, daily workflows, command reference, branch sync, configuration, best practices, and gotchas.
 
@@ -44,7 +44,7 @@ claude --plugin-dir ~/cc-plugins/fp-docs/plugins/fp-docs
 
 From `plugins/fp-docs/.claude-plugin/plugin.json`:
 - Name: `fp-docs`
-- Version: `2.7.2`
+- Version: `2.8.0`
 - License: MIT
 - Repository: `https://github.com/tomkyser/fp-docs`
 - All 19 user commands are namespaced as `/fp-docs:*`
@@ -541,14 +541,30 @@ The docs repo maintains a `docs/needs-revision-tracker.md` file with items that 
 
 For WordPress template components, the `/fp-docs:locals` command provides specialized documentation:
 
-| Subcommand | Description |
-|------------|-------------|
-| `annotate` | Add locals annotations to template components |
-| `contracts` | Generate locals contract documentation |
-| `cross-ref` | Cross-reference locals across templates and consumers |
-| `validate` | Validate locals contracts against actual usage |
-| `shapes` | Document the shape/structure of locals data |
-| `coverage` | Report locals documentation coverage |
+| Subcommand | Description | Needs CLI |
+|------------|-------------|:---------:|
+| `annotate` | Add `@locals` PHPDoc blocks to component source files | Yes |
+| `contracts` | Generate `## Locals Contracts` sections in component docs | Yes |
+| `cross-ref` | Trace caller→callee chains and generate `## Data Flow` sections | Yes |
+| `validate` | Compare `@locals` PHPDoc against actual code usage | Yes |
+| `shapes` | List shared shapes from `_locals-shapes.md` (reads docs only) | No |
+| `coverage` | Report `@locals` annotation coverage across all components | Yes |
+
+### Ephemeral WP-CLI Tool
+
+The locals engine uses an ephemeral WP-CLI command (`wp fp-locals`) for ground-truth extraction. The PHP source lives in the plugin at `framework/tools/class-locals-cli.php` and uses `token_get_all()` to achieve 100% accurate extraction of `$locals` keys, types, required/optional status, and default values from all 447 component files.
+
+**Lifecycle**: Before any CLI-dependent subcommand, the instruction file runs the setup script which copies the PHP file to the theme and registers it in `functions.php`. After the operation completes (success or failure), the teardown script removes both the file and the registration. A SubagentStop safety-net hook auto-cleans orphaned artifacts if teardown was missed.
+
+**CLI capabilities** (beyond what regex/AI can do):
+- Type inference from wrapping functions (`esc_url` → string, `intval` → int, `absint` → int, `boolval` → bool)
+- Type inference from cast operators (`(int)`, `(string)`, `(bool)`, `(array)`)
+- Default value capture from `??` coalesce operators
+- Guard detection (`isset()`, `empty()`, `array_key_exists()`) for Required/Optional classification
+- De-duplication with Required upgrade (if any unguarded access exists, the key is Required)
+- Cross-reference: tokenizes entire theme to find all `get_template_part()` callers with passed keys
+
+**Fallback**: When ddev is unavailable (environment not running, ddev not installed), instruction files fall back to manual extraction using Read/Grep tools. This fallback is less accurate.
 
 ---
 

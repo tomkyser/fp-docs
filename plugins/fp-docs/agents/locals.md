@@ -110,10 +110,28 @@ Read the instruction file for your subcommand from the plugin:
 
 Follow the steps in the instruction file to complete the operation.
 
-### Step 3: Execute the Operation
+### Step 3: Install the CLI Tool (Ephemeral)
+
+For subcommands that need CLI (`annotate`, `contracts`, `cross-ref`, `validate`, `coverage`):
+
+1. Run the setup script:
+   ```bash
+   bash "{plugin-root}/scripts/locals-cli-setup.sh"
+   ```
+2. This copies the `wp fp-locals` WP-CLI command from `{plugin-root}/framework/tools/class-locals-cli.php` into the theme and registers it in `functions.php`.
+3. If setup fails (ddev not running, path error), fall back to manual extraction as described in each instruction file's fallback section.
+
+**CRITICAL**: The CLI tool is ephemeral. After your operation completes (success or failure), you MUST run teardown:
+```bash
+bash "{plugin-root}/scripts/locals-cli-teardown.sh"
+```
+The SubagentStop hook enforces this as a safety net, but you must not rely on it.
+
+### Step 4: Execute the Operation
+
 Follow the instruction file step by step. Key principles:
-- ALWAYS read the actual PHP source to determine $locals access patterns
-- Use `token_get_all` ground truth when available for precise variable tracking
+- Use the `wp fp-locals` CLI tool as the ground-truth source for `$locals` extraction — it uses `token_get_all()` for 100% accurate PHP tokenization
+- CLI data takes priority over manual reading for key names, types, Required/Optional, and default values
 - Access pattern determines Required vs Optional classification:
   - `$locals['key']` with no isset/empty guard = Required
   - `isset($locals['key'])` or `!empty($locals['key'])` or `$locals['key'] ?? default` = Optional
@@ -123,7 +141,16 @@ Follow the instruction file step by step. Key principles:
 
 Grammar rules are in your preloaded mod-locals module (no on-demand file needed).
 
-### Step 4: Post-Operation Pipeline (annotate, contracts, shapes only)
+### CLI Subcommands Available
+
+| CLI Subcommand | Usage | Output |
+|---|---|---|
+| `ddev wp fp-locals extract "<path>" --recursive --format=json` | Extract $locals keys with types, required/optional, defaults | JSON array of key entries per file |
+| `ddev wp fp-locals validate "<path>" --recursive` | Compare @locals PHPDoc vs actual code usage | Warnings for mismatches |
+| `ddev wp fp-locals cross-ref "<path>" --recursive` | Find all callers and compare passed vs consumed keys | Caller→callee relationship data |
+| `ddev wp fp-locals coverage --format=json` | Report @locals PHPDoc coverage across all components | Per-directory coverage stats |
+
+### Step 5: Post-Operation Pipeline (annotate, contracts, shapes only)
 For write operations, execute the post-modification pipeline:
 
 1. **Verbosity check** — ensure contract descriptions do not use summarization language
@@ -142,7 +169,7 @@ On-demand algorithm files for pipeline stages:
 
 For cross-ref, validate, and coverage subcommands, produce a read-only report only — no pipeline.
 
-### Step 5: Report Your Work
+### Step 6: Report Your Work
 
 For write operations (annotate, contracts, shapes):
 
@@ -217,12 +244,14 @@ nested inside the codebase workspace. The codebase repo gitignores it.
 
 ## Critical Rules
 1. Access pattern determines Required/Optional — never guess classification
-2. ALWAYS read the PHP source to determine actual $locals usage
-3. Use token_get_all ground truth when available for precise tracking
-4. Cross-reference callers: trace who passes $locals to each component
-5. For validate/cross-ref/coverage: NEVER modify files — read-only only
-6. Contract tables must use the exact grammar from mod-locals
-7. File paths always relative to theme root
-8. When a $locals key cannot be traced to a caller, mark as [CALLER UNKNOWN]
-9. Default values must be documented when present (from ?? or ternary operators)
-10. Type inference: use actual values seen in callers, not assumptions
+2. Use the `wp fp-locals` CLI tool as the ground-truth source — it uses `token_get_all()` for 100% accurate extraction
+3. CLI setup and teardown are MANDATORY for subcommands that need CLI (annotate, contracts, cross-ref, validate, coverage). Teardown must run even on error.
+4. If CLI is unavailable (ddev not running), fall back to manual extraction and report the fallback to the user
+5. Cross-reference callers: trace who passes $locals to each component (CLI cross-ref is authoritative)
+6. For validate/cross-ref/coverage: NEVER modify files — read-only only
+7. Contract tables must use the exact grammar from mod-locals
+8. File paths always relative to theme root
+9. When a $locals key cannot be traced to a caller, mark as [CALLER UNKNOWN]
+10. Default values must be documented when present (from ?? or ternary operators)
+11. Type inference: use CLI-inferred types (from wrapping functions, casts, comparisons, defaults)
+12. The CLI PHP file must NEVER persist in the theme after the operation completes
