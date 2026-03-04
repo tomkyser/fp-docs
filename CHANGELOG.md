@@ -2,6 +2,28 @@
 
 All notable changes to the fp-docs plugin will be documented in this file.
 
+## [2.7.2] - 2026-03-04
+
+### Added
+- **Codebase change watermark** — new `.sync-watermark` file in docs repo tracks the codebase commit hash that docs were last synced against, enabling cross-repo change detection regardless of branch state
+- Watermark-based diff algorithm with 3-scenario strategy: valid watermark (diff from watermark to HEAD), no watermark + feature branch (fallback to `origin/master...HEAD`), no watermark + master (initial source scan)
+- Watermark state reporting in `branch-sync-check.sh` SessionStart hook — injects `current`, `stale (N commits)`, `invalid`, `malformed`, or `none` into session context
+- Initial-sync diff report variant format for first-ever sync on master
+- New "Sync Watermark" subsection in usage-and-workflows.md
+- New "Codebase Change Watermark" subsection in git-sync-rules.md algorithm
+
+### Changed
+- `/fp-docs:sync` now ALWAYS runs change detection (Phase 3), even when branches already match — fixes the bug where syncing on `master/master` after pulling new codebase changes reported "already synced" with no diff
+- Sync flow restructured into 3 explicit phases: Remote sync → Branch alignment → Change detection
+- Diff report format updated with watermark metadata: sync baseline, commits since last sync, codebase HEAD
+- `sync.md` instruction file rewritten with 14-step phased flow (3a-3n) replacing the old 8-step flow that short-circuited on branch match
+- `branch-sync-check.sh` updated to read watermark file and surface stale-watermark state proactively
+- Specs updated (architecture.md, features-and-capabilities.md, usage-and-workflows.md) to document watermark mechanism
+
+### Fixed
+- **Critical**: Sync command no longer short-circuits when codebase and docs branches match — previously, pulling new commits to codebase master and running `/fp-docs:sync` with docs also on master would report "already synced" and generate no diff report, because the old algorithm only compared branch names (nominal sync) rather than detecting actual codebase content changes (semantic sync)
+- Diff algorithm no longer relies solely on `git diff --name-only origin/master...HEAD`, which produces empty results on master after pulling (since `origin/master == HEAD`)
+
 ## [2.7.1] - 2026-03-04
 
 ### Changed

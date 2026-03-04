@@ -44,7 +44,7 @@ claude --plugin-dir ~/cc-plugins/fp-docs/plugins/fp-docs
 
 From `plugins/fp-docs/.claude-plugin/plugin.json`:
 - Name: `fp-docs`
-- Version: `2.7.1`
+- Version: `2.7.2`
 - License: MIT
 - Repository: `https://github.com/tomkyser/fp-docs`
 - All 19 user commands are namespaced as `/fp-docs:*`
@@ -384,16 +384,24 @@ The `branch-sync-check.sh` hook runs on every session start:
 2. Checks if docs repo exists at `{codebase-root}/themes/foreign-policy-2017/docs/.git`
 3. If docs repo not found: injects context saying "Run /fp-docs:setup"
 4. If found: compares codebase branch to docs branch
-5. If matched: injects "Repos synced" context
-6. If mismatched: emits a `stopMessage` warning the user to run `/fp-docs:sync`
+5. Reads the sync watermark file (`.sync-watermark`) to check if codebase has new commits since last docs sync
+6. If branches match AND watermark is current: injects "Repos synced" context
+7. If branches match BUT watermark is stale: injects context noting N new codebase commits since last sync (suggests running `/fp-docs:sync`)
+8. If branches mismatch: emits a `stopMessage` warning the user to run `/fp-docs:sync`
 
 ### Manual Sync Operations
 
 **Default sync** (no args): `/fp-docs:sync`
-1. Detects codebase and docs branches
-2. If no matching docs branch exists: creates it from docs `master`
-3. If matching branch exists but docs is on wrong branch: switches to it
-4. Generates a diff report at `docs/diffs/{YYYY-MM-DD}_{branch}_diff_report.md`
+1. Fetches and pulls latest from docs remote (Phase 1 — Remote sync)
+2. Detects codebase and docs branches (Phase 2 — Branch alignment)
+3. If no matching docs branch exists: creates it from docs `master`
+4. If matching branch exists but docs is on wrong branch: switches to it
+5. Reads the sync watermark to determine codebase changes since last sync (Phase 3 — Change detection)
+6. If changes detected: generates a diff report at `docs/diffs/{YYYY-MM-DD}_{branch}_diff_report.md`
+7. Updates the watermark file with the current codebase HEAD
+8. Commits watermark and diff report to the docs repo
+
+Phase 3 always runs, even when branches already matched. This ensures that codebase changes pulled to the current branch (e.g., new commits merged to master) are detected.
 
 **Merge sync**: `/fp-docs:sync merge`
 1. Switches docs repo to master
@@ -406,13 +414,19 @@ The `branch-sync-check.sh` hook runs on every session start:
 
 ### Diff Reports
 
-Generated during sync, diff reports contain:
+Generated during sync when codebase changes are detected, diff reports contain:
+- **Sync baseline**: which codebase commit the diff is computed from (watermark → HEAD)
+- **Commits since last sync**: how many codebase commits happened since the last sync
 - **LIKELY STALE** files: source file was modified, doc may not reflect changes
 - **POSSIBLY STALE** files: source file in same directory was modified
 - **STRUCTURAL CHANGES**: new/deleted source files affecting doc structure
 - Recommended actions checklist
 
 Reports accumulate in `docs/diffs/` as historical records.
+
+### Sync Watermark
+
+The sync command maintains a watermark file (`.sync-watermark`) in the docs repo that records the codebase commit hash from the last successful sync. This enables cross-repo change detection — without it, the system cannot tell whether the codebase has changed when both repos are on the same branch (e.g., both on `master`). The watermark is committed to the docs repo and persists across machines and sessions.
 
 ---
 

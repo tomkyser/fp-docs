@@ -8,7 +8,7 @@ fp-docs is a Claude Code plugin that provides a complete documentation managemen
 
 The plugin is distributed via the `fp-tools` marketplace and operates entirely through Claude Code's native plugin primitives: subagents (engines), skills (commands), hooks (lifecycle events), and modules (shared rule sets).
 
-**Version**: 2.7.1
+**Version**: 2.7.2
 **Author**: Tom Kyser
 **License**: MIT
 
@@ -323,7 +323,7 @@ fp-docs uses 5 hook events across 7 scripts:
 | Event | Script | Purpose |
 |-------|--------|---------|
 | SessionStart | `inject-manifest.sh` | Injects the plugin root path and manifest into the session context so engines can locate their instruction files |
-| SessionStart | `branch-sync-check.sh` | Detects if the codebase and docs repo are on different branches and warns the user |
+| SessionStart | `branch-sync-check.sh` | Detects codebase/docs branch alignment and reads the sync watermark to report codebase change state (current, stale with commit count, invalid, or none) |
 | SubagentStop (modify) | `post-modify-check.sh` | Validates that the modify engine completed its full pipeline by checking for the completion marker |
 | SubagentStop (orchestrate) | `post-orchestrate-check.sh` | Validates that the orchestrate engine completed its full delegation cycle, including pipeline phase coordination and git commit serialization |
 | TeammateIdle | `teammate-idle-check.sh` | Validates that teammates completed their assigned pipeline phases before going idle |
@@ -447,7 +447,7 @@ fp-docs defines 10 document type templates in mod-standards:
 - `--depth deep` -- Comprehensive scan including scope manifests
 
 ### Sync Subcommands
-- `(no args)` -- Detect branches, create/switch docs branch to match, generate diff report
+- `(no args)` -- Detect branches, align if needed, then ALWAYS run watermark-based change detection to identify codebase changes since last sync and generate a diff report
 - `merge` -- Merge current docs feature branch into docs master, push, clean up
 - `--force` -- Force branch switch even with uncommitted changes
 

@@ -21,7 +21,7 @@ fp-docs/                              # Git root (marketplace container)
 └── plugins/
     └── fp-docs/                      # THE ACTUAL PLUGIN (install target)
         ├── .claude-plugin/
-        │   └── plugin.json           # Plugin manifest v2.7.1
+        │   └── plugin.json           # Plugin manifest v2.7.2
         ├── settings.json             # Default permissions
         ├── hooks/
         │   └── hooks.json            # 4 hook event definitions
@@ -76,7 +76,7 @@ fp-docs/                              # Git root (marketplace container)
         │   ├── task-completed-check.sh
         │   └── docs-commit.sh
         └── framework/
-            ├── manifest.md           # System manifest v2.7.1
+            ├── manifest.md           # System manifest v2.7.2
             ├── config/
             │   ├── system-config.md  # Feature flags, thresholds
             │   └── project-config.md # FP-specific paths and mappings
@@ -110,7 +110,7 @@ Key distinction: The repo root (`fp-docs/`) is the marketplace container. The in
 ```json
 {
   "name": "fp-docs",
-  "version": "2.7.1",
+  "version": "2.7.2",
   "description": "Documentation management system for the Foreign Policy WordPress codebase...",
   "author": { "name": "Tom Kyser" },
   "repository": "https://github.com/tomkyser/fp-docs",
@@ -655,9 +655,10 @@ The hooks file defines 5 event types with 7 total hook scripts:
 
 **2. SessionStart: branch-sync-check.sh**
 - Fires: Every session start, after inject-manifest.sh
-- Purpose: Detects the codebase branch and docs branch, warns on mismatch
-- Logic: Uses `git -C` to get branch names from both repos. If they match, injects sync confirmation. If they mismatch, emits a `stopMessage` telling the user to run `/fp-docs:sync`
-- Gracefully handles: not in a git repo (exits silently), docs repo not set up (suggests setup)
+- Purpose: Detects the codebase branch and docs branch, warns on mismatch, and reports codebase change watermark state
+- Logic: Uses `git -C` to get branch names from both repos. Reads the sync watermark file (`.sync-watermark`) from the docs repo to detect whether the codebase has new commits since the last docs sync. If branches match AND watermark is current: injects sync confirmation. If branches match but watermark is stale: injects context noting N new codebase commits since last sync. If branches mismatch: emits a `stopMessage` telling the user to run `/fp-docs:sync`.
+- Watermark states reported: `current` (docs are synced to latest codebase HEAD), `stale` (N new codebase commits since last sync), `invalid` (watermark commit not found in codebase history), `malformed` (parse error), `none` (no watermark file — first sync needed)
+- Gracefully handles: not in a git repo (exits silently), docs repo not set up (suggests setup), missing watermark file (reports "none")
 
 **3. SubagentStop: post-modify-check.sh**
 - Fires: When the `modify` engine subagent stops (matcher: "modify")
@@ -720,20 +721,38 @@ The fp-docs system operates across three completely independent git repositories
 
 ### Branch Mirroring Rules
 
+The sync flow has three phases:
+
+**Phase 1 — Remote sync**: Fetch and pull latest docs from remote origin
+**Phase 2 — Branch alignment**:
 1. Detect codebase branch: `git -C {codebase-root} branch --show-current`
 2. Detect docs branch: `git -C {docs-root} branch --show-current`
 3. If no matching docs branch exists: create from docs master, switch to it
 4. If matching branch exists but docs is on wrong branch: switch
-5. Generate diff report after sync
+
+**Phase 3 — Change detection** (ALWAYS runs, even when branches already matched):
+5. Read watermark file (`{docs-root}/.sync-watermark`) for last-synced codebase commit
+6. Compare against current codebase HEAD to detect new changes
+7. Generate diff report if changes detected
+8. Update watermark with current codebase HEAD
+
+Phase 3 is critical — without it, the sync command would short-circuit when branches match (e.g., both on `master`) and never detect that new code was merged to the codebase.
+
+### Codebase Change Watermark
+
+The watermark file (`{docs-root}/.sync-watermark`) tracks the codebase commit hash that docs were last synced against. It solves the fundamental problem that branch-name parity does not imply content parity. The file is shell-parseable (`key=value` format) with three fields: `codebase_branch`, `codebase_commit`, `sync_timestamp`. It is committed to the docs repo for persistence across machines and sessions.
 
 ### Diff Report Generation
 
-On sync, the system:
-1. Gets codebase diff from master: `git diff --name-only origin/master...HEAD`
-2. Filters to theme-scoped files only
-3. Maps changed source files to affected doc files via the source-to-doc mapping
-4. Classifies each as LIKELY STALE, POSSIBLY STALE, or STRUCTURAL
-5. Writes report to `docs/diffs/{YYYY-MM-DD}_{branch}_diff_report.md`
+On sync, the system uses a watermark-based diff strategy:
+1. If a valid watermark exists: `git diff --name-only {watermark_commit}...HEAD` — detects all codebase changes since last sync, on any branch
+2. If no watermark and on a feature branch: `git diff --name-only origin/master...HEAD` — fallback comparing feature branch to master
+3. If no watermark and on master (first sync): enumerates all source-to-docs mapped directories for initial review
+4. Filters to theme-scoped files only
+5. Maps changed source files to affected doc files via the source-to-doc mapping
+6. Classifies each as LIKELY STALE, POSSIBLY STALE, or STRUCTURAL
+7. Writes report to `docs/diffs/{YYYY-MM-DD}_{branch}_diff_report.md`
+8. Updates the watermark file with the current codebase HEAD
 
 ### Path Resolution
 
@@ -815,7 +834,7 @@ Here is a complete trace of what happens when a user runs `/fp-docs:revise "fix 
 ### Phase 1: Session Initialization (hooks fire before command)
 
 1. **inject-manifest.sh** runs, injecting plugin root path and full manifest into context
-2. **branch-sync-check.sh** runs, checking codebase vs docs branch. If matched, injects sync confirmation + docs root path
+2. **branch-sync-check.sh** runs, checking codebase vs docs branch and watermark state. If matched and watermark current, injects sync confirmation + docs root path. If matched but watermark stale, notes N new codebase commits since last sync
 
 ### Phase 2: Command Routing
 
@@ -861,7 +880,7 @@ Here is a complete trace of what happens when a user runs `/fp-docs:revise "fix 
 
 ## 13. System Manifest (framework/manifest.md)
 
-The manifest is a comprehensive reference document (v2.7.1) that catalogs every component in the system:
+The manifest is a comprehensive reference document (v2.7.2) that catalogs every component in the system:
 
 - **Plugin identity**: name, namespace, version
 - **Engine table**: all 9 engines with agent file, model, operations

@@ -1,9 +1,9 @@
-# fp-docs System — Manifest v2.7.1
+# fp-docs System — Manifest v2.7.2
 
 ## Plugin
 - **Name**: fp-docs
 - **Namespace**: /fp-docs:* (e.g., /fp-docs:revise, /fp-docs:citations)
-- **Version**: 2.7.1
+- **Version**: 2.7.2
 
 ## Engines
 

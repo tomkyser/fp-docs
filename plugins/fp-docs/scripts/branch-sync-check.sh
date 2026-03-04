@@ -1,8 +1,8 @@
 #!/bin/bash
 # SessionStart: Detect codebase branch, compare with docs branch, warn on mismatch
-# Also: verify remote accessibility and pull latest from remote
+# Also: verify remote accessibility, pull latest from remote, and check sync watermark
 # Runs AFTER inject-manifest.sh
-# Output: JSON with additionalContext (branch info) and optional stopMessage
+# Output: JSON with additionalContext (branch info, watermark state) and optional stopMessage
 
 # Find codebase root (wp-content/)
 CODEBASE_ROOT=$(git -C "${PWD}" rev-parse --show-toplevel 2>/dev/null)
@@ -74,19 +74,48 @@ else
   REMOTE_STATUS="no_remote"
 fi
 
+# Read watermark state to detect codebase changes since last sync
+WATERMARK_INFO="none"
+WATERMARK_FILE="${DOCS_ROOT}/.sync-watermark"
+if [ -f "$WATERMARK_FILE" ]; then
+  WM_COMMIT=$(grep '^codebase_commit=' "$WATERMARK_FILE" 2>/dev/null | cut -d'=' -f2)
+  if [ -n "$WM_COMMIT" ]; then
+    CODEBASE_HEAD=$(git -C "${CODEBASE_ROOT}" rev-parse HEAD 2>/dev/null)
+    if [ "$WM_COMMIT" = "$CODEBASE_HEAD" ]; then
+      WATERMARK_INFO="current"
+    elif git -C "${CODEBASE_ROOT}" cat-file -t "$WM_COMMIT" >/dev/null 2>&1; then
+      WM_COMMITS=$(git -C "${CODEBASE_ROOT}" rev-list --count "${WM_COMMIT}..HEAD" 2>/dev/null || echo "?")
+      WATERMARK_INFO="stale (${WM_COMMITS} new codebase commits since last sync)"
+    else
+      WATERMARK_INFO="invalid (watermark commit not found in codebase history)"
+    fi
+  else
+    WATERMARK_INFO="malformed (missing codebase_commit value)"
+  fi
+fi
+
 if [ "$CODEBASE_BRANCH" = "$DOCS_BRANCH" ]; then
-  # Branches match — inject context and proceed
-  cat <<EOF
+  # Branches match — check watermark for codebase changes
+  if [[ "$WATERMARK_INFO" == stale* ]]; then
+    # Branches match but codebase has new changes since last sync
+    cat <<EOF
 {
-  "additionalContext": "Repos synced. Codebase: ${CODEBASE_BRANCH}, Docs: ${DOCS_BRANCH}. Docs git root: ${DOCS_ROOT}. Remote: ${REMOTE_STATUS}."
+  "additionalContext": "Branches aligned (${CODEBASE_BRANCH}). Docs git root: ${DOCS_ROOT}. Remote: ${REMOTE_STATUS}. Watermark: ${WATERMARK_INFO}. Run /fp-docs:sync to detect affected docs."
 }
 EOF
+  else
+    cat <<EOF
+{
+  "additionalContext": "Repos synced. Codebase: ${CODEBASE_BRANCH}, Docs: ${DOCS_BRANCH}. Docs git root: ${DOCS_ROOT}. Remote: ${REMOTE_STATUS}. Watermark: ${WATERMARK_INFO}."
+}
+EOF
+  fi
   exit 0
 else
-  # Branch mismatch — warn user
+  # Branch mismatch — warn user (watermark info included for context)
   cat <<EOF
 {
-  "additionalContext": "BRANCH MISMATCH — Codebase: ${CODEBASE_BRANCH}, Docs: ${DOCS_BRANCH}. Run /fp-docs:sync to align. Docs git root: ${DOCS_ROOT}. Remote: ${REMOTE_STATUS}.",
+  "additionalContext": "BRANCH MISMATCH — Codebase: ${CODEBASE_BRANCH}, Docs: ${DOCS_BRANCH}. Run /fp-docs:sync to align. Docs git root: ${DOCS_ROOT}. Remote: ${REMOTE_STATUS}. Watermark: ${WATERMARK_INFO}.",
   "stopMessage": "Docs branch '${DOCS_BRANCH}' does not match codebase branch '${CODEBASE_BRANCH}'. Run /fp-docs:sync to create/switch the docs branch and generate a diff report. Or continue if you want to work on docs independently."
 }
 EOF

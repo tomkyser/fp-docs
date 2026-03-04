@@ -474,7 +474,7 @@ fp-docs/                              # Git root (marketplace container)
 └── plugins/
     └── fp-docs/                      # THE ACTUAL PLUGIN (install target)
         ├── .claude-plugin/
-        │   └── plugin.json           # Plugin manifest (v2.7.1)
+        │   └── plugin.json           # Plugin manifest (v2.7.2)
         ├── settings.json             # Default permissions (Read, Grep, Glob)
         ├── agents/                   # 9 engine agent definitions
         ├── modules/                  # 11 shared modules (preloaded by engines)

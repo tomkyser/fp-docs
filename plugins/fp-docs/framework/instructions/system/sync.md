@@ -11,17 +11,48 @@
 2. Detect current branch state from session context (injected by SessionStart hook).
 
 3. If no arguments (default sync):
-   a. Unless `--offline`: verify remote is accessible using `timeout 10 git -C {docs-root} ls-remote --exit-code origin HEAD`. If unreachable, halt with diagnostic guidance.
-   b. Unless `--offline`: fetch from remote: `git -C {docs-root} fetch origin`
+
+   **Phase 1 — Remote sync** (skip if `--offline`):
+   a. Verify remote is accessible: `timeout 10 git -C {docs-root} ls-remote --exit-code origin HEAD`. If unreachable, halt with diagnostic guidance.
+   b. Fetch from remote: `git -C {docs-root} fetch origin`
+
+   **Phase 2 — Branch alignment:**
    c. Detect codebase branch: `git -C {codebase-root} branch --show-current`
    d. Detect docs branch: `git -C {docs-root} branch --show-current`
-   e. If branches match: pull latest (`git -C {docs-root} pull --ff-only`; halt if diverged), then report "already synced"
+   e. If branches match: pull latest on docs branch (`git -C {docs-root} pull --ff-only`; halt if diverged). Do NOT stop here — proceed to Phase 3.
    f. If mismatch:
       - Check if docs repo has a branch matching the codebase branch name
       - If no: pull master first (`git -C {docs-root} checkout master && git -C {docs-root} pull --ff-only`), then create branch from master, switch to it
       - If yes but on wrong branch: switch to matching branch, then pull latest on that branch
-   g. Generate diff report per the format in git-sync-rules.md
-   h. Write report to `docs/diffs/{YYYY-MM-DD}_{branch}_diff_report.md`
+
+   **Phase 3 — Change detection** (ALWAYS runs, even when branches already matched in step 3e):
+   g. Read the watermark file at `{docs-root}/.sync-watermark` (may not exist on first sync). If it exists, parse `codebase_commit` value.
+   h. Get the current codebase HEAD: `git -C {codebase-root} rev-parse HEAD`
+   i. Determine if codebase has changed since last sync:
+      - **If watermark exists and is valid** (commit exists in codebase history via `git -C {codebase-root} cat-file -t {watermark_commit}`):
+        - If `{watermark_commit}` == `{codebase_HEAD}`: report "No codebase changes since last sync ({short-hash})". Skip diff report generation. Proceed to step 3l (watermark timestamp update).
+        - Otherwise: compute diff using `git -C {codebase-root} diff --name-only {watermark_commit}...HEAD`. Count commits: `git -C {codebase-root} rev-list --count {watermark_commit}..HEAD`.
+      - **If no valid watermark AND on a feature branch** (not master/main):
+        - Fall back: `git -C {codebase-root} diff --name-only origin/master...HEAD`
+      - **If no valid watermark AND on master** (first-ever sync):
+        - No commit-based diff available. Enumerate all source directories from the source-to-docs mapping table. List files in each. Use the "Initial Sync" report format from git-sync-rules.md.
+   j. Filter diff results to theme-scoped paths (`themes/foreign-policy-2017/`). Map changed source files to doc files using the source-to-docs mapping table. Classify each as LIKELY STALE, POSSIBLY STALE, or STRUCTURAL per git-sync-rules.md.
+   k. Write diff report to `docs/diffs/{YYYY-MM-DD}_{branch}_diff_report.md` using the format from git-sync-rules.md.
+   l. Update watermark file at `{docs-root}/.sync-watermark` with current codebase HEAD, branch name, and ISO 8601 timestamp. Format:
+      ```
+      # fp-docs sync watermark — do not edit manually
+      # Records the codebase state that docs were last synced against.
+      codebase_branch={branch}
+      codebase_commit={full-SHA}
+      sync_timestamp={ISO-8601}
+      ```
+   m. Commit watermark and any diff report to docs repo:
+      ```bash
+      git -C {docs-root} add .sync-watermark diffs/
+      git -C {docs-root} commit -m "fp-docs: sync — {summary}"
+      ```
+      Push unless `--no-push` or `--offline`. Halt on push failure with diagnostics.
+   n. Report sync results: branch state, changes detected (count and categories), diff report path (if generated), watermark state.
 
 4. If `merge` argument:
    a. Verify current docs branch is NOT master
@@ -40,4 +71,10 @@
 
 ## Output
 
-Sync report: branches detected, actions taken, remote sync status, diff report location (if generated).
+Sync report including:
+- Branch state: codebase branch, docs branch, whether alignment was needed
+- Remote sync status: fetch/pull results
+- Change detection results: watermark state (new/current/stale/invalid), number of codebase commits since last sync, number of changed files
+- Diff report: path to generated report file (if changes detected), or "no changes" message
+- Watermark: updated state (commit hash short, timestamp)
+- Commit/push status: whether changes were committed and pushed to docs remote
