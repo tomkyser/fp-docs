@@ -2,11 +2,11 @@
 description: Execute runtime validations against the local development environment. Tests REST endpoints, WP-CLI commands, and template rendering.
 argument-hint: "test scope like rest-api|cli|templates"
 context: fork
-agent: validate
+agent: orchestrate
 ---
 
+Engine: validate
 Operation: test
-
-Read the instruction file at `framework/instructions/validate/test.md` and follow it exactly.
+Instruction: framework/instructions/validate/test.md
 
 User scope: $ARGUMENTS

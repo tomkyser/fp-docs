@@ -1,6 +1,8 @@
 # fp-docs Usage and Workflows Research
 
-> Research compiled from reading all 19 skill files, 8 engine agents, hooks, scripts, configuration files, instruction files, and the manifest. This document covers installation, setup, daily workflows, command reference, branch sync, configuration, best practices, and gotchas.
+> **Updated 2026-03-04**: Added multi-agent orchestration architecture. All 19 commands now route through the orchestrate engine. Write operations use 3+ agents; read-only uses 2-agent fast path. Batch operations handled natively by orchestrator via teams.
+
+> Research compiled from reading all 19 skill files, 9 engine agents, hooks, scripts, configuration files, instruction files, and the manifest. This document covers installation, setup, daily workflows, command reference, branch sync, configuration, best practices, and gotchas.
 
 ---
 
@@ -42,7 +44,7 @@ claude --plugin-dir ~/cc-plugins/fp-docs/plugins/fp-docs
 
 From `plugins/fp-docs/.claude-plugin/plugin.json`:
 - Name: `fp-docs`
-- Version: `2.7.0`
+- Version: `2.7.1`
 - License: MIT
 - Repository: `https://github.com/tomkyser/fp-docs`
 - All 19 user commands are namespaced as `/fp-docs:*`
@@ -75,8 +77,8 @@ This command routes to the `system` engine and runs a 4-phase verification:
 #### Phase 1: Plugin Structure Verification
 - Checks all required directories exist (agents/, skills/, hooks/, scripts/, framework/)
 - Validates `plugin.json` manifest has required fields
-- Verifies all 8 engine agent files exist
-- Verifies all 19 user skill files + 10 shared modules
+- Verifies all 9 engine agent files exist
+- Verifies all 19 user skill files + 11 shared modules
 - Checks `hooks.json` is valid JSON and references existing scripts
 
 #### Phase 2: Docs Repo Setup
@@ -294,7 +296,9 @@ For removed code (deleted from codebase):
 
 ## 4. Complete Command Reference
 
-### Documentation Modification Commands (modify engine)
+All 19 commands now route through the **orchestrate** engine, which parses routing metadata and delegates to specialist engines. The "Engine" column in the tables below refers to the specialist engine that receives the delegation. Write operations use 3+ agents (orchestrate + specialist + validate); read-only operations use a 2-agent fast path.
+
+### Documentation Modification Commands (modify engine via orchestrate)
 
 | Command | Arguments | Description |
 |---------|-----------|-------------|
@@ -304,7 +308,7 @@ For removed code (deleted from codebase):
 | `/fp-docs:auto-revise` | `"optional flags like --dry-run"` | Batch-process all items in the needs-revision-tracker |
 | `/fp-docs:deprecate` | `"description of deprecated code"` | Mark documentation as deprecated when code is removed or replaced |
 
-### Documentation Validation Commands (validate engine)
+### Documentation Validation Commands (validate engine via orchestrate, read-only fast path)
 
 | Command | Arguments | Description |
 |---------|-----------|-------------|
@@ -336,7 +340,7 @@ For removed code (deleted from codebase):
 
 | Command | Arguments | Engine | Description |
 |---------|-----------|--------|-------------|
-| `/fp-docs:parallel` | `operation scope flags` | (orchestrator) | Run docs operations in parallel across multiple files using Agent Teams |
+| `/fp-docs:parallel` | `operation scope flags` | orchestrate | Run docs operations in parallel across multiple files using Agent Teams. The orchestrator handles batch operations natively, creating teams when scope exceeds configured thresholds. |
 
 **Note**: `/fp-docs:parallel` requires the `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` environment variable to be enabled. Falls back to sequential execution for small scopes (<3 files) or if teams are unavailable.
 
@@ -461,6 +465,16 @@ This file controls thresholds, defaults, and feature flags:
 | `chunk_delegation.max_functions_per_agent` | `50` | Max functions per single agent |
 | `chunk_delegation.delegation_trigger_docs` | `8` | Auto-delegate above this doc count |
 
+#### Orchestration Configuration (system-config.md §6)
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `orchestration.enabled` | `true` | Master switch for multi-agent orchestration |
+| `orchestration.delegation_threshold_docs` | (configurable) | Trigger multi-agent delegation above this doc count |
+| `orchestration.delegation_threshold_stages` | (configurable) | Trigger pipeline phase splitting above this stage count |
+| `orchestration.max_team_size` | (configurable) | Maximum agents in a batch team |
+| `orchestration.git_serialization` | `true` | Only orchestrator commits in delegated mode |
+| `orchestration.fast_path_read_only` | `true` | Read-only commands skip full delegation |
+
 ### How to Customize Behavior
 
 To customize fp-docs behavior:
@@ -472,7 +486,7 @@ To customize fp-docs behavior:
 
 ## 7. The Post-Modification Pipeline
 
-Every doc-modifying operation runs an 8-stage pipeline after the core work:
+Every doc-modifying operation runs an 8-stage pipeline after the core work. Under the multi-agent orchestration architecture, these stages are split into 3 phases: **Write Phase** (primary op + stages 1-3, assigned to specialist), **Review Phase** (stages 4-5, assigned to validate engine), and **Finalize Phase** (stages 6-8, handled by orchestrator). Only the orchestrator commits to git in delegated mode.
 
 | Stage | Name | Description | Skippable? |
 |-------|------|-------------|------------|
@@ -577,7 +591,9 @@ The `/fp-docs:test` command can validate documentation against a running local d
 ### Batch Operations
 - Use `/fp-docs:auto-revise` to process the needs-revision tracker in bulk
 - Use `/fp-docs:parallel` for large-scope operations across many files (requires Agent Teams)
+- The orchestrator handles batch operations natively via teams when scope exceeds configured thresholds
 - The chunk delegation system auto-triggers when scope exceeds 8 docs or 50 functions
+- All batch/parallel operations benefit from the orchestrator's git serialization: a single atomic commit covers all changes
 
 ---
 
@@ -622,13 +638,21 @@ The biggest pitfall is confusing the three git repos. The docs directory is a SE
 - Write, Edit, and Bash will prompt for user approval
 - This means validation commands run without permission prompts, but modification commands will ask
 
+### Multi-Agent Orchestration
+- All 19 commands route through the orchestrate engine by default
+- Write operations (revise, add, auto-update, etc.) use 3+ agents: orchestrate + specialist + validate
+- Read-only operations (audit, verify, sanity-check, test, verbosity-audit) use a 2-agent fast path
+- Only the orchestrator commits to git in delegated mode — specialist engines do not execute git operations
+
 ### Parallel Operations
 - `/fp-docs:parallel` requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` environment variable
+- The orchestrator handles batch operations natively via teams when scope exceeds thresholds
 - Falls back to sequential for scopes under 3 files
 - Batch size limit is 5 files per team batch
+- TeammateIdle and TaskCompleted hooks validate team member phase completion and task outputs
 
 ### Model Allocation
-- The `modify`, `validate`, `citations`, `api-refs`, and `locals` engines use Opus (the most capable model)
+- The `orchestrate`, `modify`, `validate`, `citations`, `api-refs`, and `locals` engines use Opus (the most capable model)
 - The `verbosity`, `index`, and `system` engines use Sonnet (sufficient for their simpler tasks)
 - All engines inherit the user's configured model via `model: inherit` or `model: opus`/`model: sonnet`
 

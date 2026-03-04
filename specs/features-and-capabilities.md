@@ -1,12 +1,14 @@
 # fp-docs Features and Capabilities Research
 
+> **Updated 2026-03-04**: Added multi-agent orchestration architecture (orchestrate engine, mod-orchestration module, 3-phase pipeline delegation, delegation/standalone modes).
+
 ## What fp-docs Is
 
 fp-docs is a Claude Code plugin that provides a complete documentation management system for the Foreign Policy (FP) WordPress codebase. It automates the creation, maintenance, validation, and deprecation of developer documentation by reading actual source code and producing structured, citation-backed docs that stay in sync with the codebase.
 
 The plugin is distributed via the `fp-tools` marketplace and operates entirely through Claude Code's native plugin primitives: subagents (engines), skills (commands), hooks (lifecycle events), and modules (shared rule sets).
 
-**Version**: 2.7.0
+**Version**: 2.7.1
 **Author**: Tom Kyser
 **License**: MIT
 
@@ -22,12 +24,13 @@ The plugin is distributed via the `fp-tools` marketplace and operates entirely t
 6. **Undocumented data contracts**: WordPress template components pass `$locals` arrays between files without formal contracts. fp-docs annotates source code with `@locals` PHPDoc blocks and generates contract tables.
 7. **Branch mismatch**: The docs repo and codebase repo can get out of sync on different branches. fp-docs detects this and synchronizes branches.
 8. **No documentation lifecycle**: Most codebases lack a systematic process from creation through maintenance to deprecation. fp-docs provides the full lifecycle.
+9. **Multi-agent coordination complexity**: Documentation operations involve multiple concerns (writing, validation, citations, git commits) that benefit from specialized agents. fp-docs uses a universal orchestrator that delegates to specialist engines, coordinates pipeline phases across agents, and serializes git commits — enabling multi-agent execution for every command by default.
 
 ---
 
 ## Complete Command Catalog (19 Commands)
 
-All commands are namespaced as `/fp-docs:*` and run in isolated subagent contexts (`context: fork`).
+All commands are namespaced as `/fp-docs:*` and run in isolated subagent contexts (`context: fork`). Every command routes through the **orchestrate** engine, which classifies the command and delegates to the appropriate specialist engine. Write operations use 3+ agents (orchestrate + specialist + validate); read-only operations use a 2-agent fast path (orchestrate + specialist).
 
 ### Documentation Creation & Modification (5 commands)
 
@@ -106,11 +109,19 @@ Route to the **system** engine.
 
 ---
 
-## The 8 Engines
+## The 9 Engines
 
-Each engine is a subagent definition with a specific domain, tool permissions, and preloaded modules.
+Each engine is a subagent definition with a specific domain, tool permissions, and preloaded modules. All 9 engines can operate in **Delegation Mode** (orchestrator-coordinated, executing assigned pipeline phases) or **Standalone Mode** (self-contained, full pipeline).
 
-### 1. modify (color: green)
+### 1. orchestrate (color: white)
+- **Domain**: Universal command routing, multi-agent delegation, pipeline phase coordination
+- **Operations**: All 19 commands route through orchestrate; delegates to specialist engines
+- **Tools**: Read, Write, Edit, Grep, Glob, Bash (full write access for Finalize Phase)
+- **Modules**: mod-standards, mod-project, mod-orchestration
+- **Model**: opus, maxTurns: 100
+- **Key behavior**: The universal entry point for all commands. Parses routing metadata from skills, classifies commands (write vs read-only), delegates to specialist engines with pipeline phase assignments, coordinates Review Phase via the validate engine, and handles the Finalize Phase (changelog, index, git commit) itself. Only the orchestrator commits to git in delegated mode. For read-only commands, uses a fast-path 2-agent delegation. For batch operations exceeding thresholds, creates Agent Teams with specialist teammates.
+
+### 2. modify (color: green)
 - **Domain**: Documentation creation and modification
 - **Operations**: revise, add, auto-update, auto-revise, deprecate
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash (full write access)
@@ -118,7 +129,7 @@ Each engine is a subagent definition with a specific domain, tool permissions, a
 - **Model**: opus, maxTurns: 75
 - **Key behavior**: The only engine that executes the full 8-stage post-modification pipeline. Always reads actual source code before writing docs. Uses `[NEEDS INVESTIGATION]` instead of guessing.
 
-### 2. validate (color: cyan)
+### 3. validate (color: cyan)
 - **Domain**: Documentation validation and accuracy verification
 - **Operations**: audit, verify, sanity-check, test
 - **Tools**: Read, Grep, Glob, Bash (Write and Edit disallowed)
@@ -126,7 +137,7 @@ Each engine is a subagent definition with a specific domain, tool permissions, a
 - **Model**: opus, maxTurns: 75
 - **Key behavior**: Strictly read-only. Classifies issues by severity (CRITICAL, HIGH, MEDIUM, LOW). For sanity-check, zero tolerance: every factual claim must be verified. For test, executes against the live local dev environment.
 
-### 3. citations (color: yellow)
+### 4. citations (color: yellow)
 - **Domain**: Code citation generation, maintenance, and verification
 - **Operations**: generate, update, verify, audit
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
@@ -134,7 +145,7 @@ Each engine is a subagent definition with a specific domain, tool permissions, a
 - **Model**: opus, maxTurns: 75
 - **Key behavior**: Three citation tiers based on function length (Full for <=15 lines, Signature for 16-100, Reference for >100). Tracks citation freshness (Fresh, Stale, Drifted, Broken, Missing). Generate/update run a subset of the pipeline; verify/audit are read-only.
 
-### 4. api-refs (color: yellow)
+### 5. api-refs (color: yellow)
 - **Domain**: API Reference table generation and auditing
 - **Operations**: generate, audit
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
@@ -142,7 +153,7 @@ Each engine is a subagent definition with a specific domain, tool permissions, a
 - **Model**: opus, maxTurns: 75
 - **Key behavior**: Extracts actual function signatures from PHP/JS source. Mandatory provenance tracking (PHPDoc, Verified, Authored). Covers 7 layers: helpers, components, hooks, shortcodes, rest-api, cli, integrations. Audit is read-only.
 
-### 5. locals (color: magenta)
+### 6. locals (color: magenta)
 - **Domain**: `$locals` variable contract documentation
 - **Operations**: annotate, contracts, cross-ref, validate, shapes, coverage
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
@@ -150,7 +161,7 @@ Each engine is a subagent definition with a specific domain, tool permissions, a
 - **Model**: opus, maxTurns: 75
 - **Key behavior**: WordPress-specific engine for documenting the data shapes passed between PHP template components. Classifies keys as Required (bare `$locals['key']` access) vs Optional (guarded with `isset`/`??`/`empty`). Uses `token_get_all()` via WP-CLI for precise variable tracking. Supports both named keys and integer-indexed `$locals[0]` patterns.
 
-### 6. verbosity (color: red)
+### 7. verbosity (color: red)
 - **Domain**: Anti-brevity enforcement and verbosity gap detection
 - **Operations**: audit
 - **Tools**: Read, Grep, Glob, Bash (Write and Edit disallowed)
@@ -158,7 +169,7 @@ Each engine is a subagent definition with a specific domain, tool permissions, a
 - **Model**: opus, maxTurns: 50
 - **Key behavior**: Read-only scanner. Enforces a banned phrase list (e.g., "etc.", "and more", "various") and banned regex patterns. Reports violations at HIGH (banned phrases), MEDIUM (incomplete lists), LOW (style issues) severity. Deep scans also check scope manifests.
 
-### 7. index (color: blue)
+### 8. index (color: blue)
 - **Domain**: Documentation index maintenance and metadata synchronization
 - **Operations**: update-project-index, update-doc-links, update-example-claude
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
@@ -166,7 +177,7 @@ Each engine is a subagent definition with a specific domain, tool permissions, a
 - **Model**: opus, maxTurns: 50
 - **Key behavior**: Uses `git ls-files` as source of truth, not filesystem listing. Supports incremental (update), quick, and full regeneration modes. CLAUDE.md regeneration only touches documentation sections.
 
-### 8. system (color: blue)
+### 9. system (color: blue)
 - **Domain**: Plugin self-maintenance and configuration
 - **Operations**: update-skills, setup, sync, parallel
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
@@ -176,14 +187,14 @@ Each engine is a subagent definition with a specific domain, tool permissions, a
 
 ---
 
-## The 10 Shared Modules
+## The 11 Shared Modules
 
 Modules are preloaded into engines via the `skills:` frontmatter field. They are not user-invocable. Each rule lives in exactly one module (no duplication).
 
 | Module | Domain | Preloaded By |
 |--------|--------|-------------|
-| mod-standards | File naming, directory structure, document templates (10 types), content rules, depth requirements, cross-reference requirements, integrity rules | All 8 engines |
-| mod-project | FP-specific paths, source-to-doc mapping (30+ directories), appendix cross-references, environment settings | All 8 engines |
+| mod-standards | File naming, directory structure, document templates (10 types), content rules, depth requirements, cross-reference requirements, integrity rules | All 9 engines |
+| mod-project | FP-specific paths, source-to-doc mapping (30+ directories), appendix cross-references, environment settings | All 9 engines |
 | mod-pipeline | 8-stage post-modification pipeline definition, trigger matrix, skip conditions, completion markers | modify |
 | mod-changelog | Changelog entry format (date, files changed, summary), append-only rules | modify |
 | mod-index | PROJECT-INDEX.md update modes (quick/update/full), git consistency rules | modify, index |
@@ -192,12 +203,15 @@ Modules are preloaded into engines via the `skills:` frontmatter field. They are
 | mod-locals | @locals PHPDoc format, @controller format (HTMX), contract table columns, Required/Optional classification, shared shapes, ground truth engine | modify, locals |
 | mod-verbosity | Anti-compression directives, banned phrases (15+), banned patterns (4 regex), scope manifest format, self-audit protocol, context window management tiers | modify, verbosity |
 | mod-validation | 10-point verification checklist, sanity-check algorithm (zero-tolerance), confidence levels (HIGH/LOW), severity classification (CRITICAL/HIGH/MEDIUM/LOW) | modify, validate |
+| mod-orchestration | Orchestration rules: delegation thresholds, pipeline phase assignments (Write/Review/Finalize), team protocol, git serialization rules, read-only fast-path classification, specialist-to-phase mapping | orchestrate |
 
 ---
 
 ## The Post-Modification Pipeline (8 Stages)
 
 This is the core quality enforcement mechanism. It runs after every doc-modifying operation.
+
+Under the multi-agent orchestration architecture, the pipeline is split into **3 phases** for delegation across specialist agents: **Write Phase** (primary op + stages 1-3, assigned to specialist engine), **Review Phase** (stages 4-5, assigned to validate engine), and **Finalize Phase** (stages 6-8, handled by orchestrator). In Standalone Mode, a single engine executes all 8 stages as before.
 
 | Stage | Name | What It Does | Skip Condition |
 |-------|------|-------------|----------------|
@@ -256,10 +270,19 @@ fp-docs enables a complete documentation lifecycle:
 
 ## Batch and Parallel Capabilities
 
+### Multi-Agent Orchestration (Default)
+Every command now uses multi-agent execution by default via the orchestrate engine:
+- **Write operations** use 3+ agents: orchestrate (coordinator) + specialist engine (Write Phase) + validate engine (Review Phase)
+- **Read-only operations** use 2 agents: orchestrate (coordinator) + specialist engine (fast path)
+- The orchestrator handles all git commits (Finalize Phase), ensuring atomic documentation updates
+
 ### Parallel Operations (`/fp-docs:parallel`)
 - Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` environment variable
+- The orchestrator handles batch operations natively when scope exceeds configured thresholds
 - Groups target files into batches of up to 5
-- Creates Agent Team teammates for each batch
+- Creates Agent Team teammates for each batch, each running the appropriate specialist engine
+- TeammateIdle and TaskCompleted hooks validate team member phase completion and task outputs
+- Orchestrator handles Finalize Phase (changelog, index, single atomic git commit) for all batches
 - Aggregates results into a unified report
 - Falls back to sequential execution if teams are unavailable or scope < 3 files
 
@@ -295,15 +318,16 @@ Key rules:
 
 ## Hook System
 
-fp-docs uses 4 hook events across 6 scripts:
+fp-docs uses 5 hook events across 7 scripts:
 
 | Event | Script | Purpose |
 |-------|--------|---------|
 | SessionStart | `inject-manifest.sh` | Injects the plugin root path and manifest into the session context so engines can locate their instruction files |
 | SessionStart | `branch-sync-check.sh` | Detects if the codebase and docs repo are on different branches and warns the user |
 | SubagentStop (modify) | `post-modify-check.sh` | Validates that the modify engine completed its full pipeline by checking for the completion marker |
-| TeammateIdle | `teammate-idle-check.sh` | Validates pipeline completion for teammate agents in parallel operations |
-| TaskCompleted | `task-completed-check.sh` | Validates task outputs meet pipeline requirements |
+| SubagentStop (orchestrate) | `post-orchestrate-check.sh` | Validates that the orchestrate engine completed its full delegation cycle, including pipeline phase coordination and git commit serialization |
+| TeammateIdle | `teammate-idle-check.sh` | Validates that teammates completed their assigned pipeline phases before going idle |
+| TaskCompleted | `task-completed-check.sh` | Validates task outputs — checks for empty modifications, missing pipeline markers, and incomplete phase handoffs |
 
 Additionally, `docs-commit.sh` handles the git commit to the docs repo.
 
@@ -341,17 +365,21 @@ Every engine includes memory management instructions: update agent memory when d
 ### 10. WordPress-Specific Locals Contracts
 The locals engine addresses a WordPress-specific pattern where template components communicate via `$locals` arrays without formal type contracts. The engine annotates source code, generates contract tables, traces caller chains, and reports coverage -- solving a real problem specific to the FP codebase's architecture.
 
+### 11. Universal Multi-Agent Orchestration
+All 19 commands route through the orchestrate engine, which acts as a universal dispatcher. Write operations use a 3-phase pipeline delegation (Write Phase to specialist, Review Phase to validate engine, Finalize Phase handled by orchestrator). Read-only operations use a 2-agent fast path. Only the orchestrator commits to git in delegated mode, preventing commit conflicts. Engines support both Delegation Mode (orchestrator-coordinated) and Standalone Mode (self-contained) for backward compatibility.
+
 ---
 
 ## Configuration System
 
 ### system-config.md
 Controls configurable behavior for the plugin:
-- **Citations**: Enabled/disabled, tier line thresholds (15/100 lines), line number inclusion, excerpt comment limit
-- **Sanity Check**: Default enabled, multi-agent review thresholds (5 docs / 3 sections)
-- **API Reference**: Enabled/disabled, valid provenance values, scope by doc type
-- **Verbosity**: Enabled/disabled, gap tolerance (0 = zero tolerance), chunk-and-delegate thresholds, complete banned phrase and pattern lists
-- **Verification**: 10-check count
+- **Citations** (§1): Enabled/disabled, tier line thresholds (15/100 lines), line number inclusion, excerpt comment limit
+- **Sanity Check** (§2): Default enabled, multi-agent review thresholds (5 docs / 3 sections)
+- **API Reference** (§3): Enabled/disabled, valid provenance values, scope by doc type
+- **Verbosity** (§4): Enabled/disabled, gap tolerance (0 = zero tolerance), chunk-and-delegate thresholds, complete banned phrase and pattern lists
+- **Verification** (§5): 10-check count
+- **Orchestration** (§6): Enabled/disabled, delegation thresholds (docs and stages), max team size, git serialization mode, fast-path read-only classification, phase assignment rules
 
 ### project-config.md
 FP-specific configuration:

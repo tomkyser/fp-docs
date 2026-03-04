@@ -1,5 +1,7 @@
 # fp-docs Architecture Research
 
+> **Updated 2026-03-04**: Added multi-agent orchestration architecture (orchestrate engine, mod-orchestration module, pipeline phase delegation, delegation vs standalone modes, git serialization).
+
 Thorough analysis of the fp-docs Claude Code plugin internals: engine-skill routing, module system, pipeline, hooks, algorithms, git model, permissions, and configuration.
 
 ---
@@ -19,11 +21,12 @@ fp-docs/                              # Git root (marketplace container)
 └── plugins/
     └── fp-docs/                      # THE ACTUAL PLUGIN (install target)
         ├── .claude-plugin/
-        │   └── plugin.json           # Plugin manifest v2.7.0
+        │   └── plugin.json           # Plugin manifest v2.7.1
         ├── settings.json             # Default permissions
         ├── hooks/
         │   └── hooks.json            # 4 hook event definitions
-        ├── agents/                   # 8 engine agent definitions
+        ├── agents/                   # 9 engine agent definitions
+        │   ├── orchestrate.md
         │   ├── modify.md
         │   ├── validate.md
         │   ├── citations.md
@@ -32,7 +35,7 @@ fp-docs/                              # Git root (marketplace container)
         │   ├── verbosity.md
         │   ├── index.md
         │   └── system.md
-        ├── modules/                  # 10 shared modules (preloaded)
+        ├── modules/                  # 11 shared modules (preloaded)
         │   ├── mod-standards/SKILL.md
         │   ├── mod-project/SKILL.md
         │   ├── mod-pipeline/SKILL.md
@@ -42,7 +45,8 @@ fp-docs/                              # Git root (marketplace container)
         │   ├── mod-api-refs/SKILL.md
         │   ├── mod-locals/SKILL.md
         │   ├── mod-validation/SKILL.md
-        │   └── mod-verbosity/SKILL.md
+        │   ├── mod-verbosity/SKILL.md
+        │   └── mod-orchestration/SKILL.md
         ├── skills/                   # 19 user-facing commands
         │   ├── revise/SKILL.md
         │   ├── add/SKILL.md
@@ -63,15 +67,16 @@ fp-docs/                              # Git root (marketplace container)
         │   ├── setup/SKILL.md
         │   ├── sync/SKILL.md
         │   └── parallel/SKILL.md
-        ├── scripts/                  # 6 bash scripts (hooks + utility)
+        ├── scripts/                  # 7 bash scripts (hooks + utility)
         │   ├── inject-manifest.sh
         │   ├── branch-sync-check.sh
         │   ├── post-modify-check.sh
+        │   ├── post-orchestrate-check.sh
         │   ├── teammate-idle-check.sh
         │   ├── task-completed-check.sh
         │   └── docs-commit.sh
         └── framework/
-            ├── manifest.md           # System manifest v2.7.0
+            ├── manifest.md           # System manifest v2.7.1
             ├── config/
             │   ├── system-config.md  # Feature flags, thresholds
             │   └── project-config.md # FP-specific paths and mappings
@@ -83,6 +88,7 @@ fp-docs/                              # Git root (marketplace container)
             │   ├── codebase-analysis-guide.md
             │   └── git-sync-rules.md
             └── instructions/         # Per-engine instruction files
+                ├── orchestrate/      # delegate.md
                 ├── modify/           # revise.md, add.md, auto-update.md, auto-revise.md, deprecate.md
                 ├── validate/         # audit.md, verify.md, sanity-check.md, test.md
                 ├── citations/        # generate.md, update.md, verify.md, audit.md
@@ -104,7 +110,7 @@ Key distinction: The repo root (`fp-docs/`) is the marketplace container. The in
 ```json
 {
   "name": "fp-docs",
-  "version": "2.7.0",
+  "version": "2.7.1",
   "description": "Documentation management system for the Foreign Policy WordPress codebase...",
   "author": { "name": "Tom Kyser" },
   "repository": "https://github.com/tomkyser/fp-docs",
@@ -147,62 +153,70 @@ Default permissions are read-only. Individual engines override this via their ag
 
 ## 3. Engine-Skill Routing Pattern
 
-This is the core architectural pattern. Every user command follows the same flow:
+This is the core architectural pattern. All 19 user commands now route through the **orchestrate** engine, which acts as a universal dispatcher. The orchestrator parses routing metadata embedded in each skill, classifies the command, and delegates to the appropriate specialist engine.
 
 ```
 User types: /fp-docs:revise "fix the posts helper"
     │
     ▼
 Skill file: skills/revise/SKILL.md
-    │  - Declares agent: modify
+    │  - Declares agent: orchestrate
     │  - Declares context: fork (isolated subagent)
-    │  - Body says: Operation: revise
-    │  - Passes $ARGUMENTS to engine
+    │  - Body provides routing metadata:
+    │      Engine: modify
+    │      Operation: revise
+    │      Instruction: framework/instructions/modify/revise.md
+    │  - Passes $ARGUMENTS to orchestrator
     │
     ▼
-Engine agent: agents/modify.md
+Orchestrate engine: agents/orchestrate.md
+    │  - Parses routing metadata (Engine, Operation, Instruction)
+    │  - Classifies command (write vs read-only)
+    │  - Determines delegation strategy (multi-agent vs fast-path)
+    │  - Delegates to specialist engine(s) with pipeline phase assignments
+    │
+    ▼
+Specialist engine: agents/modify.md (Delegation Mode)
     │  - YAML frontmatter: tools, skills (modules), model, maxTurns
     │  - System prompt: identity, how-you-work steps
     │  - Engine reads instruction file: framework/instructions/modify/revise.md
+    │  - Executes assigned pipeline phases only
     │
     ▼
-Instruction file: framework/instructions/modify/revise.md
-    │  - Step-by-step algorithm for the specific operation
-    │  - References on-demand algorithm files for pipeline stages
-    │
-    ▼
-Post-modification pipeline (8 stages)
+Pipeline phases (Write → Review → Finalize)
+    │  - Coordinated across multiple agents by orchestrator
     │  - Reads on-demand algorithm files at each stage
     │  - Uses preloaded module rules
     │
     ▼
-Structured report returned to user
+Orchestrator aggregates results → Structured report returned to user
 ```
 
 ### Skill Anatomy
 
-Skills are thin routing files. Every user skill has this structure:
+Skills are thin routing files. Every user skill declares `agent: orchestrate` and provides routing metadata for the orchestrator:
 
 ```yaml
 ---
 description: Human-readable description for Claude Code UI
 argument-hint: "expected arguments"
 context: fork              # Always fork — runs in isolated subagent
-agent: modify              # Which engine agent to invoke
+agent: orchestrate         # All skills route through orchestrator
 ---
 
+Engine: modify
 Operation: revise
-
-Read the instruction file at `framework/instructions/modify/revise.md` and follow it exactly.
+Instruction: framework/instructions/modify/revise.md
 
 User request: $ARGUMENTS
 ```
 
 Key properties:
 - `context: fork` means the skill runs as an isolated subagent, not in the main conversation
-- `agent:` names the engine agent file (without .md extension)
+- `agent: orchestrate` routes all commands through the universal orchestrator
+- The skill body provides routing metadata: `Engine:` (target specialist), `Operation:` (operation name), `Instruction:` (instruction file path)
 - `$ARGUMENTS` is a Claude Code variable containing the user's input after the command name
-- The skill body tells the engine which operation to perform and which instruction file to load
+- The orchestrator parses these fields, classifies the command, and delegates to the specialist engine
 
 ### Subcommand Skills (citations, locals, api-ref)
 
@@ -223,8 +237,10 @@ The skill body parses the subcommand from arguments and dynamically routes to th
 
 ### Complete Command-to-Engine Routing Table
 
-| Command | Skill | Engine | Operation |
-|---------|-------|--------|-----------|
+All 19 commands declare `agent: orchestrate` in their skill frontmatter. The orchestrator reads the routing metadata and delegates to the specialist engine listed below.
+
+| Command | Skill | Specialist Engine | Operation |
+|---------|-------|-------------------|-----------|
 | /fp-docs:revise | skills/revise | modify | revise |
 | /fp-docs:add | skills/add | modify | add |
 | /fp-docs:auto-update | skills/auto-update | modify | auto-update |
@@ -243,11 +259,11 @@ The skill body parses the subcommand from arguments and dynamically routes to th
 | /fp-docs:update-skills | skills/update-skills | system | update-skills |
 | /fp-docs:setup | skills/setup | system | setup |
 | /fp-docs:sync | skills/sync | system | sync |
-| /fp-docs:parallel | skills/parallel | system | (orchestrator) |
+| /fp-docs:parallel | skills/parallel | system | (batch orchestration) |
 
 ---
 
-## 4. The 8 Engine Agents
+## 4. The 9 Engine Agents
 
 Each engine is a markdown file in `agents/` with YAML frontmatter and a system prompt body.
 
@@ -288,6 +304,7 @@ maxTurns: 75         # Max conversation turns
 
 | Engine | File | Model | MaxTurns | Color | Can Write? | Modules Preloaded |
 |--------|------|-------|----------|-------|------------|-------------------|
+| orchestrate | agents/orchestrate.md | opus | 100 | white | YES | mod-standards, mod-project, mod-orchestration |
 | modify | agents/modify.md | opus | 75 | green | YES | mod-standards, mod-project, mod-pipeline, mod-changelog, mod-index |
 | validate | agents/validate.md | opus | 75 | cyan | NO (disallowed) | mod-standards, mod-project, mod-validation |
 | citations | agents/citations.md | opus | 75 | yellow | YES | mod-standards, mod-project, mod-citations |
@@ -321,7 +338,7 @@ The permission model operates at three levels:
 2. **Engine agent** (frontmatter `tools:`): adds Write, Edit, Bash for write-capable engines
 3. **Engine agent** (frontmatter `disallowedTools:`): explicitly blocks Write, Edit for read-only engines
 
-**Write-capable engines**: modify, citations, api-refs, locals, index, system
+**Write-capable engines**: orchestrate, modify, citations, api-refs, locals, index, system
 **Read-only engines**: validate, verbosity (explicitly disallow Write and Edit)
 
 The `audit` skill additionally declares `allowed-tools` in its skill frontmatter, restricting to Read, Grep, Glob, Bash.
@@ -366,8 +383,8 @@ Key properties:
 
 | Module | Purpose | Preloaded By |
 |--------|---------|-------------|
-| mod-standards | Formatting, naming, structural, depth rules | ALL 8 engines |
-| mod-project | FP paths, source-to-doc mapping, environment | ALL 8 engines |
+| mod-standards | Formatting, naming, structural, depth rules | ALL 9 engines |
+| mod-project | FP paths, source-to-doc mapping, environment | ALL 9 engines |
 | mod-pipeline | 8-stage post-modification pipeline definition | modify only |
 | mod-changelog | Changelog entry format and update procedure | modify (preloaded) |
 | mod-index | PROJECT-INDEX.md update rules and triggers | modify (preloaded), index |
@@ -376,6 +393,7 @@ Key properties:
 | mod-locals | $locals contract format, shapes, validation | modify, locals |
 | mod-validation | 10-point checklist, sanity-check algorithm | modify, validate |
 | mod-verbosity | Anti-brevity rules, banned phrases, manifests | modify, verbosity |
+| mod-orchestration | Orchestration rules, delegation thresholds, pipeline phase assignments, team protocol, git serialization rules | orchestrate |
 
 The `modify` engine is the most heavily loaded — it preloads 5 modules directly (mod-standards, mod-project, mod-pipeline, mod-changelog, mod-index) and accesses domain module rules indirectly through the pipeline stages.
 
@@ -454,6 +472,22 @@ Defined in `mod-pipeline` and executed by the `modify` engine after every doc-mo
 | locals contracts | Stages 1, 2, 4-8 |
 | locals shapes | Stages 1, 2, 4-8 |
 
+### Pipeline Phase Delegation
+
+Under the multi-agent orchestration architecture, the 8-stage pipeline is split into 3 phases that can be distributed across specialist agents:
+
+| Phase | Name | Stages | Owner |
+|-------|------|--------|-------|
+| Write Phase | Primary work + enrichment | Primary operation + stages 1-3 (verbosity, citations, API refs) | Primary specialist engine (e.g., modify) |
+| Review Phase | Validation | Stages 4-5 (sanity-check, verification) | validate engine (read-only) |
+| Finalize Phase | Record-keeping + commit | Stages 6-8 (changelog, index, docs commit) | orchestrate engine |
+
+In **Delegation Mode** (the default for write operations), the orchestrator assigns the Write Phase to the primary specialist, spawns the validate engine for the Review Phase, and handles the Finalize Phase itself. This ensures git serialization: only the orchestrator commits to the docs repo.
+
+In **Standalone Mode** (when a specialist engine runs outside orchestration), the engine executes all 8 stages itself as before.
+
+For **read-only commands** (audit, verify, sanity-check, test, verbosity-audit), the orchestrator uses a fast path: it delegates directly to the specialist engine and returns results without the full 3-phase pipeline.
+
 ### Pipeline Completion Marker
 
 When the pipeline completes, the engine outputs:
@@ -461,7 +495,7 @@ When the pipeline completes, the engine outputs:
 Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: PASS] [changelog: updated] [docs-commit: committed|skipped]
 ```
 
-This marker is checked by the SubagentStop hook (`post-modify-check.sh`) to validate pipeline execution.
+This marker is checked by the SubagentStop hook (`post-modify-check.sh` or `post-orchestrate-check.sh`) to validate pipeline execution.
 
 ---
 
@@ -531,6 +565,7 @@ Report: files changed, sanity-check result, verification result
 
 | Engine | Instruction File | Operation |
 |--------|-----------------|-----------|
+| orchestrate | orchestrate/delegate.md | Multi-agent delegation and pipeline phase coordination |
 | modify | modify/revise.md | Targeted doc fix |
 | modify | modify/add.md | Create new doc for new code |
 | modify | modify/auto-update.md | Git-diff-driven batch update |
@@ -565,7 +600,7 @@ Report: files changed, sanity-check result, verification result
 
 ### hooks.json Structure
 
-The hooks file defines 4 event types with 5 total hook scripts:
+The hooks file defines 5 event types with 7 total hook scripts:
 
 ```json
 {
@@ -583,6 +618,12 @@ The hooks file defines 4 event types with 5 total hook scripts:
         "matcher": "modify",
         "hooks": [
           { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/post-modify-check.sh\"" }
+        ]
+      },
+      {
+        "matcher": "orchestrate",
+        "hooks": [
+          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/post-orchestrate-check.sh\"" }
         ]
       }
     ],
@@ -624,17 +665,22 @@ The hooks file defines 4 event types with 5 total hook scripts:
 - Logic: Reads the agent transcript from stdin JSON, greps for "changelog.*updated". Exit 0 = pass, Exit 2 = warn
 - If no changelog update detected, emits warning to stderr
 
-**4. TeammateIdle: teammate-idle-check.sh**
-- Fires: When a teammate agent goes idle during parallel operations
-- Purpose: Validates that teammates completed their pipeline stages
-- Current implementation: stub (exit 0), placeholder for future validation
+**4. SubagentStop: post-orchestrate-check.sh**
+- Fires: When the `orchestrate` engine subagent stops (matcher: "orchestrate")
+- Purpose: Validates that the orchestrator completed its full delegation cycle, including pipeline phase coordination and git commit serialization
+- Logic: Reads the agent transcript from stdin JSON, checks for pipeline completion markers across all delegated phases. Exit 0 = pass, Exit 2 = warn
 
-**5. TaskCompleted: task-completed-check.sh**
+**5. TeammateIdle: teammate-idle-check.sh**
+- Fires: When a teammate agent goes idle during parallel/team operations
+- Purpose: Validates that teammates completed their assigned pipeline phases before going idle
+- Logic: Reads teammate transcript, checks for phase completion markers (Write Phase or Review Phase), warns if a teammate went idle without completing its assigned work
+
+**6. TaskCompleted: task-completed-check.sh**
 - Fires: When a task is marked completed during orchestration
-- Purpose: Validates task outputs (checks for empty modifications, missing changelog)
-- Current implementation: stub (exit 0), placeholder for future validation
+- Purpose: Validates task outputs — checks for empty modifications, missing pipeline markers, and incomplete phase handoffs
+- Logic: Reads task output, verifies the delegated work product contains expected deliverables (modified files, validation results, or pipeline markers depending on the task type)
 
-### 6th Script: docs-commit.sh (Utility, Not a Hook)
+### 7th Script: docs-commit.sh (Utility, Not a Hook)
 
 `docs-commit.sh` is a utility script called by engines (not a hook). It commits all docs changes to the docs repo:
 1. Detects codebase root via `git rev-parse --show-toplevel`
@@ -730,6 +776,18 @@ Controls system-wide behavior independent of the specific FP project:
 - Chunk-and-delegate thresholds (max 8 docs, max 50 functions per agent)
 - Complete banned phrases list (15 phrases + 4 regex patterns)
 
+**Section 5 — Verification** (existing):
+- `verify.total_checks`: 10
+
+**Section 6 — Orchestration** (new):
+- `orchestration.enabled`: true (master switch for multi-agent orchestration)
+- `orchestration.delegation_threshold_docs`: threshold for triggering multi-agent delegation
+- `orchestration.delegation_threshold_stages`: threshold for pipeline phase splitting
+- `orchestration.max_team_size`: maximum agents in a batch team
+- `orchestration.git_serialization`: true (only orchestrator commits in delegated mode)
+- `orchestration.fast_path_read_only`: true (read-only commands skip full delegation)
+- Phase assignment rules and specialist-to-phase mapping
+
 ### project-config.md — FP-Specific Configuration
 
 Contains everything specific to the Foreign Policy WordPress project:
@@ -803,15 +861,15 @@ Here is a complete trace of what happens when a user runs `/fp-docs:revise "fix 
 
 ## 13. System Manifest (framework/manifest.md)
 
-The manifest is a comprehensive reference document (v2.7.0) that catalogs every component in the system:
+The manifest is a comprehensive reference document (v2.7.1) that catalogs every component in the system:
 
 - **Plugin identity**: name, namespace, version
-- **Engine table**: all 8 engines with agent file, model, operations
+- **Engine table**: all 9 engines with agent file, model, operations
 - **Command table**: all 19 commands with skill file, engine, operation
-- **Shared modules table**: all 10 modules with location and which engines preload them
+- **Shared modules table**: all 11 modules with location and which engines preload them
 - **On-demand algorithms table**: all 6 with path and which pipeline stage loads them
 - **Instruction files table**: all instruction files grouped by engine
-- **Hooks table**: all 5 hooks with event, matcher, script, purpose
+- **Hooks table**: all 7 hooks with event, matcher, script, purpose
 - **Configuration files table**: system-config and project-config
 - **Project files table**: files that live in the project (not the plugin) — changelog, tracker, About.md, PROJECT-INDEX.md
 
@@ -821,21 +879,22 @@ The manifest is injected into every session via the SessionStart hook (inject-ma
 
 ## 14. The /fp-docs:parallel Command
 
-The parallel skill is unique — it is an orchestrator, not a single-engine operation. It:
+The parallel skill routes through the orchestrate engine like all other commands. The orchestrator handles batch operations natively when scope exceeds configured thresholds:
 
 1. Parses the operation, scope, and flags from arguments
 2. Determines the set of target files
 3. Groups files into batches (max 5 per batch)
-4. Creates a Team with teammates running the appropriate engine
-5. Assigns each file/group as a task
-6. Waits for all teammates to complete
-7. Aggregates results into a unified report
+4. Creates a Team with teammates running the appropriate specialist engine
+5. Assigns each file/group as a task with pipeline phase assignments
+6. Waits for all teammates to complete (validated by TeammateIdle and TaskCompleted hooks)
+7. Handles the Finalize Phase (changelog, index, git commit) itself — git serialization
+8. Aggregates results into a unified report
 
 **Fallback**: If Agent Teams are unavailable or scope is <3 files, falls back to sequential execution.
 
 **Requirement**: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` must be enabled.
 
-The `TeammateIdle` and `TaskCompleted` hooks (currently stubs) are designed to support this parallel orchestration by validating teammate pipeline completion and task outputs.
+The `TeammateIdle` and `TaskCompleted` hooks validate teammate pipeline phase completion and task outputs during team operations.
 
 ---
 
@@ -863,3 +922,91 @@ This gives engines cross-session learning: an engine that learns "helper docs fr
 8. **Zero-tolerance verbosity**: The system enforces complete enumeration over summarization. Every source item must appear in documentation.
 9. **Evidence-based documentation**: Every claim must be verified against source code. No fabrication. `[NEEDS INVESTIGATION]` for unknowns.
 10. **Hook-based lifecycle management**: SessionStart hooks inject context. SubagentStop hooks validate pipeline completion. The system self-monitors.
+11. **Universal orchestrator pattern**: All 19 commands route through the orchestrate engine. The orchestrator classifies commands, delegates to specialists, coordinates pipeline phases, and serializes git commits. This centralizes routing logic and enables multi-agent execution for every command.
+12. **Pipeline phase delegation**: The 8-stage pipeline is split into 3 phases (Write, Review, Finalize) that can be distributed across specialist agents. This enables parallel validation while maintaining git serialization.
+13. **Git serialization**: In delegated mode, only the orchestrator commits to the docs repo. Specialist engines perform their work but do not execute git operations, preventing commit conflicts and ensuring atomic documentation updates.
+14. **Delegation vs Standalone modes**: Engines support both Delegation Mode (orchestrator-coordinated, phase-limited) and Standalone Mode (self-contained, full pipeline). This preserves backward compatibility and enables direct engine invocation for debugging.
+15. **Read-only fast path**: The orchestrator recognizes read-only commands (audit, verify, sanity-check, test, verbosity-audit) and uses a lightweight 2-agent path (orchestrate + specialist) instead of the full 3-phase delegation.
+16. **Batch/team protocol**: When scope exceeds orchestration thresholds, the orchestrator creates Agent Teams with specialist teammates, assigns pipeline phases, and aggregates results. The TeammateIdle and TaskCompleted hooks validate team member work.
+
+---
+
+## 17. Multi-Agent Orchestration Architecture
+
+### Universal Orchestrator Pattern
+
+The `orchestrate` engine (`agents/orchestrate.md`) is the universal entry point for all 19 commands. Every skill declares `agent: orchestrate` and provides routing metadata (`Engine:`, `Operation:`, `Instruction:`). The orchestrator:
+
+1. **Parses routing metadata** from the skill body to determine the target specialist engine
+2. **Classifies the command** as write (modify, citations generate/update, api-refs generate, locals annotate/contracts/shapes) or read-only (audit, verify, sanity-check, test, verbosity-audit, citations verify/audit, api-refs audit, locals validate/cross-ref/coverage)
+3. **Selects delegation strategy**: multi-agent for write operations, fast-path for read-only operations
+4. **Delegates to specialist engine(s)** with specific pipeline phase assignments
+5. **Aggregates results** and returns a unified report to the user
+
+### 3-Phase Pipeline Delegation
+
+For write operations, the orchestrator splits the 8-stage pipeline into three phases:
+
+**Write Phase** (assigned to primary specialist engine):
+- The primary operation (e.g., revise the documentation)
+- Stage 1: Verbosity Enforcement
+- Stage 2: Citation Generation/Update
+- Stage 3: API Reference Sync
+
+**Review Phase** (assigned to validate engine):
+- Stage 4: Sanity-Check
+- Stage 5: 10-Point Verification
+
+**Finalize Phase** (handled by orchestrator itself):
+- Stage 6: Changelog Update
+- Stage 7: Index Update
+- Stage 8: Docs Repo Commit
+
+This separation ensures:
+- Write operations execute with full tool permissions in the specialist engine
+- Validation runs in a read-only engine that cannot accidentally modify files
+- Git commits are serialized through the orchestrator, preventing conflicts
+
+### Delegation Mode vs Standalone Mode
+
+**Delegation Mode** (default when invoked through orchestrator):
+- The specialist engine receives phase assignments and executes only its assigned stages
+- The engine does NOT commit to git — the orchestrator handles all git operations
+- The engine returns structured results to the orchestrator for aggregation
+- Write operations typically involve 3+ agents: orchestrate + specialist + validate
+
+**Standalone Mode** (when engine is invoked directly, e.g., for debugging):
+- The engine executes all 8 pipeline stages itself
+- The engine commits to git directly (stage 8)
+- Backward-compatible with pre-orchestration behavior
+
+### Batch/Team Protocol
+
+When the scope of an operation exceeds orchestration thresholds (configured in system-config.md §6), the orchestrator creates Agent Teams:
+
+1. **Scope analysis**: Count target files and determine batch groupings
+2. **Team creation**: Spawn teammate agents running the appropriate specialist engine
+3. **Phase assignment**: Each teammate receives Write Phase responsibilities for its batch
+4. **Monitoring**: TeammateIdle hook validates teammate phase completion; TaskCompleted hook validates task outputs
+5. **Review aggregation**: Orchestrator spawns validate engine for Review Phase across all modified files
+6. **Finalization**: Orchestrator handles Finalize Phase (changelog, index, single atomic git commit)
+
+### Git Serialization
+
+A critical property of the orchestration architecture: **only the orchestrator commits to the docs repo in delegated mode**. This prevents:
+- Multiple agents racing to commit simultaneously
+- Partial commits from agents that fail mid-pipeline
+- Inconsistent changelog entries from parallel teammates
+- Git lock conflicts in the docs repo
+
+The orchestrator collects all modifications from specialist agents, writes the changelog entry covering all changes, updates the index if needed, and performs a single `git -C {docs-root} add -A && commit`.
+
+### Read-Only Command Fast Path
+
+For read-only commands (audit, verify, sanity-check, test, verbosity-audit), the orchestrator uses a streamlined 2-agent path:
+1. Orchestrator receives the command
+2. Orchestrator delegates directly to the specialist engine (validate or verbosity)
+3. Specialist engine executes and returns results
+4. Orchestrator returns results to user
+
+No pipeline phase splitting occurs because read-only commands do not modify documentation and do not need changelog/commit stages.

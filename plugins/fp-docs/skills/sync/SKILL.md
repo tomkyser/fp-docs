@@ -2,10 +2,12 @@
 description: Synchronize the docs repo branch with the codebase branch. Creates or switches docs branches, generates diff reports, and optionally merges docs branches.
 argument-hint: "[merge] [--force]"
 context: fork
-agent: system
+agent: orchestrate
 ---
 
+Engine: system
 Operation: sync
+Instruction: framework/instructions/system/sync.md
 
 Read the git sync rules at `framework/algorithms/git-sync-rules.md` and follow the sync flow.
 

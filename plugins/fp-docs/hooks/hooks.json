@@ -23,6 +23,15 @@
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/post-modify-check.sh\""
           }
         ]
+      },
+      {
+        "matcher": "orchestrate",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/post-orchestrate-check.sh\""
+          }
+        ]
       }
     ],
     "TeammateIdle": [

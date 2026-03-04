@@ -2,16 +2,11 @@
 description: Scan existing documentation for verbosity gaps — missing items, summarization language, unexpanded enumerables.
 argument-hint: "--depth quick|standard|deep [scope]"
 context: fork
-agent: verbosity
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
+agent: orchestrate
 ---
 
+Engine: verbosity
 Operation: audit
-
-Read the instruction file at `framework/instructions/verbosity/audit.md` and follow it exactly.
+Instruction: framework/instructions/verbosity/audit.md
 
 User request: $ARGUMENTS

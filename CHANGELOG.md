@@ -2,6 +2,65 @@
 
 All notable changes to the fp-docs plugin will be documented in this file.
 
+## [2.7.1] - 2026-03-04
+
+### Changed
+- Version bump to 2.7.1
+- Backfilled changelog entries for 2.6.0, 2.6.1, 2.6.2, 2.7.0
+- Added changelog update step to CLAUDE.md version bump procedure
+
+## [2.7.0] - 2026-03-04
+
+### Added
+- Universal `orchestrate` engine — all 19 commands now route through a single orchestration engine that delegates to specialist engines (9 engines total)
+- `mod-orchestration` shared module with delegation thresholds, batching strategy, and report formats (11 modules total)
+- `framework/instructions/orchestrate/delegate.md` — master delegation algorithm
+- `scripts/post-orchestrate-check.sh` — SubagentStop hook for orchestrator pipeline validation
+- 3-phase pipeline delegation: Write Phase (primary op + stages 1-3), Review Phase (stages 4-5), Finalize Phase (stages 6-8)
+- Scope-based execution strategies: single specialist (≤3 files), fan-out (3-8 files), team creation (>8 files)
+- §6 Orchestration section in system-config.md with 8 configuration variables
+
+### Changed
+- All 19 skill files rerouted from `agent: {engine}` to `agent: orchestrate` with routing metadata (`Engine:`, `Operation:`, `Instruction:`)
+- All 8 specialist engines gained Delegation Mode (write engines) or Pipeline Validation Mode (read-only engines) — standalone mode preserved for backward compatibility
+- Removed `allowed-tools:` from 4 skills (audit, verify, sanity-check, verbosity-audit) — read-only enforcement handled by engine `disallowedTools`
+- `mod-pipeline` updated with delegation protocol documentation
+- `hooks.json` updated with SubagentStop entry for orchestrate engine
+- `scripts/teammate-idle-check.sh` implemented (was stub)
+- `scripts/task-completed-check.sh` implemented (was stub)
+- `/fp-docs:parallel` now self-references orchestrate engine (batch operations handled natively)
+- Only the orchestrator touches git — specialists never commit in delegated mode
+- Specs, README, CLAUDE.md, manifest all updated
+
+## [2.6.2] - 2026-03-03
+
+### Changed
+- Added push-to-remote enforcement for docs repo operations (Stage 8 push always runs unless `--no-push` or `push.enabled: false`)
+- Rewrote README with updated architecture and installation guidance
+- Updated `update-skills.md` instruction file
+- Housekeeping and file cleanup
+
+## [2.6.1] - 2026-03-03
+
+### Changed
+- Fixed naming inconsistencies across skill directories and skill files
+- Corrected skill `name:` fields to match directory structure
+- Version bump to 2.6.1
+
+## [2.6.0] - 2026-03-03
+
+### Added
+- `specs/` directory with 3 canonical reference documents (architecture.md, features-and-capabilities.md, usage-and-workflows.md)
+- `disallowedTools: [Write, Edit]` on read-only engines (validate, verbosity) for defense-in-depth
+- Missing instruction file directories for system engine
+
+### Changed
+- Eliminated module duplication: removed 2 zero-value on-demand modules, refactored 4 overlapping modules into algorithms, absorbed 4 redundant modules into preloaded counterparts
+- On-demand modules renamed to "algorithms" (`framework/algorithms/`) with clear separation: modules = rule definitions (preloaded), algorithms = execution procedures (on-demand)
+- Slimmed down engine system prompts — moved domain logic into instruction files
+- Restored engine contracts per original spec (engine-contract-spec.md)
+- Version bump to 2.6.0
+
 ## [2.5.0] - 2026-03-03
 
 ### Changed

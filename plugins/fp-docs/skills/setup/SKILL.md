@@ -2,18 +2,20 @@
 description: Initialize or verify the fp-docs plugin installation. Checks plugin structure, docs repo setup, codebase gitignore, and branch sync state.
 argument-hint: ""
 context: fork
-agent: system
+agent: orchestrate
 ---
 
+Engine: system
 Operation: setup
+Instruction: framework/instructions/system/setup.md
 
 Verify AND initialize the fp-docs system:
 
 ### Phase 1: Plugin Verification
 1. Check all required directories exist (agents/, skills/, hooks/, scripts/, framework/)
 2. Validate plugin.json manifest
-3. Verify all 8 engine agent files exist
-4. Verify all 19 user skill files exist + 10 shared modules
+3. Verify all 9 engine agent files exist
+4. Verify all 19 user skill files exist + 11 shared modules
 5. Verify hooks.json and hook scripts are executable
 
 ### Phase 2: Docs Repo Setup

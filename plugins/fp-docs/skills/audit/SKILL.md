@@ -2,16 +2,11 @@
 description: Compare documentation against source code and report discrepancies. Supports quick, standard, and deep audit depths.
 argument-hint: "--depth quick|standard|deep [scope]"
 context: fork
-agent: validate
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
+agent: orchestrate
 ---
 
+Engine: validate
 Operation: audit
-
-Read the instruction file at `framework/instructions/validate/audit.md` and follow it exactly.
+Instruction: framework/instructions/validate/audit.md
 
 User request: $ARGUMENTS

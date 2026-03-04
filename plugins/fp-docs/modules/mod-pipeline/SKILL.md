@@ -86,6 +86,50 @@ Skip conditions:
 - Commit: NEVER skip — always attempt if docs repo exists
 - Push: Skip if `--no-push` or `--offline` flag was passed, or if `push.enabled` is `false` in system-config. Push failure **halts** the operation with diagnostic guidance.
 
+## Delegation Protocol
+
+When the orchestrate engine delegates pipeline execution, the pipeline is split into three phases across multiple agents:
+
+### Pipeline Phase Grouping
+
+| Phase | Stages | Executing Agent | Description |
+|-------|--------|----------------|-------------|
+| Write Phase | Primary op + Stages 1-3 | Primary engine (modify, citations, api-refs, locals) | Core operation + enforcement (verbosity, citations, API refs) |
+| Review Phase | Stages 4-5 | Validate engine | Independent sanity-check + 10-point verification |
+| Finalize Phase | Stages 6-8 | Orchestrator | Changelog, index, git commit & push |
+
+### Stage-to-Phase Mapping
+
+| Stage | Phase | Agent |
+|-------|-------|-------|
+| Stage 1: Verbosity Enforcement | Write | Primary engine |
+| Stage 2: Citation Generation/Update | Write | Primary engine |
+| Stage 3: API Reference Sync | Write | Primary engine |
+| Stage 4: Sanity Check | Review | Validate engine |
+| Stage 5: Verify | Review | Validate engine |
+| Stage 6: Changelog Update | Finalize | Orchestrator |
+| Stage 7: Index Update | Finalize | Orchestrator |
+| Stage 8: Docs Commit & Push | Finalize | Orchestrator |
+
+### Teammate Pipeline Behavior
+
+When executing as a teammate in a batch operation:
+- Each teammate runs the primary operation AND stages 1-3 (enforcement)
+- Teammates do NOT run stages 4-8 (validation, changelog, index, git)
+- Each teammate returns a Delegation Result with enforcement stage outcomes
+- The orchestrator runs ONE validation pass (stages 4-5) after all teammates complete
+- The orchestrator performs ONE set of finalization (stages 6-8) covering all changes
+
+### Delegated Mode Completion Marker
+
+When running in delegated mode, engines output a variant completion marker:
+
+```
+Delegation complete: [verbosity: PASS] [citations: PASS] [api-refs: N/A]
+```
+
+This replaces the full pipeline completion marker (which is only output by the orchestrator after all phases complete).
+
 ## Pipeline Trigger Matrix
 
 | Operation | Stages Run |

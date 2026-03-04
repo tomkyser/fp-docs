@@ -2,7 +2,7 @@
 
 Documentation management system for the Foreign Policy WordPress codebase. fp-docs is a Claude Code plugin that automates the creation, revision, validation, and maintenance of technical documentation by reading your source code directly and keeping docs in sync with every change.
 
-fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships 19 commands, 8 specialized engines, and an automated 8-stage post-modification pipeline that runs after every documentation change.
+fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships 19 commands, 9 specialized engines (including a universal orchestration engine that coordinates multi-agent execution), and an automated 8-stage post-modification pipeline that runs after every documentation change.
 
 ### What Problems It Solves
 
@@ -91,8 +91,8 @@ From here, the SessionStart hooks handle branch detection and plugin context inj
 
 ### Summary Table
 
-| Command | Engine | Description |
-|---------|--------|-------------|
+| Command | Specialist Engine | Description |
+|---------|------------------|-------------|
 | `/fp-docs:revise` | modify | Fix specific documentation you know is wrong |
 | `/fp-docs:add` | modify | Create docs for new code |
 | `/fp-docs:auto-update` | modify | Auto-detect code changes and update affected docs |
@@ -111,7 +111,9 @@ From here, the SessionStart hooks handle branch detection and plugin context inj
 | `/fp-docs:update-skills` | system | Regenerate skill files from definitions |
 | `/fp-docs:setup` | system | Initialize or verify installation |
 | `/fp-docs:sync` | system | Synchronize docs branch with codebase branch |
-| `/fp-docs:parallel` | (orchestrator) | Run operations in parallel across files |
+| `/fp-docs:parallel` | orchestrate | Run operations in parallel across files |
+
+All commands route through the **orchestrate** engine, which delegates to the specialist engine listed above. Write operations use 3+ agents (orchestrator + specialist + validator). Read-only operations use 2 agents (orchestrator + specialist).
 
 ### Documentation Lifecycle Commands
 
@@ -472,10 +474,10 @@ fp-docs/                              # Git root (marketplace container)
 └── plugins/
     └── fp-docs/                      # THE ACTUAL PLUGIN (install target)
         ├── .claude-plugin/
-        │   └── plugin.json           # Plugin manifest (v2.7.0)
+        │   └── plugin.json           # Plugin manifest (v2.7.1)
         ├── settings.json             # Default permissions (Read, Grep, Glob)
-        ├── agents/                   # 8 engine agent definitions
-        ├── modules/                  # 10 shared modules (preloaded by engines)
+        ├── agents/                   # 9 engine agent definitions
+        ├── modules/                  # 11 shared modules (preloaded by engines)
         ├── skills/                   # 19 user-facing commands
         ├── hooks/
         │   └── hooks.json            # 4 hook event definitions
@@ -496,46 +498,58 @@ User: /fp-docs:revise "fix the posts helper"
   |
   v
 Skill (skills/revise/SKILL.md)
-  - Declares: agent: modify, context: fork
-  - Body: Operation: revise, User request: $ARGUMENTS
+  - Declares: agent: orchestrate, context: fork
+  - Body: Engine: modify, Operation: revise, Instruction: ..., User request: $ARGUMENTS
   |
   v
-Engine (agents/modify.md)
-  - YAML frontmatter: tools, skills (modules), model, maxTurns
-  - Reads instruction file: framework/instructions/modify/revise.md
+Orchestrator (agents/orchestrate.md)
+  - Parses routing metadata (Engine, Operation, Instruction)
+  - Classifies command type (write/read-only/admin/batch)
+  - Analyzes scope for delegation strategy
   |
   v
-Instruction File (framework/instructions/modify/revise.md)
-  - Step-by-step algorithm for the operation
-  - References on-demand algorithm files for pipeline stages
+Write Phase: Specialist Engine (agents/modify.md — Mode: DELEGATED)
+  - Executes primary operation + enforcement stages 1-3
+  - Returns Delegation Result
   |
   v
-Post-Modification Pipeline (8 stages)
+Review Phase: Validate Engine (agents/validate.md — Mode: PIPELINE-VALIDATION)
+  - Runs sanity-check (stage 4) + 10-point verification (stage 5)
+  - Returns Pipeline Validation Report
   |
   v
-Structured Report
+Finalize Phase: Orchestrator
+  - Stage 6: Changelog update
+  - Stage 7: Index update (conditional)
+  - Stage 8: Docs commit & push
+  |
+  v
+Orchestration Report (aggregated from all phases)
 ```
 
-**Skills** are thin routing files. They declare which engine to invoke (`agent:`), run in isolation (`context: fork`), and pass the user's input (`$ARGUMENTS`) to the engine. All logic lives in the engines and instruction files.
+**Skills** are thin routing files. They declare `agent: orchestrate` and `context: fork`, providing routing metadata (Engine, Operation, Instruction path) and the user's input (`$ARGUMENTS`). All logic lives in the engines and instruction files.
 
-**Engines** are subagent definitions with YAML frontmatter (tools, modules, model, maxTurns) and a system prompt. They parse the skill's request, load the appropriate instruction file, execute it, run the pipeline, and return a report.
+**The Orchestrator** is the universal entry point. It parses routing metadata, classifies the command, delegates to specialist engines, coordinates pipeline phases, and handles finalization. Multi-agent execution is the default.
+
+**Specialist Engines** are domain-specific subagent definitions. When invoked in Delegated Mode, they execute only their primary operation and enforcement stages (1-3), returning a structured Delegation Result. In Standalone Mode (for backward compatibility), they execute the full pipeline.
 
 **Instruction files** are the source of truth for operation behavior. They contain the step-by-step procedure for each specific operation.
 
-### The 8 Engines
+### The 9 Engines
 
-| Engine | Agent File | Can Write? | Modules Preloaded |
-|--------|-----------|------------|-------------------|
-| modify | agents/modify.md | Yes | mod-standards, mod-project, mod-pipeline, mod-changelog, mod-index |
-| validate | agents/validate.md | No | mod-standards, mod-project, mod-validation |
-| citations | agents/citations.md | Yes | mod-standards, mod-project, mod-citations |
-| api-refs | agents/api-refs.md | Yes | mod-standards, mod-project, mod-api-refs |
-| locals | agents/locals.md | Yes | mod-standards, mod-project, mod-locals |
-| verbosity | agents/verbosity.md | No | mod-standards, mod-project, mod-verbosity |
-| index | agents/index.md | Yes | mod-standards, mod-project, mod-index |
-| system | agents/system.md | Yes | mod-standards, mod-project |
+| Engine | Agent File | Role | Modules Preloaded |
+|--------|-----------|------|-------------------|
+| orchestrate | agents/orchestrate.md | Universal routing & delegation | mod-standards, mod-project, mod-pipeline, mod-changelog, mod-orchestration |
+| modify | agents/modify.md | Write (docs) | mod-standards, mod-project, mod-pipeline, mod-changelog, mod-index |
+| validate | agents/validate.md | Read-only | mod-standards, mod-project, mod-validation |
+| citations | agents/citations.md | Write (citations) | mod-standards, mod-project, mod-citations |
+| api-refs | agents/api-refs.md | Write (API refs) | mod-standards, mod-project, mod-api-refs |
+| locals | agents/locals.md | Write (locals) | mod-standards, mod-project, mod-locals |
+| verbosity | agents/verbosity.md | Read-only | mod-standards, mod-project, mod-verbosity |
+| index | agents/index.md | Write (index) | mod-standards, mod-project, mod-index |
+| system | agents/system.md | Admin | mod-standards, mod-project |
 
-Read-only engines (`validate`, `verbosity`) enforce this with `disallowedTools: [Write, Edit]` in their frontmatter.
+Read-only engines (`validate`, `verbosity`) enforce this with `disallowedTools: [Write, Edit]` in their frontmatter. All 8 specialist engines support Delegation Mode (invoked by the orchestrator) and Standalone Mode (backward-compatible direct invocation).
 
 ### The 8-Stage Post-Modification Pipeline
 
@@ -561,13 +575,13 @@ The `post-modify-check.sh` SubagentStop hook validates this marker.
 
 ### Module System
 
-The 10 modules in `modules/` are shared rule files preloaded into engines via the engine's `skills:` frontmatter. They are NOT user-invocable commands.
+The 11 modules in `modules/` are shared rule files preloaded into engines via the engine's `skills:` frontmatter. They are NOT user-invocable commands.
 
 | Module | Purpose |
 |--------|---------|
 | mod-standards | Universal formatting, naming, structural, and depth rules |
 | mod-project | FP-specific paths, source-to-doc mappings, environment config |
-| mod-pipeline | 8-stage pipeline definition, trigger matrix, skip conditions |
+| mod-pipeline | 8-stage pipeline definition, trigger matrix, skip conditions, delegation protocol |
 | mod-changelog | Changelog entry format and update procedure |
 | mod-index | PROJECT-INDEX.md update rules and modes |
 | mod-citations | Citation format, tiers, staleness model, provenance |
@@ -575,6 +589,7 @@ The 10 modules in `modules/` are shared rule files preloaded into engines via th
 | mod-locals | `$locals` contract format, shapes, validation rules |
 | mod-validation | 10-point checklist, sanity-check algorithm, claim classification |
 | mod-verbosity | Anti-compression rules, banned phrases, scope manifests |
+| mod-orchestration | Delegation thresholds, batching strategy, report formats, team protocol |
 
 **Key distinction**: Modules define WHAT (rules, formats, classification systems). On-demand algorithm files in `framework/algorithms/` define HOW (step-by-step procedures). Modules are always in the engine's context. Algorithm files are loaded only when needed during pipeline execution, then discarded.
 
@@ -591,17 +606,18 @@ The 10 modules in `modules/` are shared rule files preloaded into engines via th
 
 ### Hook System
 
-Four event types with five hook scripts:
+Four event types with six hook scripts:
 
 | Event | Script | Purpose |
 |-------|--------|---------|
 | SessionStart | `inject-manifest.sh` | Inject plugin root path and manifest into context |
 | SessionStart | `branch-sync-check.sh` | Detect branch mismatch, warn if out of sync |
 | SubagentStop (modify) | `post-modify-check.sh` | Validate pipeline completion (checks changelog) |
-| TeammateIdle | `teammate-idle-check.sh` | Validate teammate pipeline (stub) |
-| TaskCompleted | `task-completed-check.sh` | Validate task outputs (stub) |
+| SubagentStop (orchestrate) | `post-orchestrate-check.sh` | Validate orchestration completion and delegation |
+| TeammateIdle | `teammate-idle-check.sh` | Validate teammate delegation results and enforcement stages |
+| TaskCompleted | `task-completed-check.sh` | Validate task outputs and check for HALLUCINATION markers |
 
-A sixth script, `docs-commit.sh`, is a utility called by engines (not a hook) to commit docs changes.
+A seventh script, `docs-commit.sh`, is a utility called by engines (not a hook) to commit docs changes.
 
 ### Design Philosophy
 
@@ -749,6 +765,12 @@ Use per-command flags (`--no-citations`, `--no-sanity-check`, etc.) for one-off 
 | `sanity_check.multi_agent_threshold_docs` | `5` | Doc count that triggers multi-agent sanity review |
 | `chunk_delegation.max_docs_per_agent` | `8` | Max docs a single agent processes |
 | `chunk_delegation.max_functions_per_agent` | `50` | Max functions a single agent processes |
+| `orchestration.enabled` | `true` | Master switch for multi-agent orchestration |
+| `orchestration.parallel_threshold_files` | `3` | Fan-out threshold for parallel Agent spawns |
+| `orchestration.team_threshold_files` | `8` | Team creation threshold for batched teammates |
+| `orchestration.max_teammates` | `5` | Max concurrent teammates |
+| `orchestration.validation_retry_limit` | `1` | Max retries on LOW validation confidence |
+| `orchestration.single_commit` | `true` | Aggregate changes into one git commit |
 
 ### Source-to-Documentation Mapping (project-config.md)
 
@@ -843,10 +865,10 @@ Claude Code's plugin update mechanism may not pull the latest version due to sta
 2. Pull the latest changes:
 
    ```bash
-   git pull origin main
+   git pull origin master
    ```
 
-   Use `master` instead of `main` if the repository's default branch is `master`.
+   Use `main` instead of `master` if the repository's default branch is `main`.
 
 3. After pulling, run the plugin update command again or reinstall the plugin to apply the changes:
 

@@ -102,7 +102,9 @@ Remote sync behavior: remote origin is the source of truth for the docs repo. Al
 | `verbosity.enabled` | `true` | Master switch for VERBOSITY-SCOPE and VERBOSITY-ENFORCE phases |
 | `verbosity.gap_tolerance` | `0` | Maximum allowed gap between source item count and documented item count. `0` = zero tolerance. |
 
-### Chunk-and-Delegate Thresholds
+### Chunk-and-Delegate Thresholds (Legacy)
+
+> These thresholds are superseded by §6 Orchestration for multi-agent delegation. Retained for backward compatibility when engines run in standalone mode.
 
 | Variable | Value | Description |
 |----------|-------|-------------|
@@ -142,3 +144,34 @@ Banned patterns (regex):
 | `see (above\|previous\|earlier) for (similar\|more\|details)` | "see above for similar" |
 | `(handles?\|supports?\|includes?\|provides?)\s+(various\|multiple\|many\|several\|different)\b` | "handles various post types" |
 | `\.{3}\|…` | Ellipsis used as list omission |
+
+---
+
+## 6. Orchestration
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `orchestration.enabled` | `true` | Master switch for multi-agent orchestration |
+| `orchestration.parallel_threshold_files` | `3` | Fan-out via parallel Agent spawns above this count |
+| `orchestration.team_threshold_files` | `8` | Create Team with batched teammates above this count |
+| `orchestration.max_teammates` | `5` | Maximum concurrent teammates in a team |
+| `orchestration.max_files_per_teammate` | `5` | Maximum files assigned to a single teammate |
+| `orchestration.pipeline_delegation` | `true` | Whether pipeline stages delegate to specialists |
+| `orchestration.validation_retry_limit` | `1` | Max retries if validation finds LOW confidence |
+| `orchestration.single_commit` | `true` | Aggregate all changes into one git commit |
+
+### Execution Strategy Selection
+
+```
+scope_files ≤ parallel_threshold → SINGLE specialist
+parallel_threshold < scope_files ≤ team_threshold → FAN-OUT (parallel Agent calls)
+scope_files > team_threshold → TEAM (TeamCreate + batched teammates)
+```
+
+### Pipeline Phase Grouping
+
+| Phase | Stages | Agent | Rationale |
+|-------|--------|-------|-----------|
+| Write Phase | Primary op + Stages 1-3 | Primary engine (delegated) | Needs write access + fresh context |
+| Review Phase | Stages 4-5 | Validate engine | Independent quality review |
+| Finalize Phase | Stages 6-8 | Orchestrator | Administrative finalization |
