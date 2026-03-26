@@ -2,6 +2,28 @@
 
 All notable changes to the fp-docs plugin will be documented in this file.
 
+## [1.0.0] - 2026-03-26
+
+### Changed
+- **Version reset to 1.0.0** -- Clean break for independent repo era
+- Plugin extracted as independent git submodule (was nested at plugins/fp-docs/)
+- Repository structure flattened: plugin root is now the submodule root
+
+### Added
+- `/fp-docs:update` command -- Check for and install plugin updates via GitHub Releases API
+- `lib/update.cjs` module -- Background update checking, version comparison, cache management
+- SessionStart update-check hook -- Background cache writer for update detection
+- Statusline hook template (`fp-docs-statusline.js`) -- Passive update notification
+- Versioning governance rules in CLAUDE.md (permanent)
+
+### Fixed
+- Setup instruction file: corrected plugin.json path (.claude-plugin/plugin.json)
+- Setup instruction file: corrected hooks.json path (hooks/hooks.json)
+- Setup instruction file: removed config.json confusion
+- Setup instruction file: updated skill/module counts (20+ skills, 11 modules)
+- Setup instruction file: added CLAUDE.md integration warning
+- Setup instruction file: corrected shell prompt template reference
+
 ## [2.8.0] - 2026-03-04
 
 ### Added

@@ -1,9 +1,9 @@
-# fp-docs System — Manifest v2.8.0
+# fp-docs System — Manifest v1.0.0
 
 ## Plugin
 - **Name**: fp-docs
 - **Namespace**: /fp-docs:* (e.g., /fp-docs:revise, /fp-docs:citations)
-- **Version**: 2.8.0
+- **Version**: 1.0.0
 
 ## Engines
 
@@ -17,7 +17,7 @@
 | locals | agents/locals.md | inherit | annotate, contracts, cross-ref, validate, shapes, coverage |
 | verbosity | agents/verbosity.md | sonnet | audit |
 | index | agents/index.md | sonnet | update-project-index, update-doc-links, update-example-claude |
-| system | agents/system.md | sonnet | update-skills, setup, sync |
+| system | agents/system.md | sonnet | update-skills, setup, sync, update |
 
 ## Commands
 
@@ -42,6 +42,9 @@
 | /setup | skills/setup/SKILL.md | orchestrate | system | setup |
 | /sync | skills/sync/SKILL.md | orchestrate | system | sync |
 | /parallel | skills/parallel/SKILL.md | orchestrate | orchestrate | (batch) |
+| /do | skills/do/SKILL.md | orchestrate | (routed) | (intent-matched) |
+| /help | skills/help/SKILL.md | orchestrate | orchestrate | help |
+| /update | skills/update/SKILL.md | orchestrate | system | update |
 
 ## Shared Modules (Preloaded)
 
@@ -82,7 +85,7 @@
 | locals | locals/annotate.md, locals/contracts.md, locals/cross-ref.md, locals/validate.md, locals/shapes.md, locals/coverage.md |
 | verbosity | verbosity/audit.md |
 | index | index/update.md, index/update-example-claude.md |
-| system | system/update-skills.md, system/setup.md, system/sync.md |
+| system | system/update-skills.md, system/setup.md, system/sync.md, system/update.md |
 
 ## Hooks
 
@@ -92,6 +95,8 @@ All hooks invoke CJS handlers via `fp-tools.cjs hooks run <event> [matcher]`.
 |---|---|---|---|
 | SessionStart | (all) | `hooks run session-start inject-manifest` | Inject plugin root + manifest |
 | SessionStart | (all) | `hooks run session-start branch-sync` | Detect branch mismatch + verify remote + pull latest |
+| SessionStart | (all) | `hooks run session-start drift-nudge` | Surface pending doc updates from drift detection |
+| SessionStart | (all) | `hooks run session-start update-check` | Background check for plugin updates |
 | SubagentStop | modify | `hooks run subagent-stop modify` | Validate pipeline completion |
 | SubagentStop | orchestrate | `hooks run subagent-stop orchestrate` | Validate orchestration completion |
 | SubagentStop | locals | `hooks run subagent-stop locals` | Auto-clean orphaned CLI artifacts after locals engine stops |
@@ -102,8 +107,20 @@ All hooks invoke CJS handlers via `fp-tools.cjs hooks run <event> [matcher]`.
 
 | Module | Purpose |
 |---|---|
-| lib/hooks.cjs | All 7 hook handlers as pure functions + CLI dispatch |
+| lib/hooks.cjs | All hook handlers as pure functions + CLI dispatch |
 | lib/locals-cli.cjs | Ephemeral WP-CLI lifecycle (setup/teardown) |
+| lib/core.cjs | Shared utilities (output, error, safeReadFile, safeJsonParse) |
+| lib/paths.cjs | Path resolution (plugin root, codebase root, docs root) |
+| lib/config.cjs | Plugin configuration access |
+| lib/git.cjs | Three-repo git operations |
+| lib/state.cjs | JSON-based state management |
+| lib/routing.cjs | Command routing table and validation |
+| lib/pipeline.cjs | Pipeline sequencing engine (stages 6-8) |
+| lib/security.cjs | Input validation and injection prevention |
+| lib/drift.cjs | Drift detection and staleness tracking |
+| lib/remediate.cjs | Remediation plan persistence |
+| lib/engine-compliance.cjs | CJS compliance checking for engines |
+| lib/update.cjs | Background update checking, version comparison, cache management |
 
 ## Tools
 
