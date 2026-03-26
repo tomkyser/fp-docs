@@ -48,6 +48,12 @@ Verify AND initialize the fp-docs system:
 2. Output the source line for user's .zshrc: `source "{codebase-root}/.fp-docs-shell.zsh"`
 3. Inform user to add the source line to their .zshrc
 
+### Phase 7: Update Notification Setup
+1. Copy statusline hook template to `~/.claude/hooks/fp-docs-statusline.js` if not present
+2. Check if `~/.claude/settings.json` already references the statusline hook
+3. If not configured: show user how to add the hook to their settings (separate hook or integrate with existing statusline)
+4. Report statusline hook installation status
+
 ### Important: CLAUDE.md Integration
 After completing all phases, check if codebase CLAUDE.md contains fp-docs configuration. If not, include in setup report: "WARNING: CLAUDE.md not configured for fp-docs. Run `/fp-docs:update-claude` to configure."
 
