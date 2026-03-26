@@ -67,16 +67,22 @@ describe('lib/routing.cjs', () => {
       const route = lookupRoute('remediate');
       assert.deepStrictEqual(route, { engine: 'orchestrate', operation: 'remediate', type: 'write' });
     });
+
+    it('should return correct route for update', () => {
+      const { lookupRoute } = require(path.join(LIB_DIR, 'routing.cjs'));
+      const route = lookupRoute('update');
+      assert.deepStrictEqual(route, { engine: 'system', operation: 'update', type: 'admin' });
+    });
   });
 
   describe('getRoutingTable', () => {
-    it('should return object with exactly 20 command keys', () => {
+    it('should return object with exactly 21 command keys', () => {
       const { getRoutingTable } = require(path.join(LIB_DIR, 'routing.cjs'));
       const table = getRoutingTable();
-      assert.strictEqual(Object.keys(table).length, 20);
+      assert.strictEqual(Object.keys(table).length, 21);
     });
 
-    it('should include all 20 expected command names', () => {
+    it('should include all 21 expected command names', () => {
       const { getRoutingTable } = require(path.join(LIB_DIR, 'routing.cjs'));
       const table = getRoutingTable();
       const expected = [
@@ -86,7 +92,7 @@ describe('lib/routing.cjs', () => {
         'verbosity-audit',
         'update-index', 'update-claude',
         'update-skills', 'setup', 'sync',
-        'parallel', 'remediate',
+        'parallel', 'remediate', 'update',
       ];
       for (const cmd of expected) {
         assert.ok(table[cmd], `Missing routing table entry for: ${cmd}`);
@@ -105,7 +111,7 @@ describe('lib/routing.cjs', () => {
   });
 
   describe('validateRoutes', () => {
-    it('should validate all 20 skills match routing table', () => {
+    it('should validate all 21 skills match routing table', () => {
       const { validateRoutes } = require(path.join(LIB_DIR, 'routing.cjs'));
       const pluginRoot = path.resolve(__dirname, '..', '..');
       const result = validateRoutes(pluginRoot);
@@ -130,7 +136,7 @@ describe('lib/routing.cjs', () => {
       assert.match(result, /## Batch Operations/);
     });
 
-    it('should include all 20 commands in grouped output', () => {
+    it('should include all 21 commands in grouped output', () => {
       const result = execFileSync('node', [fpTools, 'help', 'grouped', '--raw'], { encoding: 'utf-8' });
       const expectedCommands = [
         'revise', 'add', 'auto-update', 'auto-revise', 'deprecate',
@@ -139,7 +145,7 @@ describe('lib/routing.cjs', () => {
         'verbosity-audit',
         'update-index', 'update-claude',
         'update-skills', 'setup', 'sync',
-        'parallel', 'remediate',
+        'parallel', 'remediate', 'update',
       ];
       for (const cmd of expectedCommands) {
         assert.match(result, new RegExp(`/fp-docs:${cmd}`), `Missing command: /fp-docs:${cmd}`);

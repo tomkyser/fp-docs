@@ -177,12 +177,12 @@ describe('fp-tools CLI', () => {
       assert.equal(result.type, 'batch');
     });
 
-    it('table returns 20 entries', () => {
+    it('table returns 21 entries', () => {
       const result = runCliJson('route', 'table');
-      assert.equal(Object.keys(result).length, 20);
+      assert.equal(Object.keys(result).length, 21);
     });
 
-    it('validate confirms all 20 skills match routing table', () => {
+    it('validate confirms all 21 skills match routing table', () => {
       const result = runCliJson('route', 'validate');
       assert.strictEqual(result.valid, true, `Expected valid=true, got mismatches: ${JSON.stringify(result.mismatches)}`);
       assert.strictEqual(result.mismatches.length, 0, `Expected 0 mismatches, got: ${JSON.stringify(result.mismatches)}`);
