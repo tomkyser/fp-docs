@@ -1,6 +1,8 @@
 # fp-docs Features and Capabilities Research
 
-> **Updated 2026-03-25**: Phase 8 -- All 9 engines invoke CJS tooling (`fp-tools.cjs`) for git, pipeline, state, and config operations. Pipeline finalization stages 6-8 are fully CJS-executed via callback loop. SubagentStop hooks include CJS compliance checking. Added Design Choice #12 (explicit CJS invocation in instruction files).
+> **Updated 2026-03-26**: Phase 10 -- Version reset to 1.0.0. Added `/fp-docs:update` command (21st routing-table entry). Update system: background check via GitHub Releases API, cache-based awareness, statusline hook template, git-based self-update. Plugin extracted as independent submodule.
+>
+> Previously (2026-03-25): Phase 8 -- All 9 engines invoke CJS tooling (`fp-tools.cjs`) for git, pipeline, state, and config operations. Pipeline finalization stages 6-8 are fully CJS-executed via callback loop. SubagentStop hooks include CJS compliance checking. Added Design Choice #12 (explicit CJS invocation in instruction files).
 >
 > Previously (2026-03-25): Phase 7 -- added drift detection system: proactive staleness detection via git hooks, SessionStart nudge, shell prompt integration, auto-clear after successful operations, `lib/drift.cjs` module with `fp-tools drift` CLI surface (7 subcommands), extended `/fp-docs:setup` with Phases 5-6.
 >
@@ -14,7 +16,7 @@ fp-docs is a Claude Code plugin that provides a complete documentation managemen
 
 The plugin is distributed via the `fp-tools` marketplace and operates entirely through Claude Code's native plugin primitives: subagents (engines), skills (commands), hooks (lifecycle events), and modules (shared rule sets).
 
-**Version**: 2.8.0
+**Version**: 1.0.0
 **Author**: Tom Kyser
 **License**: MIT
 
@@ -35,11 +37,11 @@ The plugin is distributed via the `fp-tools` marketplace and operates entirely t
 
 ---
 
-## Complete Command Catalog (20 Document-Operation Commands + 2 Meta-Commands)
+## Complete Command Catalog (21 Routing-Table Commands + 2 Meta-Commands)
 
 All commands are namespaced as `/fp-docs:*` and run in isolated subagent contexts (`context: fork`). Every command routes through the **orchestrate** engine, which acts as a pure dispatcher (D-06) -- it never executes fp-docs operations directly.
 
-The 20 document-operation commands are managed by the ROUTING_TABLE in `lib/routing.cjs` and delegate to specialist engines. Write operations use 3+ agents (orchestrate + specialist + validate); read-only operations use a 2-agent fast path (orchestrate + specialist) with actionable output including per-issue command recommendations.
+The 21 routing-table commands are managed by the ROUTING_TABLE in `lib/routing.cjs` and delegate to specialist engines. Write operations use 3+ agents (orchestrate + specialist + validate); read-only operations use a 2-agent fast path (orchestrate + specialist) with actionable output including per-issue command recommendations.
 
 The 2 meta-commands (`/fp-docs:do` and `/fp-docs:help`) bypass the standard delegation pattern -- they are handled directly by the orchestrate engine without entering the ROUTING_TABLE or delegating to specialist engines.
 
@@ -115,20 +117,21 @@ Route to the **index** engine.
 | `/fp-docs:update-index` | Refresh the PROJECT-INDEX.md codebase reference. Supports update (incremental) and full (complete regeneration) modes. | index |
 | `/fp-docs:update-claude` | Regenerate the CLAUDE.md template with current skill inventory, documentation links, and project configuration. | index |
 
-### System & Maintenance (4 commands)
+### System & Maintenance (5 commands)
 
 Route to the **system** engine.
 
 | Command | Description | Engine |
 |---------|-------------|--------|
-| `/fp-docs:setup` | Initialize or verify the fp-docs plugin installation. Runs six phases: plugin structure verification, docs repo setup, codebase gitignore check, branch sync, git hook installation (post-merge/post-rewrite for drift detection), and shell prompt integration. | system |
+| `/fp-docs:setup` | Initialize or verify the fp-docs plugin installation. Runs seven phases: plugin structure verification, docs repo setup, codebase gitignore check, branch sync, git hook installation (post-merge/post-rewrite for drift detection), shell prompt integration, and update notification setup (statusline hook). | system |
 | `/fp-docs:sync` | Synchronize the docs repo branch with the codebase branch. Creates or switches docs branches, generates diff reports, and optionally merges docs branches. | system |
 | `/fp-docs:update-skills` | Regenerate all plugin skills from current prompt definitions. Syncs skill files with source-of-truth prompts. | system |
+| `/fp-docs:update` | Check for and install plugin updates. Queries the GitHub Releases API for the latest version, displays the changelog from release notes, confirms with the user, and executes a git-based update (`git fetch && git checkout <tag>`). Supports `--check` flag for version check only. | system |
 | `/fp-docs:parallel` | Run documentation operations in parallel across multiple files using Agent Teams. Batches files into groups of up to 5 and assigns each batch to a teammate. Falls back to sequential if Agent Teams are disabled or scope is small (<3 files). Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` env variable. | system |
 
 ### Meta-Commands (2 commands)
 
-These commands are handled directly by the orchestrate engine. They do NOT appear in the 20-entry ROUTING_TABLE and do not delegate to specialist engines.
+These commands are handled directly by the orchestrate engine. They do NOT appear in the 21-entry ROUTING_TABLE and do not delegate to specialist engines.
 
 | Command | Description | How It Works |
 |---------|-------------|-------------|
@@ -143,7 +146,7 @@ Each engine is a subagent definition with a specific domain, tool permissions, a
 
 ### 1. orchestrate (color: white)
 - **Domain**: Universal command routing, multi-agent delegation, pipeline phase coordination, meta-command handling
-- **Operations**: All 20 document-operation commands route through orchestrate and delegate to specialist engines. The 2 meta-commands (`/fp-docs:do`, `/fp-docs:help`) are handled directly by the orchestrate engine without delegation.
+- **Operations**: All 21 routing-table commands route through orchestrate and delegate to specialist engines. The 2 meta-commands (`/fp-docs:do`, `/fp-docs:help`) are handled directly by the orchestrate engine without delegation.
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash (full write access for Finalize Phase)
 - **Modules**: mod-standards, mod-project, mod-orchestration
 - **Model**: opus, maxTurns: 100
@@ -455,10 +458,13 @@ Every engine includes memory management instructions: update agent memory when d
 The locals engine addresses a WordPress-specific pattern where template components communicate via `$locals` arrays without formal type contracts. The engine annotates source code, generates contract tables, traces caller chains, and reports coverage -- solving a real problem specific to the FP codebase's architecture. Uses an ephemeral WP-CLI tool (`wp fp-locals`) backed by PHP's `token_get_all()` for 100% accurate extraction of keys, types, required/optional status, and default values -- far superior to regex or AI inference. The CLI source lives in the plugin and is copied to the theme during operations, then removed after.
 
 ### 11. Universal Multi-Agent Orchestration
-All 20 commands route through the orchestrate engine, which acts as a pure dispatcher (D-06) that never executes fp-docs operations directly. Write operations use a 3-phase pipeline delegation (Write Phase to specialist, Review Phase to validate engine, Finalize Phase handled by orchestrator). Read-only operations use a 2-agent fast path with actionable output. Execution mode is controlled by the `--batch-mode` flag (D-08): subagent (default), team (explicit request with confirmation per D-07), or sequential. The orchestrator extracts only summary metrics from delegation results (D-09). Engines support both Delegation Mode (orchestrator-coordinated) and Standalone Mode (self-contained) for backward compatibility.
+All 21 routing-table commands route through the orchestrate engine, which acts as a pure dispatcher (D-06) that never executes fp-docs operations directly. Write operations use a 3-phase pipeline delegation (Write Phase to specialist, Review Phase to validate engine, Finalize Phase handled by orchestrator). Read-only operations use a 2-agent fast path with actionable output. Execution mode is controlled by the `--batch-mode` flag (D-08): subagent (default), team (explicit request with confirmation per D-07), or sequential. The orchestrator extracts only summary metrics from delegation results (D-09). Engines support both Delegation Mode (orchestrator-coordinated) and Standalone Mode (self-contained) for backward compatibility.
 
 ### 12. Explicit CJS Invocation in Instruction Files (Phase 8)
 Engines invoke CJS CLI commands explicitly -- instruction files contain literal `fp-tools.cjs` commands (e.g., `fp-tools.cjs pipeline init`, `fp-tools.cjs git commit`, `fp-tools.cjs locals-cli setup`) to prevent engine improvisation. This eliminates the risk of engines inventing ad-hoc git or pipeline commands, ensures deterministic execution of finalization stages, and provides a compliance verification layer via SubagentStop hooks that emit non-blocking warnings when write-capable engines skip expected CJS calls.
+
+### 13. Update System with Background Check and Git-Based Self-Update (Phase 10)
+Plugin updates use a three-layer approach: (1) Background spawn during SessionStart writes version check results to `.fp-docs/update-cache.json` with 1-hour TTL -- never blocks session startup. (2) A user-level statusline hook (`fp-docs-statusline.js`, installed by `/fp-docs:setup`) reads the cache and displays a passive update nudge. (3) The `/fp-docs:update` command checks the GitHub Releases API, displays the changelog from release notes, confirms with the user, and executes a git-based update (`git fetch origin && git checkout <tag>`). This pattern was adapted from GSD's `gsd-check-update.js` background spawn.
 
 ### 13. MCP over CJS for Browser Automation (Phase 9)
 Browser tools integrate as MCP native tool calls, not CJS CLI wrappers. This avoids building a custom browser automation layer and lets Claude call browser tools with the same invocation pattern as Read/Write/Grep.

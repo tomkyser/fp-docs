@@ -2,7 +2,7 @@
 
 Documentation management system for the Foreign Policy WordPress codebase. fp-docs is a Claude Code plugin that automates the creation, revision, validation, and maintenance of technical documentation by reading your source code directly and keeping docs in sync with every change.
 
-fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships 19 commands, 9 specialized engines (including a universal orchestration engine that coordinates multi-agent execution), and an automated 8-stage post-modification pipeline that runs after every documentation change.
+fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships 21 commands, 9 specialized engines (including a universal orchestration engine that coordinates multi-agent execution), and an automated 8-stage post-modification pipeline that runs after every documentation change.
 
 ### What Problems It Solves
 
@@ -112,6 +112,10 @@ From here, the SessionStart hooks handle branch detection and plugin context inj
 | `/fp-docs:setup` | system | Initialize or verify installation |
 | `/fp-docs:sync` | system | Synchronize docs branch with codebase branch |
 | `/fp-docs:parallel` | orchestrate | Run operations in parallel across files |
+| `/fp-docs:remediate` | orchestrate | Resolve audit findings via batch remediation |
+| `/fp-docs:do` | orchestrate | Smart router: natural language to command |
+| `/fp-docs:help` | orchestrate | Grouped command reference |
+| `/fp-docs:update` | system | Check for and install plugin updates |
 
 All commands route through the **orchestrate** engine, which delegates to the specialist engine listed above. Write operations use 3+ agents (orchestrator + specialist + validator). Read-only operations use 2 agents (orchestrator + specialist).
 
@@ -470,7 +474,7 @@ The chunk delegation system auto-triggers when scope exceeds 8 docs or 50 functi
 ```
 fp-docs/                              # Git root (independent repo, submodule of fp-tools)
 ├── .claude-plugin/
-│   └── plugin.json                   # Plugin manifest (v2.8.0)
+│   └── plugin.json                   # Plugin manifest (v1.0.0)
 ├── settings.json                     # Default permissions (Read, Grep, Glob)
 ├── agents/                           # 9 engine agent definitions
 ├── modules/                          # 11 shared modules (preloaded by engines)

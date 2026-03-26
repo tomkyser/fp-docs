@@ -1,6 +1,8 @@
 # fp-docs Usage and Workflows Research
 
-> **Updated 2026-03-25**: Phase 8 -- Pipeline finalization is CJS-managed (no manual git commands needed). Setup Phase 5 installs drift hooks via `fp-tools drift install`. Setup Phase 6 installs shell integration via `fp-tools drift shell-install`.
+> **Updated 2026-03-26**: Phase 10 -- Version reset to 1.0.0 for independent repo era. Added `/fp-docs:update` command and "Updating fp-docs" workflow. Setup extended with Phase 7 (statusline hook installation).
+>
+> Previously (2026-03-25): Phase 8 -- Pipeline finalization is CJS-managed (no manual git commands needed). Setup Phase 5 installs drift hooks via `fp-tools drift install`. Setup Phase 6 installs shell integration via `fp-tools drift shell-install`.
 >
 > Previously (2026-03-25): Phase 7 -- added drift detection system: Workflow H (Drift Detection), extended `/fp-docs:setup` with Phases 5-6 (git hooks + shell integration), 3 new gotchas, staleness.json and drift-pending.json data files.
 >
@@ -50,10 +52,10 @@ claude --plugin-dir ~/cc-plugins/fp-docs
 
 From `.claude-plugin/plugin.json`:
 - Name: `fp-docs`
-- Version: `2.8.0`
+- Version: `1.0.0`
 - License: MIT
 - Repository: `https://github.com/tomkyser/fp-docs`
-- All 22 user commands are namespaced as `/fp-docs:*` (20 document-operation + 2 meta-commands)
+- All 23 user commands are namespaced as `/fp-docs:*` (21 routing-table + 2 meta-commands)
 
 ### Default Permissions
 
@@ -141,7 +143,7 @@ Two meta-commands help new and experienced users discover and access fp-docs cap
 
 **Command Reference**: `/fp-docs:help`
 
-Displays all 20 document-operation commands organized by type (write/read/admin/batch) in formatted markdown tables with descriptions and engine assignments. The output is generated from CJS routing data, so it never drifts from the actual command inventory.
+Displays all 21 routing-table commands organized by type (write/read/admin/batch) in formatted markdown tables with descriptions and engine assignments. The output is generated from CJS routing data, so it never drifts from the actual command inventory.
 
 ```
 /fp-docs:help
@@ -416,20 +418,36 @@ Run /fp-docs:auto-revise to update affected docs, or /fp-docs:drift status for d
 
 **Prerequisites:** ddev running, Playwright MCP server active (auto-started with plugin)
 
+### Workflow J: "I want to update fp-docs to the latest version"
+
+**When:** You see an update notification in the statusline, or you want to check for new versions.
+
+**Steps:**
+1. Check for updates: `/fp-docs:update --check`
+2. If an update is available, install it: `/fp-docs:update`
+3. The command queries the GitHub Releases API, displays the changelog from release notes, and asks for confirmation
+4. On confirmation, it executes `git fetch origin && git checkout <tag>` in the plugin directory
+5. Restart your Claude Code session to pick up the new version
+
+**How the update awareness works:**
+- A SessionStart hook spawns a background process that checks for updates (writes to `.fp-docs/update-cache.json`)
+- The statusline hook (installed by `/fp-docs:setup`) reads the cache and displays an update nudge
+- Neither the background check nor the statusline blocks session startup
+
 ---
 
 ## 4. Complete Command Reference
 
-All 22 commands route through the **orchestrate** engine (`agent: orchestrate`). The 20 document-operation commands delegate to specialist engines; the 2 meta-commands are handled directly by the orchestrate engine.
+All 23 commands route through the **orchestrate** engine (`agent: orchestrate`). The 21 routing-table commands delegate to specialist engines; the 2 meta-commands are handled directly by the orchestrate engine.
 
 ### Meta-Commands (handled directly by orchestrate)
 
 | Command | Arguments | Description |
 |---------|-----------|-------------|
 | `/fp-docs:do` | `"natural language description"` | Route natural language to the right fp-docs command. The smart router evaluates your intent against a routing rules table, disambiguates when needed, and auto-dispatches the matched command. |
-| `/fp-docs:help` | (none) | Display all 20 document-operation commands grouped by type (write/read/admin/batch) with descriptions and engines. CJS-generated from routing data. |
+| `/fp-docs:help` | (none) | Display all 21 routing-table commands grouped by type (write/read/admin/batch) with descriptions and engines. CJS-generated from routing data. |
 
-### Document-Operation Commands (20 commands)
+### Routing-Table Commands (21 commands)
 
 The "Engine" column refers to the specialist engine that receives the delegation. Write operations use 3+ agents (orchestrate + specialist + validate); read-only operations use a 2-agent fast path with actionable output.
 
@@ -465,8 +483,9 @@ The "Engine" column refers to the specialist engine that receives the delegation
 
 | Command | Arguments | Engine | Description |
 |---------|-----------|--------|-------------|
-| `/fp-docs:setup` | (none) | system | Initialize or verify plugin installation (6 phases: structure, docs repo, gitignore, branch sync, git hooks, shell integration) |
+| `/fp-docs:setup` | (none) | system | Initialize or verify plugin installation (7 phases: structure, docs repo, gitignore, branch sync, git hooks, shell integration, update notification) |
 | `/fp-docs:sync` | `[merge] [--force]` | system | Synchronize docs repo branch with codebase branch |
+| `/fp-docs:update` | `[--check]` | system | Check for and install plugin updates via GitHub Releases API. `--check` for version check only. |
 | `/fp-docs:update-index` | `update\|full` | index | Refresh the PROJECT-INDEX.md codebase reference |
 | `/fp-docs:update-claude` | (none) | index | Regenerate the CLAUDE.md template with current skill inventory |
 | `/fp-docs:update-skills` | (none) | system | Regenerate all plugin skills from prompt definitions |

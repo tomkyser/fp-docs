@@ -80,12 +80,12 @@ describe('fp-tools CLI', () => {
       const result = runCliJson('version');
       assert.ok(result.version, 'should have version field');
       assert.equal(typeof result.version, 'string');
-      assert.equal(result.version, '2.8.0');
+      assert.equal(result.version, '1.0.0');
     });
 
     it('--raw outputs bare version string matching plugin.json', () => {
       const raw = runCliRaw('version');
-      assert.equal(raw, '2.8.0');
+      assert.equal(raw, '1.0.0');
     });
   });
 

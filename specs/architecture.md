@@ -1,6 +1,8 @@
 # fp-docs Architecture Research
 
-> **Updated 2026-03-25**: Phase 8 -- All 9 engines invoke CJS tooling layer (`fp-tools.cjs`). Pipeline finalization uses callback loop. SubagentStop hooks verify CJS compliance. Instruction files contain literal CJS commands. Zero stale bash references remain.
+> **Updated 2026-03-26**: Phase 10 -- Version reset to 1.0.0 for independent repo era. Plugin extracted as git submodule. Added `/fp-docs:update` command (21st routing-table entry), `lib/update.cjs` module, SessionStart update-check hook, statusline hook template. Versioning governance rules added to CLAUDE.md.
+>
+> Previously (2026-03-25): Phase 8 -- All 9 engines invoke CJS tooling layer (`fp-tools.cjs`). Pipeline finalization uses callback loop. SubagentStop hooks verify CJS compliance. Instruction files contain literal CJS commands. Zero stale bash references remain.
 >
 > Previously (2026-03-25): Phase 7 -- added drift detection system: git hooks (post-merge, post-rewrite), staleness tracker (staleness.json), session nudge (handleDriftNudge), shell prompt integration (fp-docs-shell.zsh), auto-clear on successful operations, lib/drift.cjs module with CLI surface, extended /fp-docs:setup with Phases 5-6.
 >
@@ -19,7 +21,7 @@ The fp-docs repository is an independent git repo (`tomkyser/fp-docs`) added as 
 ```
 fp-docs/                              # Git root (independent repo, submodule of fp-tools)
 ├── .claude-plugin/
-│   └── plugin.json                   # Plugin manifest v2.8.0
+│   └── plugin.json                   # Plugin manifest v1.0.0
 ├── settings.json                     # Default permissions
 ├── .mcp.json                         # Playwright MCP server declaration (visual verification)
 ├── hooks/
@@ -46,7 +48,7 @@ fp-docs/                              # Git root (independent repo, submodule of
 │   ├── mod-validation/SKILL.md
 │   ├── mod-verbosity/SKILL.md
 │   └── mod-orchestration/SKILL.md
-├── skills/                           # 22 user-facing commands (20 document-operation + 2 meta)
+├── skills/                           # 23 user-facing commands (21 routing-table + 2 meta)
 │   ├── revise/SKILL.md
 │   ├── add/SKILL.md
 │   ├── auto-update/SKILL.md
@@ -66,6 +68,8 @@ fp-docs/                              # Git root (independent repo, submodule of
 │   ├── setup/SKILL.md
 │   ├── sync/SKILL.md
 │   ├── parallel/SKILL.md
+│   ├── remediate/SKILL.md             # Resolve audit findings via batch remediation
+│   ├── update/SKILL.md               # Check for and install plugin updates
 │   ├── do/SKILL.md                   # Meta-command: smart router (natural language -> command)
 │   └── help/SKILL.md                 # Meta-command: grouped command reference
 ├── lib/                              # CJS modules (hooks, locals-cli, core, paths, etc.)
@@ -79,17 +83,22 @@ fp-docs/                              # Git root (independent repo, submodule of
 │   ├── health.cjs                    # System health checks
 │   ├── state.cjs                     # Operation state management
 │   ├── git.cjs                       # Three-repo git operations
-│   └── drift.cjs                     # Drift detection and staleness tracking
+│   ├── drift.cjs                     # Drift detection and staleness tracking
+│   ├── pipeline.cjs                  # Pipeline sequencing engine (stages 6-8)
+│   ├── remediate.cjs                 # Remediation plan persistence
+│   ├── engine-compliance.cjs         # CJS compliance checking for engines
+│   └── update.cjs                    # Background update checking, version comparison, cache
 ├── fp-tools.cjs                      # CLI entry point for all CJS modules
 ├── framework/
-│   ├── manifest.md                   # System manifest v2.8.0
+│   ├── manifest.md                   # System manifest v1.0.0
 │   ├── config/
 │   │   ├── system-config.md          # Feature flags, thresholds
 │   │   └── project-config.md         # FP-specific paths and mappings
 │   ├── templates/                    # Git hook and shell integration templates
 │   │   ├── post-merge.sh             # Git post-merge hook template (drift analysis)
 │   │   ├── post-rewrite.sh           # Git post-rewrite hook template (drift analysis)
-│   │   └── fp-docs-shell.zsh         # Zsh shell prompt integration template
+│   │   ├── fp-docs-shell.zsh         # Zsh shell prompt integration template
+│   │   └── fp-docs-statusline.js    # Statusline hook template for update notifications
 │   ├── tools/                        # Ephemeral tool resources
 │   │   └── class-locals-cli.php      # WP-CLI fp-locals command (token-based $locals extraction)
 │   ├── algorithms/                   # 6 on-demand algorithm files
@@ -108,7 +117,7 @@ fp-docs/                              # Git root (independent repo, submodule of
 │       ├── locals/                   # annotate.md, contracts.md, cross-ref.md, validate.md, shapes.md, coverage.md
 │       ├── verbosity/                # audit.md
 │       ├── index/                    # update.md, update-example-claude.md
-│       └── system/                   # update-skills.md, setup.md, sync.md
+│       └── system/                   # update-skills.md, setup.md, sync.md, update.md
 ├── specs/                            # Canonical specification documents
 ├── tests/                            # Characterization and unit tests
 ├── README.md
@@ -126,7 +135,7 @@ Key distinction: The repo root IS the plugin root. When using `--plugin-dir` for
 ```json
 {
   "name": "fp-docs",
-  "version": "2.8.0",
+  "version": "1.0.0",
   "description": "Documentation management system for the Foreign Policy WordPress codebase...",
   "author": { "name": "Tom Kyser" },
   "repository": "https://github.com/tomkyser/fp-docs",
@@ -171,9 +180,9 @@ Default permissions are read-only. Individual engines override this via their ag
 
 ## 3. Engine-Skill Routing Pattern
 
-This is the core architectural pattern. All 22 user commands route through the **orchestrate** engine via `agent: orchestrate` in their skill frontmatter.
+This is the core architectural pattern. All 23 user commands route through the **orchestrate** engine via `agent: orchestrate` in their skill frontmatter.
 
-**20 document-operation commands** follow the standard delegation pattern: the orchestrator parses routing metadata (Engine, Operation, Instruction), classifies the command, and delegates to the appropriate specialist engine.
+**21 routing-table commands** follow the standard delegation pattern: the orchestrator parses routing metadata (Engine, Operation, Instruction), classifies the command, and delegates to the appropriate specialist engine.
 
 **2 meta-commands** bypass the standard delegation pattern:
 - `/fp-docs:do` uses `Instruction: framework/instructions/orchestrate/do.md` -- the orchestrate engine reads the instruction file's routing rules table, matches user intent, and auto-dispatches the matched command. Does NOT enter the ROUTING_TABLE.
@@ -263,7 +272,7 @@ The skill body parses the subcommand from arguments and dynamically routes to th
 
 ### Complete Command-to-Engine Routing Table (20 Document-Operation Commands)
 
-All 20 document-operation commands declare `agent: orchestrate` in their skill frontmatter. The orchestrator reads the routing metadata and delegates to the specialist engine listed below. These entries correspond to the ROUTING_TABLE in `lib/routing.cjs`.
+All 21 routing-table commands declare `agent: orchestrate` in their skill frontmatter. The orchestrator reads the routing metadata and delegates to the specialist engine listed below. These entries correspond to the ROUTING_TABLE in `lib/routing.cjs`.
 
 | Command | Skill | Specialist Engine | Operation |
 |---------|-------|-------------------|-----------|
@@ -287,6 +296,7 @@ All 20 document-operation commands declare `agent: orchestrate` in their skill f
 | /fp-docs:sync | skills/sync | system | sync |
 | /fp-docs:remediate | skills/remediate | orchestrate | remediate |
 | /fp-docs:parallel | skills/parallel | system | (batch orchestration) |
+| /fp-docs:update | skills/update | system | update |
 
 ### Meta-Commands (2 Commands -- Not in ROUTING_TABLE)
 
@@ -631,6 +641,7 @@ Report: files changed, sanity-check result, verification result
 | system | system/update-skills.md | Regenerate skill files |
 | system | system/setup.md | Initialize/verify installation |
 | system | system/sync.md | Branch sync + diff reports |
+| system | system/update.md | Check for and install plugin updates |
 
 ---
 
@@ -1071,11 +1082,11 @@ Here is a complete trace of what happens when a user runs `/fp-docs:revise "fix 
 
 ## 13. System Manifest (framework/manifest.md)
 
-The manifest is a comprehensive reference document (v2.8.0) that catalogs every component in the system:
+The manifest is a comprehensive reference document (v1.0.0) that catalogs every component in the system:
 
 - **Plugin identity**: name, namespace, version
 - **Engine table**: all 9 engines with agent file, model, operations
-- **Command table**: all 20 commands with skill file, engine, operation
+- **Command table**: all 21 routing-table commands with skill file, engine, operation
 - **Shared modules table**: all 11 modules with location and which engines preload them
 - **On-demand algorithms table**: all 6 with path and which pipeline stage loads them
 - **Instruction files table**: all instruction files grouped by engine
@@ -1133,7 +1144,7 @@ This gives engines cross-session learning: an engine that learns "helper docs fr
 8. **Zero-tolerance verbosity**: The system enforces complete enumeration over summarization. Every source item must appear in documentation.
 9. **Evidence-based documentation**: Every claim must be verified against source code. No fabrication. `[NEEDS INVESTIGATION]` for unknowns.
 10. **Hook-based lifecycle management**: SessionStart hooks inject context. SubagentStop hooks validate pipeline completion. All hooks are CJS functions in `lib/hooks.cjs`, invoked via `fp-tools.cjs hooks run`. The system self-monitors.
-11. **Universal orchestrator pattern**: All 20 commands route through the orchestrate engine. The orchestrator is a pure dispatcher (D-06) -- it classifies commands, delegates to specialists, coordinates pipeline phases, and serializes git commits. It never executes fp-docs operations directly. This centralizes routing logic and enables multi-agent execution for every command.
+11. **Universal orchestrator pattern**: All 21 routing-table commands route through the orchestrate engine. The orchestrator is a pure dispatcher (D-06) -- it classifies commands, delegates to specialists, coordinates pipeline phases, and serializes git commits. It never executes fp-docs operations directly. This centralizes routing logic and enables multi-agent execution for every command.
 12. **Pipeline phase delegation**: The 8-stage pipeline is split into 3 phases (Write, Review, Finalize) that can be distributed across specialist agents. This enables parallel validation while maintaining git serialization.
 13. **Git serialization**: In delegated mode, only the orchestrator commits to the docs repo. Specialist engines perform their work but do not execute git operations, preventing commit conflicts and ensuring atomic documentation updates.
 14. **Delegation vs Standalone modes**: Engines support both Delegation Mode (orchestrator-coordinated, phase-limited) and Standalone Mode (self-contained, full pipeline). This preserves backward compatibility and enables direct engine invocation for debugging.
