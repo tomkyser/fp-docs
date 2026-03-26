@@ -67,9 +67,38 @@
    - `source "{codebase-root}/.fp-docs-shell.zsh"`
 3. Inform user: "Add the line above to your .zshrc to see drift notifications in your terminal. Notifications appear once per terminal session when stale docs are detected."
 
+### Phase 7: Update Notification Setup
+
+This phase installs the statusline hook for passive update notifications per D-06.
+
+1. Check if `~/.claude/hooks/fp-docs-statusline.js` already exists. If yes, skip to step 3.
+2. Copy the statusline template from the plugin:
+   ```bash
+   cp "{plugin-root}/framework/templates/fp-docs-statusline.js" ~/.claude/hooks/fp-docs-statusline.js
+   ```
+3. Check if the user's `~/.claude/settings.json` already references `fp-docs-statusline.js` in a hooks entry. If yes, skip to step 5.
+4. Inform the user they need to add the statusline hook to their settings. There are two options:
+   - **Option A (separate hook):** Add to `~/.claude/settings.json` hooks:
+     ```json
+     {
+       "hooks": {
+         "Notification": [
+           {
+             "hooks": [{
+               "type": "command",
+               "command": "node ~/.claude/hooks/fp-docs-statusline.js"
+             }]
+           }
+         ]
+       }
+     }
+     ```
+   - **Option B (integrate into existing statusline):** If they already have a statusline hook (e.g., GSD's `gsd-statusline.js`), they can add the fp-docs cache check directly into that file. Show the relevant code snippet from the template.
+5. Report: "Statusline hook installed. Update notifications will appear in your statusline when a new version is available."
+
 ## Output
 
-Setup report with per-phase pass/fail status and recommended actions. Phases 5-6 report git hook and shell integration installation status.
+Setup report with per-phase pass/fail status and recommended actions. Phases 5-7 report git hook, shell integration, and update notification installation status.
 
 ### CLAUDE.md Integration Check
 
