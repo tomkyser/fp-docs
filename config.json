@@ -1,0 +1,212 @@
+{
+  "system": {
+    "citations": {
+      "enabled": true,
+      "full_body_max_lines": 15,
+      "signature_max_lines": 100,
+      "include_line_numbers": true,
+      "excerpt_comment_threshold": 5,
+      "scope": [
+        { "element": "Function documentation", "required": true, "tier": "Full or Signature", "notes": "Every documented function gets a citation (tier by line count)" },
+        { "element": "Hook registrations", "required": true, "tier": "Full", "notes": "The add_action/add_filter call" },
+        { "element": "Meta field tables", "required": true, "tier": "Reference", "notes": "File + method + line range, no excerpt" },
+        { "element": "Registration args (CPT/taxonomy)", "required": true, "tier": "Signature", "notes": "The registration args array" },
+        { "element": "Shortcode attributes", "required": true, "tier": "Full", "notes": "The shortcode_atts defaults + extract" },
+        { "element": "REST endpoint registration", "required": true, "tier": "Full", "notes": "Route + method + callback registration" },
+        { "element": "ACF field definitions", "required": true, "tier": "Reference", "notes": "File + method + line range for field arrays" },
+        { "element": "Component file lists", "required": false, "tier": null, "notes": "File existence is self-verifying" },
+        { "element": "Prose descriptions / overviews", "required": false, "tier": null, "notes": "Not directly citable" },
+        { "element": "Related Docs sections", "required": false, "tier": null, "notes": "Links, not code claims" },
+        { "element": "Admin UI descriptions", "required": "conditional", "tier": "Reference", "notes": "Only when describing specific code behavior" }
+      ]
+    },
+    "sanity_check": {
+      "default_enabled": true,
+      "multi_agent_threshold_docs": 5,
+      "multi_agent_threshold_sections": 3
+    },
+    "verify": {
+      "total_checks": 10
+    },
+    "api_ref": {
+      "enabled": true,
+      "provenance_values": ["PHPDoc", "Verified", "Authored"],
+      "default_provenance": "Verified",
+      "phpdoc_provenance": "PHPDoc",
+      "scope": [
+        { "doc_type": "Helper", "section": "3.3", "required": true, "covers": "Every function in the namespace" },
+        { "doc_type": "Post Type", "section": "3.1", "required": true, "covers": "Public methods on the class" },
+        { "doc_type": "Taxonomy", "section": "3.2", "required": true, "covers": "Public methods, query modification helpers" },
+        { "doc_type": "REST Endpoint", "section": "3.6", "required": true, "covers": "Callback methods, response shape typing" },
+        { "doc_type": "JavaScript", "section": "3.8", "required": true, "covers": "Exported functions, key event handlers" },
+        { "doc_type": "Integration", "section": "3.10", "required": true, "covers": "Helper functions for the integration" },
+        { "doc_type": "Hook", "section": "3.4", "required": false, "covers": "Already tabular reference format" },
+        { "doc_type": "Shortcode", "section": "3.5", "required": false, "covers": "Already has attribute tables" },
+        { "doc_type": "ACF Field Group", "section": "3.9", "required": false, "covers": "Already has field tables" },
+        { "doc_type": "Component", "section": "3.7", "required": false, "covers": "Deferred -- $locals contracts are separate" }
+      ],
+      "table_columns": [
+        { "column": 1, "header": "Function", "content_rule": "Function/method name in backticks with (). Namespaced: function_name(). Class methods: ClassName::method()." },
+        { "column": 2, "header": "Params", "content_rule": "Typed parameter list. Use -- for no params. For 4+ params, list primary params and note 'See citation.'" },
+        { "column": 3, "header": "Return", "content_rule": "Return type in backticks. Use void for no return. Unions: string|false." },
+        { "column": 4, "header": "Description", "content_rule": "One-liner. Present tense, starts with verb. Max ~80 chars." },
+        { "column": 5, "header": "Src", "content_rule": "Provenance marker. Must be one of api_ref.provenance_values." }
+      ]
+    },
+    "remote": {
+      "source_of_truth": true,
+      "pull_on_session_start": true,
+      "pull_before_commit": true,
+      "halt_on_failure": true
+    },
+    "push": {
+      "enabled": true,
+      "on_commit": true,
+      "on_merge": true
+    },
+    "verbosity": {
+      "enabled": true,
+      "gap_tolerance": 0,
+      "banned_phrases": [
+        { "phrase": "and more", "context": "replacing enumeration", "always": true },
+        { "phrase": "etc.", "context": null, "always": true },
+        { "phrase": "et cetera", "context": null, "always": true },
+        { "phrase": "similar to above", "context": null, "always": true },
+        { "phrase": "various", "context": "avoiding enumeration of knowable items", "always": false },
+        { "phrase": "among others", "context": "replacing enumeration", "always": true },
+        { "phrase": "and so on", "context": null, "always": true },
+        { "phrase": "remaining", "context": "avoiding enumeration", "always": false },
+        { "phrase": "and additional", "context": "replacing enumeration", "always": false },
+        { "phrase": "the rest", "context": "replacing enumeration", "always": false },
+        { "phrase": "likewise", "context": "skipping repetitive documentation", "always": false },
+        { "phrase": "as above", "context": "skipping repetitive documentation", "always": false },
+        { "phrase": "other similar", "context": "avoiding enumeration", "always": false },
+        { "phrase": "numerous", "context": "avoiding counting", "always": false },
+        { "phrase": "several", "context": "avoiding enumeration of known items", "always": false },
+        { "phrase": "a number of", "context": "avoiding enumeration of known items", "always": false }
+      ],
+      "banned_patterns": [
+        { "pattern": "\\d+\\s+(more|additional|other|remaining|further|extra)\\b", "example": "5 more functions" },
+        { "pattern": "see (above|previous|earlier) for (similar|more|details)", "example": "see above for similar" },
+        { "pattern": "(handles?|supports?|includes?|provides?)\\s+(various|multiple|many|several|different)\\b", "example": "handles various post types" },
+        { "pattern": "\\.{3}|\\u2026", "example": "Ellipsis used as list omission" }
+      ],
+      "chunk_delegation": {
+        "max_docs_per_agent": 8,
+        "max_functions_per_agent": 50,
+        "delegation_trigger_docs": 8,
+        "delegation_trigger_functions": 50
+      }
+    },
+    "orchestration": {
+      "enabled": true,
+      "parallel_threshold_files": 3,
+      "team_threshold_files": 8,
+      "max_teammates": 5,
+      "max_files_per_teammate": 5,
+      "pipeline_delegation": true,
+      "validation_retry_limit": 1,
+      "single_commit": true
+    },
+    "locals": {
+      "cli_enabled": true,
+      "cli_auto_teardown": true,
+      "cli_source": "framework/tools/class-locals-cli.php",
+      "cli_target": "inc/cli/class-locals-cli.php"
+    }
+  },
+  "project": {
+    "identity": {
+      "name": "Foreign Policy",
+      "theme_root": "themes/foreign-policy-2017",
+      "docs_root": "themes/foreign-policy-2017/docs",
+      "wp_cli_prefix": "ddev wp",
+      "local_url": "https://foreignpolicy.local/",
+      "ssl": "self-signed",
+      "php_namespace": "ForeignPolicy\\Helpers\\{Feature}\\function_name()"
+    },
+    "source_to_docs": {
+      "functions.php": "docs/01-architecture/bootstrap-sequence.md",
+      "inc/post-types/": "docs/02-post-types/",
+      "inc/taxonomies/": "docs/03-taxonomies/",
+      "inc/custom-fields/": "docs/04-custom-fields/",
+      "components/": "docs/05-components/",
+      "helpers/": "docs/06-helpers/",
+      "inc/shortcodes/": "docs/07-shortcodes/",
+      "inc/hooks/": "docs/08-hooks/",
+      "inc/rest-api/": "docs/09-api/rest-api/",
+      "inc/endpoints/": "docs/09-api/custom-endpoints/",
+      "layouts/": "docs/10-layouts/",
+      "features/": "docs/11-features/",
+      "lib/autoloaded/": "docs/12-integrations/",
+      "inc/cli/": "docs/16-cli/",
+      "inc/admin-settings/": "docs/17-admin/",
+      "assets/src/scripts/": "docs/18-frontend-assets/js/",
+      "assets/src/styles/": "docs/18-frontend-assets/css/",
+      "build/": "docs/00-getting-started/build-system.md",
+      "inc/roles/": "docs/20-exports-notifications/"
+    },
+    "appendix_triggers": {
+      "add_action|add_filter": "docs/24-appendices/A-complete-hook-registry.md",
+      "shortcode_registration": "docs/24-appendices/B-shortcode-quick-reference.md",
+      "register_rest_route": "docs/24-appendices/C-rest-route-reference.md",
+      "define|const": "docs/24-appendices/D-constants-reference.md",
+      "composer|npm": "docs/24-appendices/E-third-party-dependencies.md",
+      "acf_field_group": "docs/24-appendices/F-acf-field-group-reference.md",
+      "feature_template": "docs/24-appendices/G-feature-template-catalog.md"
+    },
+    "repos": {
+      "codebase": {
+        "git_root": "wp-content/",
+        "docs_scope": "themes/foreign-policy-2017/",
+        "remote": "origin"
+      },
+      "docs": {
+        "git_root": "themes/foreign-policy-2017/docs/",
+        "remote": "https://github.com/tomkyser/docs-foreignpolicy-com",
+        "visibility": "private",
+        "branch_strategy": "mirrors codebase"
+      },
+      "plugin": {
+        "remote": "https://github.com/tomkyser/fp-docs",
+        "visibility": "public",
+        "branch_strategy": "master"
+      }
+    }
+  },
+  "pipeline": {
+    "stages": [
+      { "id": 1, "name": "verbosity", "phase": "write", "agent": "primary", "skippable": true },
+      { "id": 2, "name": "citations", "phase": "write", "agent": "primary", "skippable": true },
+      { "id": 3, "name": "api-refs", "phase": "write", "agent": "primary", "skippable": true },
+      { "id": 4, "name": "sanity-check", "phase": "review", "agent": "validate", "skippable": false },
+      { "id": 5, "name": "verification", "phase": "review", "agent": "validate", "skippable": false },
+      { "id": 6, "name": "changelog", "phase": "finalize", "agent": "orchestrator", "skippable": false },
+      { "id": 7, "name": "index", "phase": "finalize", "agent": "orchestrator", "skippable": true },
+      { "id": 8, "name": "docs-commit", "phase": "finalize", "agent": "orchestrator", "skippable": false }
+    ],
+    "triggerMatrix": {
+      "revise":             [1, 2, 3, 4, 5, 6, 7, 8],
+      "add":                [1, 2, 3, 4, 5, 6, 7, 8],
+      "auto-update":        [1, 2, 3, 4, 5, 6, 7, 8],
+      "auto-revise":        [1, 2, 3, 4, 5, 6, 7, 8],
+      "deprecate":          [1, 2, 3, 4, 5, 6, 7, 8],
+      "citations-generate": [4, 5, 6, 7, 8],
+      "citations-update":   [4, 5, 6, 7, 8],
+      "api-refs-generate":  [1, 2, 4, 5, 6, 7, 8],
+      "locals-annotate":    [1, 2, 4, 5, 6, 7, 8],
+      "locals-contracts":   [1, 2, 4, 5, 6, 7, 8],
+      "locals-shapes":      [1, 2, 4, 5, 6, 7, 8]
+    },
+    "skipConditions": {
+      "1": { "configKey": "system.verbosity.enabled", "flagOverride": "--no-verbosity" },
+      "2": { "configKey": "system.citations.enabled", "flagOverride": "--no-citations" },
+      "3": { "configKey": "system.api_ref.enabled", "flagOverride": "--no-api-ref" },
+      "4": { "configKey": "system.sanity_check.default_enabled", "flagOverride": "--no-sanity-check" },
+      "5": { "never_skip": true },
+      "6": { "never_skip": true },
+      "7": { "structural_only": true, "flagOverride": "--no-index" },
+      "8": { "never_skip": true, "sub_rules": { "push": { "configKey": "system.push.enabled", "flagOverride": "--no-push" }, "pull": { "configKey": "system.remote.pull_before_commit", "flagOverride": "--offline" } } }
+    }
+  }
+}

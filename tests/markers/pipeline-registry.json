@@ -1,0 +1,114 @@
+{
+  "markers": [
+    {
+      "name": "pipeline_complete",
+      "pattern": "Pipeline complete:",
+      "checked_by": "hooks.cjs",
+      "applies_to": "write_operations",
+      "type": "positive",
+      "handler": "handlePostOrchestrateCheck"
+    },
+    {
+      "name": "changelog_updated",
+      "pattern": "changelog.*updated|updated.*changelog",
+      "flags": "i",
+      "checked_by": ["hooks.cjs", "hooks.cjs"],
+      "applies_to": "write_operations",
+      "type": "positive",
+      "handlers": ["handlePostModifyCheck", "handlePostOrchestrateCheck"]
+    },
+    {
+      "name": "write_operation_detection",
+      "pattern": "write phase|delegation result|files modified",
+      "flags": "i",
+      "checked_by": "hooks.cjs",
+      "applies_to": "write_operations",
+      "type": "detection",
+      "handler": "handlePostOrchestrateCheck",
+      "note": "Used to determine if changelog check applies"
+    },
+    {
+      "name": "delegation_evidence",
+      "pattern": "agents? used|delegation result|pipeline validation",
+      "flags": "i",
+      "checked_by": "hooks.cjs",
+      "applies_to": "orchestrated_operations",
+      "type": "positive",
+      "handler": "handlePostOrchestrateCheck"
+    },
+    {
+      "name": "delegation_result_structure",
+      "pattern": "## Delegation Result",
+      "checked_by": "hooks.cjs",
+      "applies_to": "delegated_teammates",
+      "type": "positive",
+      "handler": "handleTeammateIdleCheck"
+    },
+    {
+      "name": "enforcement_stages",
+      "pattern": "delegation complete:|enforcement stages",
+      "flags": "i",
+      "checked_by": "hooks.cjs",
+      "applies_to": "delegated_teammates",
+      "type": "positive",
+      "handler": "handleTeammateIdleCheck"
+    },
+    {
+      "name": "delegation_mode_detection",
+      "pattern": "mode.*delegated|delegation",
+      "flags": "i",
+      "checked_by": "hooks.cjs",
+      "applies_to": "delegated_teammates",
+      "type": "detection",
+      "handler": "handleTeammateIdleCheck",
+      "note": "Used to determine if delegation checks apply"
+    },
+    {
+      "name": "file_modifications",
+      "pattern": "files modified|changes made|delegation result",
+      "flags": "i",
+      "checked_by": "hooks.cjs",
+      "applies_to": "write_tasks",
+      "type": "positive",
+      "handler": "handleTaskCompletedCheck"
+    },
+    {
+      "name": "hallucination_flag",
+      "pattern": "HALLUCINATION",
+      "flags": "i",
+      "checked_by": "hooks.cjs",
+      "applies_to": "all_tasks",
+      "type": "negative",
+      "handler": "handleTaskCompletedCheck",
+      "note": "Presence triggers warning"
+    },
+    {
+      "name": "write_task_detection",
+      "pattern": "revise|add|update|generate|annotate|contracts|shapes|deprecate",
+      "flags": "i",
+      "checked_by": "hooks.cjs",
+      "applies_to": "write_tasks",
+      "type": "detection",
+      "handler": "handleTaskCompletedCheck"
+    },
+    {
+      "name": "changelog_task_detection",
+      "pattern": "revise|add|update|deprecate",
+      "flags": "i",
+      "checked_by": "hooks.cjs",
+      "applies_to": "write_tasks",
+      "type": "detection",
+      "handler": "handleTaskCompletedCheck"
+    },
+    {
+      "name": "changelog_missing_detection",
+      "pattern": "changelog.*missing|no changelog",
+      "flags": "i",
+      "checked_by": "hooks.cjs",
+      "applies_to": "write_tasks",
+      "type": "negative",
+      "handler": "handleTaskCompletedCheck"
+    }
+  ],
+  "completion_format": "Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: PASS] [changelog: updated] [docs-commit: committed|skipped]"
+}

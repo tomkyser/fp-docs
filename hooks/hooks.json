@@ -1,0 +1,71 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run session-start inject-manifest"
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run session-start branch-sync"
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run session-start drift-nudge"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "modify",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run subagent-stop modify"
+          }
+        ]
+      },
+      {
+        "matcher": "orchestrate",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run subagent-stop orchestrate"
+          }
+        ]
+      },
+      {
+        "matcher": "locals",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run subagent-stop locals"
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run teammate-idle"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run task-completed"
+          }
+        ]
+      }
+    ]
+  }
+}
