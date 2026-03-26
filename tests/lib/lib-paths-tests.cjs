@@ -1,6 +1,6 @@
 'use strict';
 
-// Tests for fp-docs/plugins/fp-docs/lib/paths.cjs
+// Tests for lib/paths.cjs
 // TDD RED phase: These tests should fail until the module is implemented.
 
 const { describe, it } = require('node:test');
@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
 
-const LIB_DIR = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'lib');
+const LIB_DIR = path.resolve(__dirname, '..', '..', 'lib');
 
 describe('lib/paths.cjs', () => {
   it('should be requireable', () => {
@@ -26,10 +26,11 @@ describe('lib/paths.cjs', () => {
   });
 
   describe('getPluginRoot', () => {
-    it('should return a path containing plugins/fp-docs', () => {
+    it('should return a path ending with the plugin root directory', () => {
       const paths = require(path.join(LIB_DIR, 'paths.cjs'));
       const root = paths.getPluginRoot();
-      assert.ok(root.includes(path.join('plugins', 'fp-docs')));
+      // The plugin root is the repo root (one level above lib/)
+      assert.ok(root.endsWith('fp-docs') || root.includes('fp-docs'));
     });
 
     it('should return a path that exists on disk', () => {

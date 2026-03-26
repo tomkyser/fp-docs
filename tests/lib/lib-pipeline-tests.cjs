@@ -1,6 +1,6 @@
 'use strict';
 
-// Tests for fp-docs/plugins/fp-docs/lib/pipeline.cjs
+// Tests for lib/pipeline.cjs
 // TDD RED phase: These tests should fail until the module is implemented.
 
 const { describe, it, beforeEach, afterEach } = require('node:test');
@@ -10,10 +10,10 @@ const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
 
-const LIB_DIR = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'lib');
-const CONFIG_PATH = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'config.json');
-const FP_TOOLS_PATH = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'fp-tools.cjs');
-const PLUGIN_DIR = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs');
+const LIB_DIR = path.resolve(__dirname, '..', '..', 'lib');
+const CONFIG_PATH = path.resolve(__dirname, '..', '..', 'config.json');
+const FP_TOOLS_PATH = path.resolve(__dirname, '..', '..', 'fp-tools.cjs');
+const PLUGIN_DIR = path.resolve(__dirname, '..', '..');
 
 // ── Test Helpers ──────────────────────────────────────────────────────────────
 

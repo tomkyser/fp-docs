@@ -2,7 +2,7 @@
 
 // Behavioral spec structural validation module.
 // Validates that behavioral spec files in tests/specs/ have correct
-// routing metadata matching actual skill files in plugins/fp-docs/skills/.
+// routing metadata matching actual skill files in skills/.
 //
 // Uses parseFrontmatter and parseBodyField from frontmatter-parser.cjs
 // to parse both spec files and skill files, then cross-references
@@ -17,7 +17,7 @@ const path = require('node:path');
 const { parseFrontmatter, parseBodyField } = require('./frontmatter-parser.cjs');
 
 const SPECS_DIR = path.join(__dirname, '..', 'specs');
-const SKILLS_DIR = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'skills');
+const SKILLS_DIR = path.resolve(__dirname, '..', '..', 'skills');
 
 // Valid type values for behavioral specs
 const VALID_TYPES = ['write', 'read', 'admin', 'batch', 'varies', 'meta'];

@@ -1,14 +1,14 @@
 'use strict';
 
-// Tests for fp-docs/plugins/fp-docs/lib/health.cjs
+// Tests for lib/health.cjs
 // TDD RED phase: These tests should fail until the module is implemented.
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
-const LIB_DIR = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'lib');
-const PLUGIN_ROOT = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs');
+const LIB_DIR = path.resolve(__dirname, '..', '..', 'lib');
+const PLUGIN_ROOT = path.resolve(__dirname, '..', '..');
 
 describe('lib/health.cjs', () => {
   it('should be requireable', () => {

@@ -13,8 +13,8 @@ const path = require('node:path');
 
 // ── Paths ────────────────────────────────────────────────────────────────────
 
-const fpToolsPath = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'fp-tools.cjs');
-const pluginDir = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs');
+const fpToolsPath = path.resolve(__dirname, '..', '..', 'fp-tools.cjs');
+const pluginDir = path.resolve(__dirname, '..', '..');
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

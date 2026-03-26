@@ -1,6 +1,6 @@
 'use strict';
 
-// Tests for fp-docs/plugins/fp-docs/lib/routing.cjs
+// Tests for lib/routing.cjs
 // Covers lookupRoute, getRoutingTable, validateRoutes, and cmdHelp grouped output.
 
 const { describe, it } = require('node:test');
@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-const LIB_DIR = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'lib');
+const LIB_DIR = path.resolve(__dirname, '..', '..', 'lib');
 
 describe('lib/routing.cjs', () => {
   it('should be requireable', () => {
@@ -107,7 +107,7 @@ describe('lib/routing.cjs', () => {
   describe('validateRoutes', () => {
     it('should validate all 20 skills match routing table', () => {
       const { validateRoutes } = require(path.join(LIB_DIR, 'routing.cjs'));
-      const pluginRoot = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs');
+      const pluginRoot = path.resolve(__dirname, '..', '..');
       const result = validateRoutes(pluginRoot);
       assert.strictEqual(result.valid, true, `Expected valid=true, got mismatches: ${JSON.stringify(result.mismatches)}`);
       assert.strictEqual(result.mismatches.length, 0, `Expected 0 mismatches, got: ${JSON.stringify(result.mismatches)}`);
@@ -115,7 +115,7 @@ describe('lib/routing.cjs', () => {
   });
 
   describe('cmdHelp grouped output via CLI', () => {
-    const fpTools = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'fp-tools.cjs');
+    const fpTools = path.resolve(__dirname, '..', '..', 'fp-tools.cjs');
 
     it('should output grouped markdown when called with grouped subcommand', () => {
       const result = execFileSync('node', [fpTools, 'help', 'grouped', '--raw'], { encoding: 'utf-8' });

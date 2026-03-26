@@ -1,6 +1,6 @@
 'use strict';
 
-// Tests for fp-docs/plugins/fp-docs/lib/core.cjs
+// Tests for lib/core.cjs
 // TDD RED phase: These tests should fail until the module is implemented.
 
 const { describe, it } = require('node:test');
@@ -9,7 +9,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { execFileSync } = require('node:child_process');
 
-const LIB_DIR = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'lib');
+const LIB_DIR = path.resolve(__dirname, '..', '..', 'lib');
 
 describe('lib/core.cjs', () => {
   it('should be requireable', () => {

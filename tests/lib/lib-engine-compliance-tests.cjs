@@ -15,7 +15,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const PLUGIN_ROOT = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs');
+const PLUGIN_ROOT = path.resolve(__dirname, '..', '..');
 const AGENTS_DIR = path.join(PLUGIN_ROOT, 'agents');
 const INSTRUCTIONS_DIR = path.join(PLUGIN_ROOT, 'framework', 'instructions');
 const MODULES_DIR = path.join(PLUGIN_ROOT, 'modules');

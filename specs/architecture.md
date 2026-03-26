@@ -14,118 +14,114 @@ Thorough analysis of the fp-docs Claude Code plugin internals: engine-skill rout
 
 ## 1. Repository Layout and File Inventory
 
-The fp-docs repository has a two-level nesting structure:
+The fp-docs repository is an independent git repo (`tomkyser/fp-docs`) added as a submodule to the `fp-tools` marketplace container (`tomkyser/fp-tools`):
 
 ```
-fp-docs/                              # Git root (marketplace container)
+fp-docs/                              # Git root (independent repo, submodule of fp-tools)
 ├── .claude-plugin/
-│   └── marketplace.json              # fp-tools marketplace definition
-├── CHANGELOG.md
+│   └── plugin.json                   # Plugin manifest v2.8.0
+├── settings.json                     # Default permissions
+├── .mcp.json                         # Playwright MCP server declaration (visual verification)
+├── hooks/
+│   └── hooks.json                    # 4 hook event definitions
+├── agents/                           # 9 engine agent definitions
+│   ├── orchestrate.md
+│   ├── modify.md
+│   ├── validate.md
+│   ├── citations.md
+│   ├── api-refs.md
+│   ├── locals.md
+│   ├── verbosity.md
+│   ├── index.md
+│   └── system.md
+├── modules/                          # 11 shared modules (preloaded)
+│   ├── mod-standards/SKILL.md
+│   ├── mod-project/SKILL.md
+│   ├── mod-pipeline/SKILL.md
+│   ├── mod-changelog/SKILL.md
+│   ├── mod-index/SKILL.md
+│   ├── mod-citations/SKILL.md
+│   ├── mod-api-refs/SKILL.md
+│   ├── mod-locals/SKILL.md
+│   ├── mod-validation/SKILL.md
+│   ├── mod-verbosity/SKILL.md
+│   └── mod-orchestration/SKILL.md
+├── skills/                           # 22 user-facing commands (20 document-operation + 2 meta)
+│   ├── revise/SKILL.md
+│   ├── add/SKILL.md
+│   ├── auto-update/SKILL.md
+│   ├── auto-revise/SKILL.md
+│   ├── deprecate/SKILL.md
+│   ├── audit/SKILL.md
+│   ├── verify/SKILL.md
+│   ├── sanity-check/SKILL.md
+│   ├── test/SKILL.md
+│   ├── citations/SKILL.md
+│   ├── api-ref/SKILL.md
+│   ├── locals/SKILL.md
+│   ├── verbosity-audit/SKILL.md
+│   ├── update-index/SKILL.md
+│   ├── update-claude/SKILL.md
+│   ├── update-skills/SKILL.md
+│   ├── setup/SKILL.md
+│   ├── sync/SKILL.md
+│   ├── parallel/SKILL.md
+│   ├── do/SKILL.md                   # Meta-command: smart router (natural language -> command)
+│   └── help/SKILL.md                 # Meta-command: grouped command reference
+├── lib/                              # CJS modules (hooks, locals-cli, core, paths, etc.)
+│   ├── hooks.cjs                     # 8 hook handlers (SessionStart, SubagentStop, TeammateIdle, TaskCompleted)
+│   ├── locals-cli.cjs                # Ephemeral WP-CLI setup/teardown lifecycle
+│   ├── core.cjs                      # Shared utilities (output, error, safeJsonParse)
+│   ├── paths.cjs                     # Three-repo path resolution
+│   ├── security.cjs                  # Input validation and injection scanning
+│   ├── config.cjs                    # Configuration access
+│   ├── routing.cjs                   # Command routing table
+│   ├── health.cjs                    # System health checks
+│   ├── state.cjs                     # Operation state management
+│   ├── git.cjs                       # Three-repo git operations
+│   └── drift.cjs                     # Drift detection and staleness tracking
+├── fp-tools.cjs                      # CLI entry point for all CJS modules
+├── framework/
+│   ├── manifest.md                   # System manifest v2.8.0
+│   ├── config/
+│   │   ├── system-config.md          # Feature flags, thresholds
+│   │   └── project-config.md         # FP-specific paths and mappings
+│   ├── templates/                    # Git hook and shell integration templates
+│   │   ├── post-merge.sh             # Git post-merge hook template (drift analysis)
+│   │   ├── post-rewrite.sh           # Git post-rewrite hook template (drift analysis)
+│   │   └── fp-docs-shell.zsh         # Zsh shell prompt integration template
+│   ├── tools/                        # Ephemeral tool resources
+│   │   └── class-locals-cli.php      # WP-CLI fp-locals command (token-based $locals extraction)
+│   ├── algorithms/                   # 6 on-demand algorithm files
+│   │   ├── verbosity-algorithm.md
+│   │   ├── citation-algorithm.md
+│   │   ├── api-ref-algorithm.md
+│   │   ├── validation-algorithm.md
+│   │   ├── codebase-analysis-guide.md
+│   │   └── git-sync-rules.md
+│   └── instructions/                 # Per-engine instruction files
+│       ├── orchestrate/              # delegate.md, remediate.md
+│       ├── modify/                   # revise.md, add.md, auto-update.md, auto-revise.md, deprecate.md
+│       ├── validate/                 # audit.md, verify.md, sanity-check.md, test.md
+│       ├── citations/                # generate.md, update.md, verify.md, audit.md
+│       ├── api-refs/                 # generate.md, audit.md
+│       ├── locals/                   # annotate.md, contracts.md, cross-ref.md, validate.md, shapes.md, coverage.md
+│       ├── verbosity/                # audit.md
+│       ├── index/                    # update.md, update-example-claude.md
+│       └── system/                   # update-skills.md, setup.md, sync.md
+├── specs/                            # Canonical specification documents
+├── tests/                            # Characterization and unit tests
 ├── README.md
-├── LICENSE
-├── planning/                         # Dev planning docs (not part of plugin)
-└── plugins/
-    └── fp-docs/                      # THE ACTUAL PLUGIN (install target)
-        ├── .claude-plugin/
-        │   └── plugin.json           # Plugin manifest v2.8.0
-        ├── settings.json             # Default permissions
-        ├── .mcp.json                 # Playwright MCP server declaration (visual verification)
-        ├── hooks/
-        │   └── hooks.json            # 4 hook event definitions
-        ├── agents/                   # 9 engine agent definitions
-        │   ├── orchestrate.md
-        │   ├── modify.md
-        │   ├── validate.md
-        │   ├── citations.md
-        │   ├── api-refs.md
-        │   ├── locals.md
-        │   ├── verbosity.md
-        │   ├── index.md
-        │   └── system.md
-        ├── modules/                  # 11 shared modules (preloaded)
-        │   ├── mod-standards/SKILL.md
-        │   ├── mod-project/SKILL.md
-        │   ├── mod-pipeline/SKILL.md
-        │   ├── mod-changelog/SKILL.md
-        │   ├── mod-index/SKILL.md
-        │   ├── mod-citations/SKILL.md
-        │   ├── mod-api-refs/SKILL.md
-        │   ├── mod-locals/SKILL.md
-        │   ├── mod-validation/SKILL.md
-        │   ├── mod-verbosity/SKILL.md
-        │   └── mod-orchestration/SKILL.md
-        ├── skills/                   # 22 user-facing commands (20 document-operation + 2 meta)
-        │   ├── revise/SKILL.md
-        │   ├── add/SKILL.md
-        │   ├── auto-update/SKILL.md
-        │   ├── auto-revise/SKILL.md
-        │   ├── deprecate/SKILL.md
-        │   ├── audit/SKILL.md
-        │   ├── verify/SKILL.md
-        │   ├── sanity-check/SKILL.md
-        │   ├── test/SKILL.md
-        │   ├── citations/SKILL.md
-        │   ├── api-ref/SKILL.md
-        │   ├── locals/SKILL.md
-        │   ├── verbosity-audit/SKILL.md
-        │   ├── update-index/SKILL.md
-        │   ├── update-claude/SKILL.md
-        │   ├── update-skills/SKILL.md
-        │   ├── setup/SKILL.md
-        │   ├── sync/SKILL.md
-        │   ├── parallel/SKILL.md
-        │   ├── do/SKILL.md             # Meta-command: smart router (natural language → command)
-        │   └── help/SKILL.md           # Meta-command: grouped command reference
-        ├── lib/                      # CJS modules (hooks, locals-cli, core, paths, etc.)
-        │   ├── hooks.cjs             # 8 hook handlers (SessionStart, SubagentStop, TeammateIdle, TaskCompleted)
-        │   ├── locals-cli.cjs        # Ephemeral WP-CLI setup/teardown lifecycle
-        │   ├── core.cjs              # Shared utilities (output, error, safeJsonParse)
-        │   ├── paths.cjs             # Three-repo path resolution
-        │   ├── security.cjs          # Input validation and injection scanning
-        │   ├── config.cjs            # Configuration access
-        │   ├── routing.cjs           # Command routing table
-        │   ├── health.cjs            # System health checks
-        │   ├── state.cjs             # Operation state management
-        │   ├── git.cjs               # Three-repo git operations
-        │   └── drift.cjs             # Drift detection and staleness tracking
-        ├── fp-tools.cjs              # CLI entry point for all CJS modules
-        └── framework/
-            ├── manifest.md           # System manifest v2.8.0
-            ├── config/
-            │   ├── system-config.md  # Feature flags, thresholds
-            │   └── project-config.md # FP-specific paths and mappings
-            ├── templates/            # Git hook and shell integration templates
-            │   ├── post-merge.sh     # Git post-merge hook template (drift analysis)
-            │   ├── post-rewrite.sh   # Git post-rewrite hook template (drift analysis)
-            │   └── fp-docs-shell.zsh # Zsh shell prompt integration template
-            ├── tools/                # Ephemeral tool resources
-            │   └── class-locals-cli.php  # WP-CLI fp-locals command (token-based $locals extraction)
-            ├── algorithms/           # 6 on-demand algorithm files
-            │   ├── verbosity-algorithm.md
-            │   ├── citation-algorithm.md
-            │   ├── api-ref-algorithm.md
-            │   ├── validation-algorithm.md
-            │   ├── codebase-analysis-guide.md
-            │   └── git-sync-rules.md
-            └── instructions/         # Per-engine instruction files
-                ├── orchestrate/      # delegate.md, remediate.md
-                ├── modify/           # revise.md, add.md, auto-update.md, auto-revise.md, deprecate.md
-                ├── validate/         # audit.md, verify.md, sanity-check.md, test.md
-                ├── citations/        # generate.md, update.md, verify.md, audit.md
-                ├── api-refs/         # generate.md, audit.md
-                ├── locals/           # annotate.md, contracts.md, cross-ref.md, validate.md, shapes.md, coverage.md
-                ├── verbosity/        # audit.md
-                ├── index/            # update.md, update-example-claude.md
-                └── system/           # update-skills.md, setup.md, sync.md
+└── CHANGELOG.md
 ```
 
-Key distinction: The repo root (`fp-docs/`) is the marketplace container. The installable plugin is at `fp-docs/plugins/fp-docs/`. When using `--plugin-dir` for local dev, point at the inner path.
+Key distinction: The repo root IS the plugin root. When using `--plugin-dir` for local dev, point at this directory. The marketplace container (`fp-tools`) references it via `.claude-plugin/marketplace.json` with `"source": "./fp-docs"`.
 
 ---
 
 ## 2. Plugin Manifest and Marketplace
 
-### plugin.json (plugins/fp-docs/.claude-plugin/plugin.json)
+### plugin.json (.claude-plugin/plugin.json)
 
 ```json
 {
@@ -140,7 +136,9 @@ Key distinction: The repo root (`fp-docs/`) is the marketplace container. The in
 
 The `plugin.json` declares the plugin identity. Claude Code reads this to discover the plugin name, version, and description. Module discovery is enabled by having `"skills": "./modules/"` in plugin.json (per CLAUDE.md), though the actual file only contains the fields shown above.
 
-### marketplace.json (fp-docs/.claude-plugin/marketplace.json)
+### marketplace.json (in the fp-tools container repo)
+
+The marketplace definition lives in the `fp-tools` container repo (`tomkyser/fp-tools`) at `.claude-plugin/marketplace.json`, NOT inside the fp-docs submodule:
 
 ```json
 {
@@ -148,7 +146,7 @@ The `plugin.json` declares the plugin identity. Claude Code reads this to discov
   "plugins": [
     {
       "name": "fp-docs",
-      "source": "./plugins/fp-docs",
+      "source": "./fp-docs",
       "description": "Documentation management system..."
     }
   ]
@@ -157,7 +155,7 @@ The `plugin.json` declares the plugin identity. Claude Code reads this to discov
 
 The marketplace container (`fp-tools`) can host multiple plugins. Currently it contains only `fp-docs`.
 
-### settings.json (plugins/fp-docs/settings.json)
+### settings.json (settings.json)
 
 ```json
 {

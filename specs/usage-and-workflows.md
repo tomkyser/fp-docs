@@ -16,7 +16,7 @@
 
 ### Method A: Marketplace Install (Production)
 
-fp-docs is distributed through the `fp-tools` marketplace, defined in `fp-docs/.claude-plugin/marketplace.json`:
+fp-docs is distributed through the `fp-tools` marketplace, defined in the container repo's `.claude-plugin/marketplace.json`:
 
 ```json
 {
@@ -24,7 +24,7 @@ fp-docs is distributed through the `fp-tools` marketplace, defined in `fp-docs/.
   "plugins": [
     {
       "name": "fp-docs",
-      "source": "./plugins/fp-docs",
+      "source": "./fp-docs",
       "description": "Documentation management system for the Foreign Policy WordPress codebase"
     }
   ]
@@ -33,7 +33,7 @@ fp-docs is distributed through the `fp-tools` marketplace, defined in `fp-docs/.
 
 To install from the marketplace:
 ```
-/plugin marketplace add tomkyser/fp-docs
+/plugin marketplace add tomkyser/fp-tools
 /plugin install fp-docs@fp-tools
 ```
 
@@ -41,14 +41,14 @@ To install from the marketplace:
 
 For plugin development or testing local changes:
 ```bash
-claude --plugin-dir ~/cc-plugins/fp-docs/plugins/fp-docs
+claude --plugin-dir ~/cc-plugins/fp-docs
 ```
 
-**Critical path distinction**: Point `--plugin-dir` at `plugins/fp-docs/`, NOT the repo root. The repo root is the marketplace wrapper; `plugins/fp-docs/` is the actual plugin directory containing agents, skills, modules, hooks, etc.
+**Path note**: Point `--plugin-dir` at the `fp-docs/` directory (the submodule root). This IS the plugin root containing agents, skills, modules, hooks, etc. The parent directory (`cc-plugins/`) is the marketplace wrapper.
 
 ### Plugin Identity
 
-From `plugins/fp-docs/.claude-plugin/plugin.json`:
+From `.claude-plugin/plugin.json`:
 - Name: `fp-docs`
 - Version: `2.8.0`
 - License: MIT
@@ -57,7 +57,7 @@ From `plugins/fp-docs/.claude-plugin/plugin.json`:
 
 ### Default Permissions
 
-From `plugins/fp-docs/settings.json`:
+From `settings.json`:
 ```json
 {
   "permissions": {

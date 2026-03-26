@@ -1,6 +1,6 @@
 'use strict';
 
-// Tests for fp-docs/plugins/fp-docs/lib/git.cjs
+// Tests for lib/git.cjs
 // TDD RED phase: Tests written first, then implementation.
 
 const { describe, it, before, after } = require('node:test');
@@ -9,7 +9,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
 
-const LIB_DIR = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'lib');
+const LIB_DIR = path.resolve(__dirname, '..', '..', 'lib');
 
 describe('lib/git.cjs', () => {
   it('should be requireable', () => {

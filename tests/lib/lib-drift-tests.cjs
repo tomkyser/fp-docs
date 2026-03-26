@@ -1,6 +1,6 @@
 'use strict';
 
-// Tests for fp-docs/plugins/fp-docs/lib/drift.cjs
+// Tests for lib/drift.cjs
 // TDD RED phase: These tests define the behavior of the drift detection module.
 
 const { describe, it, beforeEach, afterEach } = require('node:test');
@@ -9,7 +9,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
 
-const LIB_DIR = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'lib');
+const LIB_DIR = path.resolve(__dirname, '..', '..', 'lib');
 
 // ── Test Helpers ──────────────────────────────────────────────────────────────
 

@@ -21,7 +21,7 @@ const path = require('node:path');
 const { existsSync, readdirSync, statSync } = require('node:fs');
 const { runScript, sanitizeHeredocJson, scriptNameFromDir, loadFixture, discoverScenarios, FIXTURES_DIR } = require('./fixture-runner.cjs');
 const { assertStructuralMatch, formatDiff } = require('./json-diff.cjs');
-const hooks = require('../../plugins/fp-docs/lib/hooks.cjs');
+const hooks = require('../../lib/hooks.cjs');
 
 // Map fixture directory names to CJS handler functions
 const HANDLER_MAP = {
@@ -246,7 +246,7 @@ if (existsSync(hooksDir)) {
     if (!HANDLER_MAP[hookDir]) continue;
 
     const scriptName = scriptNameFromDir(hookDir);
-    const scriptPath = path.join(path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'scripts'), scriptName);
+    const scriptPath = path.join(path.resolve(__dirname, '..', '..', 'scripts'), scriptName);
 
     describe(`A/B: ${scriptName}`, () => {
       if (!existsSync(scriptPath)) {

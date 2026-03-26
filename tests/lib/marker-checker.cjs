@@ -13,7 +13,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const MARKERS_DIR = path.join(__dirname, '..', 'markers');
-const LIB_DIR = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'lib');
+const LIB_DIR = path.resolve(__dirname, '..', '..', 'lib');
 
 const registryPath = path.join(MARKERS_DIR, 'pipeline-registry.json');
 const registry = JSON.parse(fs.readFileSync(registryPath, 'utf-8'));

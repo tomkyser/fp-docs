@@ -35,17 +35,17 @@ fp-docs enforces zero-tolerance verbosity (every source item must be documented)
 ### Marketplace Install (Production)
 
 ```
-/plugin marketplace add tomkyser/fp-docs
+/plugin marketplace add tomkyser/fp-tools
 /plugin install fp-docs@fp-tools
 ```
 
 ### Local Development
 
 ```bash
-claude --plugin-dir ~/cc-plugins/fp-docs/plugins/fp-docs
+claude --plugin-dir ~/cc-plugins/fp-docs
 ```
 
-**Important**: Point `--plugin-dir` at `plugins/fp-docs/`, not the repo root. The repo root is the marketplace wrapper (`fp-tools`). The installable plugin lives at `plugins/fp-docs/`.
+**Path note**: Point `--plugin-dir` at the `fp-docs/` directory. This IS the plugin root. The parent directory (`cc-plugins/`) is the marketplace wrapper (`fp-tools`).
 
 ### Default Permissions
 
@@ -468,26 +468,27 @@ The chunk delegation system auto-triggers when scope exceeds 8 docs or 50 functi
 ### Repository Structure
 
 ```
-fp-docs/                              # Git root (marketplace container)
+fp-docs/                              # Git root (independent repo, submodule of fp-tools)
 ├── .claude-plugin/
-│   └── marketplace.json              # fp-tools marketplace definition
-└── plugins/
-    └── fp-docs/                      # THE ACTUAL PLUGIN (install target)
-        ├── .claude-plugin/
-        │   └── plugin.json           # Plugin manifest (v2.8.0)
-        ├── settings.json             # Default permissions (Read, Grep, Glob)
-        ├── agents/                   # 9 engine agent definitions
-        ├── modules/                  # 11 shared modules (preloaded by engines)
-        ├── skills/                   # 19 user-facing commands
-        ├── hooks/
-        │   └── hooks.json            # 4 hook event definitions (CJS-backed)
-        ├── lib/                      # CJS modules (hooks, locals-cli, core, paths, git, etc.)
-        ├── fp-tools.cjs              # CLI entry point for all CJS modules
-        └── framework/
-            ├── manifest.md           # System manifest
-            ├── config/               # system-config.md, project-config.md
-            ├── algorithms/           # 6 on-demand algorithm files
-            └── instructions/         # Per-engine instruction files
+│   └── plugin.json                   # Plugin manifest (v2.8.0)
+├── settings.json                     # Default permissions (Read, Grep, Glob)
+├── agents/                           # 9 engine agent definitions
+├── modules/                          # 11 shared modules (preloaded by engines)
+├── skills/                           # 22 user-facing commands
+├── hooks/
+│   └── hooks.json                    # 4 hook event definitions (CJS-backed)
+├── lib/                              # CJS modules (hooks, locals-cli, core, paths, git, etc.)
+├── fp-tools.cjs                      # CLI entry point for all CJS modules
+├── framework/
+│   ├── manifest.md                   # System manifest
+│   ├── config/                       # system-config.md, project-config.md
+│   ├── algorithms/                   # 6 on-demand algorithm files
+│   ├── templates/                    # Shell integration templates
+│   └── instructions/                 # Per-engine instruction files
+├── specs/                            # Canonical specification documents
+├── tests/                            # Characterization and unit tests
+├── README.md
+└── CHANGELOG.md
 ```
 
 ### Engine-Skill Routing Pattern

@@ -18,7 +18,7 @@
 //
 // Environment placeholder:
 //   __PLUGIN_ROOT__ in env.json values is replaced with the resolved
-//   path to plugins/fp-docs/ at runtime.
+//   path to the plugin root at runtime.
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
@@ -38,8 +38,8 @@ try {
 }
 
 const FIXTURES_DIR = path.join(__dirname, '..', 'fixtures');
-const SCRIPTS_DIR = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs', 'scripts');
-const PLUGIN_ROOT = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs');
+const SCRIPTS_DIR = path.resolve(__dirname, '..', '..', 'scripts');
+const PLUGIN_ROOT = path.resolve(__dirname, '..', '..');
 
 // -- CJS handler fallback -----------------------------------------------------
 
@@ -47,7 +47,7 @@ const PLUGIN_ROOT = path.resolve(__dirname, '..', '..', 'plugins', 'fp-docs');
 let _hooks = null;
 function getHooksModule() {
   if (!_hooks) {
-    _hooks = require('../../plugins/fp-docs/lib/hooks.cjs');
+    _hooks = require('../../lib/hooks.cjs');
   }
   return _hooks;
 }
