@@ -22,6 +22,7 @@
  *   locals-cli - Ephemeral WP-CLI lifecycle (setup, teardown)
  *   pipeline   - Pipeline sequencing (init, next, run-stage, status, reset)
  *   drift      - Drift detection and staleness tracking (analyze, status, clear, add-signal, list)
+ *   update     - Version checking and self-update (check, status, run)
  *
  * Output protocol:
  *   Default: JSON to stdout
@@ -205,6 +206,12 @@ function main() {
     case 'drift': {
       const drift = require('./lib/drift.cjs');
       drift.cmdDrift(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'update': {
+      const update = require('./lib/update.cjs');
+      update.cmdUpdate(args[1], args.slice(2), raw);
       break;
     }
 

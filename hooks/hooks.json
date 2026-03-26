@@ -14,6 +14,10 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run session-start drift-nudge"
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run session-start update-check"
           }
         ]
       }
