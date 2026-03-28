@@ -55,6 +55,17 @@ Spawn specialist in standalone mode -- engine handles its own workflow.
 ### Batch Commands
 The `parallel` command and any operation with `--batch-mode team`.
 
+### Meta-Commands (Not Delegated)
+
+Two commands are handled directly by the orchestrate engine and do NOT follow the delegation algorithm:
+
+| Command | Behavior |
+|---------|----------|
+| `/fp-docs:do` | Smart router -- orchestrate engine matches intent to a routing-table command, then re-enters delegation for the matched command |
+| `/fp-docs:help` | Command reference -- orchestrate engine calls `fp-tools.cjs help grouped` and formats the output directly |
+
+These are the only exceptions to the delegation rule. All 21 routing-table commands delegate to specialist engines. Total command count: 23 (21 routing-table + 2 meta).
+
 ## Step 3: Parse Execution Mode and Scope
 
 ### 3a. Parse --batch-mode Flag (D-08)
