@@ -1,6 +1,10 @@
 # fp-docs Features and Capabilities Research
 
-> **Updated 2026-03-28**: Phase 11 -- Fixed pipeline init/next sequence in finalization. Added `update` to system engine operations. Fixed update instruction field alignment.
+<!-- Updated 2026-03-28: Phase 13 — MCP wiring confirmed, command count aligned, design choice added -->
+
+> **Updated 2026-03-28**: Phase 13 -- MCP server declared in `.mcp.json` at plugin root (confirmed). Plugin compliance validated. Design choice #15 added for MCP declarations.
+>
+> Previously (2026-03-28): Phase 11 -- Fixed pipeline init/next sequence in finalization. Added `update` to system engine operations. Fixed update instruction field alignment.
 >
 > Previously (2026-03-26): Phase 10 -- Version reset to 1.0.0. Added `/fp-docs:update` command (21st routing-table entry). Update system: background check via GitHub Releases API, cache-based awareness, statusline hook template, git-based self-update. Plugin extracted as independent submodule.
 >
@@ -381,6 +385,8 @@ Browser-based documentation verification using Playwright MCP for live environme
 - `/fp-docs:add --visual` -- Visual verification of newly documented components
 - `/fp-docs:auto-update --visual` -- Visual verification during batch updates
 
+**MCP server:** The Playwright MCP server is declared in `.mcp.json` at the plugin root. Claude Code automatically starts the server when the plugin is enabled. The server is version-pinned at `@playwright/mcp@0.0.68` with triple-layer SSL bypass for ddev's self-signed certificates.
+
 **Flag system:** Visual capabilities are gated by the `--visual` flag on modify operations and the `visual` scope on test. The `visual.enabled` feature flag in system-config provides a master override. Without the flag, engines never touch browser tools.
 
 **Screenshot storage:**
@@ -473,6 +479,9 @@ Browser tools integrate as MCP native tool calls, not CJS CLI wrappers. This avo
 
 ### 14. Flag-Gated Visual Steps (Phase 9)
 Visual verification is opt-in via `--visual` flag, never default-on. Browser automation adds latency (5-15 seconds per navigation). Instruction files contain explicit numbered steps with exact MCP tool names (`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`) -- no LLM judgment on when to use browser tools. Same deterministic pattern as Phase 8 D-04.
+
+### 15. MCP Declarations in .mcp.json (Phase 13)
+Dedicated `.mcp.json` file at plugin root for MCP server declarations, separate from `settings.json` permission grants. Follows Claude Code's standard `.mcp.json` convention. This keeps MCP declarations cleanly separated from tool permission settings and aligns with the platform's expected file layout for MCP server configuration.
 
 ---
 

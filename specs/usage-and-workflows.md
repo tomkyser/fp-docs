@@ -1,6 +1,10 @@
 # fp-docs Usage and Workflows Research
 
-> **Updated 2026-03-28**: Phase 11 -- Fixed pipeline init/next sequence. System engine now routes `update` operation. Update instruction fields aligned with update.cjs output.
+<!-- Updated 2026-03-28: Phase 13 — MCP reference confirmed, command count aligned -->
+
+> **Updated 2026-03-28**: Phase 13 -- MCP `.mcp.json` reference confirmed in installation and visual verification sections. Plugin compliance validated.
+>
+> Previously (2026-03-28): Phase 11 -- Fixed pipeline init/next sequence. System engine now routes `update` operation. Update instruction fields aligned with update.cjs output.
 >
 > Previously (2026-03-26): Phase 10 -- Version reset to 1.0.0 for independent repo era. Added `/fp-docs:update` command and "Updating fp-docs" workflow. Setup extended with Phase 7 (statusline hook installation).
 >
@@ -71,6 +75,10 @@ From `settings.json`:
 ```
 
 Only Read, Grep, and Glob are auto-allowed. Write, Edit, and Bash require user approval per-session (these are used by the `modify` and `system` engines but not auto-approved at the plugin level).
+
+### MCP Server (Auto-Loaded)
+
+The plugin's `.mcp.json` file configures the Playwright MCP server for visual verification. Claude Code automatically starts this server when the plugin is loaded -- no manual configuration needed. The server provides browser automation tools (`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`) used by the `--visual` flag and `/fp-docs:test visual` scope.
 
 ---
 
