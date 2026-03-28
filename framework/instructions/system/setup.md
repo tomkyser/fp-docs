@@ -63,9 +63,20 @@
 
 ### Phase 6: Shell Prompt Integration
 1. Run `node {plugin-root}/fp-tools.cjs drift shell-install --codebase-root {codebase-root}`
-2. Output the source line for the user to add to their `.zshrc`:
+2. Verify the baked output file has NO remaining placeholders:
+   - Read the output file at `{codebase-root}/.fp-docs-shell.zsh`
+   - Check that it does NOT contain the literal strings `__CODEBASE_ROOT__`, `__FP_DOCS_DIR__`, or `__DOCS_ROOT__`
+   - If any placeholder strings remain, report ERROR: "Shell integration file contains unbaked placeholders. Installation failed."
+3. Verify the baked output file contains the merged precmd function:
+   - Check that it contains `_fp_docs_precmd()` (the combined drift + RPROMPT hook)
+   - Check that it contains `add-zsh-hook precmd _fp_docs_precmd`
+   - If missing, report ERROR: "Shell integration file is missing precmd hook registration."
+4. Output the source line for the user to add to their `.zshrc`:
    - `source "{codebase-root}/.fp-docs-shell.zsh"`
-3. Inform user: "Add the line above to your .zshrc to see drift notifications in your terminal. Notifications appear once per terminal session when stale docs are detected."
+5. Warn the user: if they previously had a separate `source` line for `fp-docs-prompt.zsh`, they should REMOVE it. The merged file replaces both.
+6. Inform user: "Add the source line above to your .zshrc. This provides:
+   - Drift notifications (once per terminal session when stale docs detected)
+   - Branch sync status (append `${_FP_DOCS_PROMPT}` to your RPROMPT)"
 
 ### Phase 7: Update Notification Setup
 
