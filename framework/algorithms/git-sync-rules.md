@@ -163,7 +163,7 @@ sync_timestamp=2026-03-04T10:30:00Z
 
    **c. No valid watermark, on master/main** (first-ever sync on master):
    - No commit-based diff baseline is available.
-   - Instead: enumerate all source directories from the source-to-docs mapping table (project-config.md).
+   - Instead: enumerate all source directories from the source-to-doc mapping (`source-map.json`, queried via `node {plugin-root}/fp-tools.cjs source-map dump`).
    - For each mapped source directory that exists, list all files within it.
    - Mark all as NEEDS INITIAL REVIEW in the report (one-time bootstrap).
    - Log: "First sync on master — no watermark baseline. Performing initial source scan."
@@ -172,7 +172,7 @@ sync_timestamp=2026-03-04T10:30:00Z
 
 5. **Filter to theme scope**: From the diff results, keep only paths under `themes/foreign-policy-2017/`.
 
-6. **Map to documentation**: Using the source-to-docs mapping table from project-config.md, map each changed source file to its corresponding doc file(s).
+6. **Map to documentation**: Using the source-to-doc mapping from `source-map.json` (query via `node {plugin-root}/fp-tools.cjs source-map lookup <path>`), map each changed source file to its corresponding doc file(s).
 
 7. **Classify staleness** for each affected doc file:
    - **LIKELY STALE**: The doc's direct source file was modified (e.g., `helpers/posts.php` changed → `docs/06-helpers/posts.md` is likely stale)

@@ -6,7 +6,7 @@
 
 ## Steps
 
-1. Parse the user's request. Identify which documentation file(s) need revision, what aspect is incorrect or outdated, and what source file(s) are relevant (using the source-to-documentation mapping from the project module). If the user included the `--visual` flag, visual verification will be performed after the primary operation (see Step 8).
+1. Parse the user's request. Identify which documentation file(s) need revision, what aspect is incorrect or outdated, and what source file(s) are relevant (using the source-to-doc mapping from `source-map.json` (query via `fp-tools source-map lookup <source-path>`, or see mod-project for examples)). If the user included the `--visual` flag, visual verification will be performed after the primary operation (see Step 8).
 
 2. Read the current documentation file(s).
 
@@ -26,7 +26,7 @@
 8. **Visual Verification** (only if `--visual` flag is present AND `visual.enabled` = true in system-config):
    > Skip this entire step if `--visual` is absent or `visual.enabled` is false.
 
-   a. Determine the page URL on foreignpolicy.local that corresponds to the documentation being revised. Use the source-to-documentation mapping from project-config in reverse: find the source path, then construct the likely URL. For post types, use `https://foreignpolicy.local/?post_type={slug}`. For components/templates, navigate to a page that renders them.
+   a. Determine the page URL on foreignpolicy.local that corresponds to the documentation being revised. Use `fp-tools source-map reverse-lookup <doc-path>` to find the source path, then construct the likely URL. For post types, use `https://foreignpolicy.local/?post_type={slug}`. For components/templates, navigate to a page that renders them.
    b. Navigate to the page: call `browser_navigate` with `url: "https://foreignpolicy.local/{path}"`. If navigation fails (ddev not running, page not found), log a warning and skip remaining visual steps -- do NOT fail the operation.
    c. Capture accessibility snapshot: call `browser_snapshot` to get the accessibility tree.
    d. Take screenshot: call `browser_take_screenshot` with `filename: "visual-revise-{doc-name}.jpeg"`.

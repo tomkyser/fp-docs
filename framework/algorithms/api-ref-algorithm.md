@@ -6,7 +6,7 @@ All format rules, column definitions, provenance values, and scope tables are in
 ## API Reference Table Generation
 
 ### Step 1: Identify Source File
-Use the source-to-docs mapping from your preloaded mod-project module.
+Use the source-to-doc mapping from `source-map.json` (query via `fp-tools source-map lookup <source-path>`, or see mod-project module for example mappings).
 Resolve the source file(s) for the doc being generated/updated.
 
 ### Step 2: Extract Functions

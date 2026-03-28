@@ -11,7 +11,7 @@
 
 2. Review the changed files list (from `$CHANGED_FILES` or run git log since baseline). Filter to documentation-relevant source files: remove docs/, node_modules/, vendor/, public/, .git/. If the user included the `--visual` flag, visual verification will be performed after updates (see Step 9).
 
-3. Map each changed source file to its documentation target using the source-to-documentation mapping from the project module. Identify additions, modifications, and removals. If $ARGUMENTS specifies a scope restriction, filter the list.
+3. Map each changed source file to its documentation target using the source-to-doc mapping from `source-map.json` (query via `fp-tools source-map lookup <source-path>`, or see mod-project for examples). Identify additions, modifications, and removals. If $ARGUMENTS specifies a scope restriction, filter the list.
 
 4. If no changed files map to any documentation targets: report "No documentation-relevant changes found" and exit.
 

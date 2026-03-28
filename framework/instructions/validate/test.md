@@ -33,7 +33,7 @@
       - Read system-config `visual.enabled` -- if `false`, skip visual scope with "Visual verification disabled in system-config" message.
       - Verify Playwright MCP tools are available by checking that `browser_navigate` is a callable tool. If not available, skip with "Playwright MCP server not running -- ensure plugin .mcp.json is loaded" message.
       - Verify local development environment: `curl -sk https://foreignpolicy.local/ -o /dev/null -w "%{http_code}"`. If not 200, skip with "ddev not running or foreignpolicy.local unreachable" message.
-   b. Read component and layout documentation files that describe rendered UI elements. Use the source-to-documentation mapping from project-config to identify docs that correspond to navigable pages.
+   b. Read component and layout documentation files that describe rendered UI elements. Use the source-to-doc mapping from `source-map.json` (query via `fp-tools source-map reverse-lookup`) to identify docs that correspond to navigable pages.
    c. For each documented page or component with a determinable URL on foreignpolicy.local:
       i.   Navigate: call `browser_navigate` with `url: "https://foreignpolicy.local/{path}"`.
       ii.  Snapshot: call `browser_snapshot` to capture the accessibility tree for structural verification. This is the primary verification tool (far fewer tokens than screenshot analysis).

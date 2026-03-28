@@ -48,9 +48,21 @@ Defines PROJECT-INDEX.md update procedure and link format rules.
 
 ## Git Consistency Rules
 
-- Use `git ls-tree` for file enumeration — never filesystem-only tools
+- Use `git ls-tree` for file enumeration -- never filesystem-only tools
 - Check for uncommitted changes before running update or full mode
 - Use `git ls-tree -r --name-only HEAD` for counts and listings
 - Record branch name in index header
 - Preserve existing Security Notes and Performance Notes sections
 - Only include files tracked by git
+
+## Dual-Artifact Maintenance
+
+The index engine maintains two artifacts:
+1. **PROJECT-INDEX.md** -- Exhaustive codebase file tree (the sole codebase index per D-05)
+2. **source-map.json** -- Source-to-doc mapping with file-level granularity
+
+Both must be updated together. When structural changes occur:
+- Regenerate PROJECT-INDEX.md via `git ls-tree` scan
+- Reconcile source-map.json via `node {plugin-root}/fp-tools.cjs source-map generate`
+
+Pipeline stage 7 (index update) triggers both updates when structural file changes are detected.

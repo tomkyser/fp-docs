@@ -11,7 +11,7 @@
 2. For `quick` depth:
    a. Read PROJECT-INDEX.md for source file inventory.
    b. Read `docs/About.md`. Verify every linked doc file exists on disk.
-   c. Cross-reference source-to-doc mapping. Identify MISSING (source exists, no doc) and ORPHAN (doc exists, no source).
+   c. Cross-reference source-to-doc mapping from `source-map.json` (use `fp-tools source-map` for lookups). Identify MISSING (source exists, no doc) and ORPHAN (doc exists, no source).
    d. Validate all relative markdown links.
 
 3. For `standard` depth (includes quick):

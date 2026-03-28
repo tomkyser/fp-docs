@@ -6,7 +6,7 @@
 
 ## Steps
 
-1. Parse the user's request. Identify what new code was added (file paths, system type — post type, helper, shortcode, etc.) and which docs section it belongs in (using the source-to-documentation mapping from the project module). If the user included the `--visual` flag, visual verification will be performed after the primary operation (see Step 9).
+1. Parse the user's request. Identify what new code was added (file paths, system type — post type, helper, shortcode, etc.) and which docs section it belongs in (using the source-to-doc mapping from `source-map.json` (query via `fp-tools source-map lookup <source-path>`, or see mod-project for examples)). If the user included the `--visual` flag, visual verification will be performed after the primary operation (see Step 9).
 
 2. Read PROJECT-INDEX.md at `docs/claude-code-docs-system/PROJECT-INDEX.md` to discover existing files in the target source directory and related modules.
 
@@ -28,7 +28,7 @@
 9. **Visual Verification** (only if `--visual` flag is present AND `visual.enabled` = true in system-config):
    > Skip this entire step if `--visual` is absent or `visual.enabled` is false.
 
-   a. Determine the page URL on foreignpolicy.local that corresponds to the newly documented code. Use the source-to-documentation mapping from project-config in reverse to find the source path, then construct the likely URL.
+   a. Determine the page URL on foreignpolicy.local that corresponds to the newly documented code. Use `fp-tools source-map reverse-lookup <doc-path>` to find the source path, then construct the likely URL.
    b. Navigate to the page: call `browser_navigate` with `url: "https://foreignpolicy.local/{path}"`. If navigation fails, log a warning and skip remaining visual steps.
    c. Capture accessibility snapshot: call `browser_snapshot` to get the accessibility tree.
    d. Take screenshot: call `browser_take_screenshot` with `filename: "visual-add-{doc-name}.jpeg"`.

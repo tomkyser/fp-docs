@@ -21,40 +21,25 @@ FP-specific configuration preloaded by every engine. Contains source-to-document
 
 ## Source-to-Documentation Mapping
 
-| Source Directory | Documentation Target |
-|-----------------|---------------------|
-| `functions.php` | `docs/01-architecture/bootstrap-sequence.md` |
+Source-to-doc mappings are managed by `source-map.json` at the plugin root, accessed through `lib/source-map.cjs`.
+
+**Lookup commands** (run via Bash tool):
+- Single lookup: `node {plugin-root}/fp-tools.cjs source-map lookup <source-path>`
+- Reverse (doc to source): `node {plugin-root}/fp-tools.cjs source-map reverse-lookup <doc-path>`
+- All unmapped files: `node {plugin-root}/fp-tools.cjs source-map unmapped`
+- Full mapping dump: `node {plugin-root}/fp-tools.cjs source-map dump`
+
+**Example mappings** (representative sample -- full mapping in source-map.json):
+
+| Source | Documentation |
+|--------|--------------|
 | `inc/post-types/` | `docs/02-post-types/` |
-| `inc/taxonomies/` | `docs/03-taxonomies/` |
-| `inc/custom-fields/` | `docs/04-custom-fields/` |
-| `inc/custom-field-types/` | `docs/04-custom-fields/custom-field-types.md` |
-| `inc/custom-location-rules/` | `docs/04-custom-fields/custom-location-rules.md` |
-| `components/` | `docs/05-components/` |
 | `helpers/` | `docs/06-helpers/` |
-| `inc/shortcodes/` | `docs/07-shortcodes/` |
+| `components/` | `docs/05-components/` |
 | `inc/hooks/` | `docs/08-hooks/` |
 | `inc/rest-api/` | `docs/09-api/rest-api/` |
-| `inc/endpoints/` | `docs/09-api/custom-endpoints/` |
-| `layouts/` | `docs/10-layouts-and-templates/` |
-| `features/` | `docs/11-features/catalog.md` |
-| `inc/cli/` | `docs/15-cli/` |
-| `inc/admin-settings/` | `docs/16-admin/` |
-| `inc/roles/` | `docs/16-admin/user-roles.md` |
-| `assets/src/scripts/` | `docs/17-frontend-assets/javascript/` |
-| `assets/src/styles/` | `docs/17-frontend-assets/styles/` |
-| `build/` | `docs/00-getting-started/build-system.md` |
-| `crons/` | `docs/14-crons-feeds-rewrites/crons.md` |
-| `feeds/` | `docs/14-crons-feeds-rewrites/feeds.md` |
-| `rewrites/` | `docs/14-crons-feeds-rewrites/rewrites.md` |
-| `redirects/` | `docs/14-crons-feeds-rewrites/redirects.md` |
-| `mobile/` | `docs/18-mobile/` |
-| `sponsored/` | `docs/13-sponsored-content/` |
-| `dynamic-pdfs/` | `docs/19-pdf-generation/` |
-| `amp/` | `docs/20-amp/amp-support.md` |
-| `inc/exports/` | `docs/21-exports/` |
-| `inc/notifications/` | `docs/22-notifications/` |
-| `inc/abstract/htmx/`, `inc/traits/htmx/` | `docs/23-htmx/` |
-| `lib/` | `docs/appendices/E-third-party-dependencies.md` |
+
+> **ONE SOURCE OF TRUTH:** `source-map.json` is the sole authoritative source-to-doc mapping. Do NOT maintain competing mapping tables in any other module, instruction file, or config file.
 
 ## Appendix Cross-References
 

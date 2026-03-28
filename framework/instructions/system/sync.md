@@ -37,8 +37,8 @@
       - **If no valid watermark AND on a feature branch** (not master/main):
         - Fall back: `git -C {codebase-root} diff --name-only origin/master...HEAD`
       - **If no valid watermark AND on master** (first-ever sync):
-        - No commit-based diff available. Enumerate all source directories from the source-to-docs mapping table. List files in each. Use the "Initial Sync" report format from git-sync-rules.md.
-   j. Filter diff results to theme-scoped paths (`themes/foreign-policy-2017/`). Map changed source files to doc files using the source-to-docs mapping table. Classify each as LIKELY STALE, POSSIBLY STALE, or STRUCTURAL per git-sync-rules.md.
+        - No commit-based diff available. Enumerate all source directories from the source-to-doc mapping (`source-map.json`). List files in each. Use the "Initial Sync" report format from git-sync-rules.md.
+   j. Filter diff results to theme-scoped paths (`themes/foreign-policy-2017/`). Map changed source files to doc files using the source-to-doc mapping (`source-map.json`, query via `fp-tools source-map lookup`). Classify each as LIKELY STALE, POSSIBLY STALE, or STRUCTURAL per git-sync-rules.md.
    k. Write diff report to `docs/diffs/{YYYY-MM-DD}_{branch}_diff_report.md` using the format from git-sync-rules.md.
    l. Update watermark file at `{docs-root}/.sync-watermark` with current codebase HEAD, branch name, and ISO 8601 timestamp. Format:
       ```
