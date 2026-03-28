@@ -272,7 +272,7 @@ Read the instruction file at `framework/instructions/citations/{subcommand}.md` 
 
 The skill body parses the subcommand from arguments and dynamically routes to the right instruction file.
 
-### Complete Command-to-Engine Routing Table (20 Document-Operation Commands)
+### Complete Command-to-Engine Routing Table (21 Routing-Table Commands)
 
 All 21 routing-table commands declare `agent: orchestrate` in their skill frontmatter. The orchestrator reads the routing metadata and delegates to the specialist engine listed below. These entries correspond to the ROUTING_TABLE in `lib/routing.cjs`.
 
@@ -1161,7 +1161,7 @@ This gives engines cross-session learning: an engine that learns "helper docs fr
 
 ### Universal Orchestrator Pattern
 
-The `orchestrate` engine (`agents/orchestrate.md`) is the universal entry point for all 22 commands (20 document-operation + 2 meta). Every skill declares `agent: orchestrate`. Document-operation skills provide routing metadata (`Engine:`, `Operation:`, `Instruction:`) for delegation. Meta-commands (`/fp-docs:do`, `/fp-docs:help`) are handled directly by the orchestrate engine without delegation. The orchestrator is a **pure dispatcher** (D-06) -- it never executes fp-docs operations directly, always delegating to subagents. The orchestrator:
+The `orchestrate` engine (`agents/orchestrate.md`) is the universal entry point for all 23 commands (21 routing-table + 2 meta). Every skill declares `agent: orchestrate`. Document-operation skills provide routing metadata (`Engine:`, `Operation:`, `Instruction:`) for delegation. Meta-commands (`/fp-docs:do`, `/fp-docs:help`) are handled directly by the orchestrate engine without delegation. The orchestrator is a **pure dispatcher** (D-06) -- it never executes fp-docs operations directly, always delegating to subagents. The orchestrator:
 
 1. **Parses routing metadata** from the skill body to determine the target specialist engine
 2. **Classifies the command** as write (modify, citations generate/update, api-refs generate, locals annotate/contracts/shapes) or read-only (audit, verify, sanity-check, test, verbosity-audit, citations verify/audit, api-refs audit, locals validate/cross-ref/coverage)

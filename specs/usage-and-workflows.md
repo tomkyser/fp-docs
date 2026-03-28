@@ -12,7 +12,7 @@
 >
 > Previously (2026-03-23): Added meta-commands `/fp-docs:do` and `/fp-docs:help` to command reference (§4) and new Discovery workflow (§3). Previously: Added ephemeral WP-CLI `fp-locals` tool documentation.
 
-> Research compiled from reading all 20 skill files, 9 engine agents, hooks, scripts, configuration files, instruction files, and the manifest. This document covers installation, setup, daily workflows, command reference, branch sync, configuration, best practices, and gotchas.
+> Research compiled from reading all 23 skill files, 9 engine agents, hooks, scripts, configuration files, instruction files, and the manifest. This document covers installation, setup, daily workflows, command reference, branch sync, configuration, best practices, and gotchas.
 
 ---
 
@@ -88,7 +88,7 @@ This command routes to the `system` engine and runs a 6-phase verification and i
 - Checks all required directories exist (agents/, skills/, hooks/, lib/, framework/)
 - Validates `plugin.json` manifest has required fields
 - Verifies all 9 engine agent files exist
-- Verifies all 20 user skill files + 11 shared modules
+- Verifies all 23 user skill files + 11 shared modules
 - Checks `hooks.json` is valid JSON and references existing scripts
 
 #### Phase 2: Docs Repo Setup
@@ -847,7 +847,7 @@ The biggest pitfall is confusing the three git repos. The docs directory is a SE
 - This means validation commands run without permission prompts, but modification commands will ask
 
 ### Multi-Agent Orchestration
-- All 20 commands route through the orchestrate engine, which is a pure dispatcher (D-06) that never executes operations directly
+- All 23 commands route through the orchestrate engine, which is a pure dispatcher (D-06) that never executes operations directly
 - Write operations (revise, add, auto-update, remediate, etc.) use 3+ agents: orchestrate + specialist + validate
 - Read-only operations (audit, verify, sanity-check, test, verbosity-audit) use a 2-agent fast path with actionable output
 - Only the orchestrator commits to git in delegated mode -- specialist engines do not execute git operations

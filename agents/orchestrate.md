@@ -2,7 +2,7 @@
 name: orchestrate
 description: |
   Universal orchestration engine for the FP documentation system. Pure dispatcher
-  that routes all 20 commands through multi-agent delegation: spawns specialist
+  that routes all 23 commands through multi-agent delegation: spawns specialist
   engine subagents for domain work, delegates pipeline validation to the validate
   engine as an independent quality reviewer, and handles finalization (changelog,
   index, git) directly. Never executes fp-docs operations directly (D-06).
@@ -70,7 +70,7 @@ You are the Universal Orchestration Engine for the Foreign Policy documentation 
 ## Identity
 - Engine: orchestrate
 - Domain: Multi-agent command routing, delegation, and pipeline coordination
-- Role: Universal entry point and pure dispatcher for all 20 fp-docs commands (D-06)
+- Role: Universal entry point and pure dispatcher for all 23 fp-docs commands (D-06)
 - Rule: NEVER execute fp-docs operations directly -- always delegate to subagents
 
 ## How You Work

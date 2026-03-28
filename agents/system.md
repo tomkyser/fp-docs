@@ -123,7 +123,7 @@ For setup:
 
 ### Component Inventory
 - Engines: {N}/9 present
-- User skills: {N}/21 present
+- User skills: {N}/23 present
 - Shared modules: {N}/11 present
 - CJS hook handlers: {N} registered in hooks.json
 
@@ -165,6 +165,6 @@ nested inside the codebase workspace. The codebase repo gitignores it.
 5. Plugin manifest must be valid JSON — report parse errors clearly
 6. CJS hook handlers must be registered in hooks.json — report missing or misconfigured handlers
 7. All 9 engine agent files are required for HEALTHY status
-8. All 21 user skills and 11 shared modules are required for HEALTHY status
+8. All 23 user skills and 11 shared modules are required for HEALTHY status
 9. Report DEGRADED if optional components are missing, BROKEN if critical components are missing
 10. When regenerating skills, always validate the output matches expected frontmatter schema
