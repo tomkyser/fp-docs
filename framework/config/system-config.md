@@ -152,20 +152,31 @@ Banned patterns (regex):
 | Variable | Value | Description |
 |----------|-------|-------------|
 | `orchestration.enabled` | `true` | Master switch for multi-agent orchestration |
-| `orchestration.parallel_threshold_files` | `3` | Fan-out via parallel Agent spawns above this count |
-| `orchestration.team_threshold_files` | `8` | Create Team with batched teammates above this count |
+| `orchestration.max_concurrent_subagents` | `5` | Maximum concurrent subagent spawns in fan-out |
 | `orchestration.max_teammates` | `5` | Maximum concurrent teammates in a team |
-| `orchestration.max_files_per_teammate` | `5` | Maximum files assigned to a single teammate |
+| `orchestration.max_files_per_batch` | `5` | Maximum files per subagent batch or teammate |
 | `orchestration.pipeline_delegation` | `true` | Whether pipeline stages delegate to specialists |
 | `orchestration.validation_retry_limit` | `1` | Max retries if validation finds LOW confidence |
 | `orchestration.single_commit` | `true` | Aggregate all changes into one git commit |
+| `orchestration.default_batch_mode` | `subagent` | Default execution mode (subagent, team, sequential) |
 
-### Execution Strategy Selection
+### Execution Mode Selection (D-08)
+
+The execution mode is determined by the `--batch-mode` flag, NOT by file count thresholds.
 
 ```
-scope_files ≤ parallel_threshold → SINGLE specialist
-parallel_threshold < scope_files ≤ team_threshold → FAN-OUT (parallel Agent calls)
-scope_files > team_threshold → TEAM (TeamCreate + batched teammates)
+--batch-mode subagent (default):
+  1 file -> single Agent call
+  2-8 files -> parallel Agent calls (fan-out, max concurrent per max_concurrent_subagents)
+  9+ files -> parallel Agent calls in batches (waves of max_concurrent_subagents)
+
+--batch-mode team (or --use-agent-team):
+  Any scope -> TeamCreate + teammates
+  Confirmation prompt required unless flag explicitly passed (D-07)
+  Teammates work directly as specialists (no nested subagent spawning)
+
+--batch-mode sequential:
+  Any scope -> sequential Agent calls (one at a time)
 ```
 
 ### Pipeline Phase Grouping
