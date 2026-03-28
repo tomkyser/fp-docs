@@ -1,6 +1,10 @@
 # fp-docs Architecture Research
 
-> **Updated 2026-03-28**: Phase 11 -- Fixed pipeline init/next sequence in Finalize Phase (orchestrate.md, delegate.md). Added `update` operation to system engine agent. Fixed update.md instruction field alignment with update.cjs output.
+<!-- Updated 2026-03-28: Phase 13 — .mcp.json created, plugin compliance validated, MCP design decision documented -->
+
+> **Updated 2026-03-28**: Phase 13 -- .mcp.json created at plugin root with Playwright MCP server declaration. Plugin compliance validated against Claude Code plugin-reference spec (6 categories). MCP design decision documented (`.mcp.json` over `settings.json`).
+>
+> Previously (2026-03-28): Phase 11 -- Fixed pipeline init/next sequence in Finalize Phase (orchestrate.md, delegate.md). Added `update` operation to system engine agent. Fixed update.md instruction field alignment with update.cjs output.
 >
 > Previously (2026-03-26): Phase 10 -- Version reset to 1.0.0 for independent repo era. Plugin extracted as git submodule. Added `/fp-docs:update` command (21st routing-table entry), `lib/update.cjs` module, SessionStart update-check hook, statusline hook template. Versioning governance rules added to CLAUDE.md.
 >
@@ -1029,6 +1033,8 @@ The plugin declares external MCP servers in `.mcp.json` at the plugin root. Clau
 
 MCP tools (e.g., `browser_navigate`, `browser_snapshot`, `browser_take_screenshot`) are available to engines as native tool calls, identical to Read, Write, Grep, etc. No CJS glue code is needed for browser operations.
 
+**Validation status:** All plugin components validated against Claude Code plugin-reference spec (Phase 13). Plugin passes `claude plugin validate .` structural check. Compliance validated across 6 categories: manifest (plugin.json), agents (9), skills (23), modules (11), hooks (4 events), and settings (settings.json).
+
 ---
 
 ## 12. End-to-End Flow Example
@@ -1154,6 +1160,7 @@ This gives engines cross-session learning: an engine that learns "helper docs fr
 16. **Batch/team protocol**: The `--batch-mode` flag (subagent|team|sequential) controls execution mode (D-08). Agent Teams are created only on explicit request (`--batch-mode team` or `--use-agent-team`), with user confirmation required by default (D-07). The orchestrator extracts only summary metrics from delegation results to keep context lean (D-09).
 17. **Ephemeral CLI tool pattern**: The WP-CLI `fp-locals` command lives in the plugin repo (`framework/tools/class-locals-cli.php`) but operates in the theme. Setup (`lib/locals-cli.cjs`) copies it to the theme and registers it in `functions.php`; teardown reverses both steps. The CLI must never persist after an operation. A SubagentStop safety net (`handleLocalsCLICleanup` in `lib/hooks.cjs`) auto-cleans orphaned artifacts. This gives the locals engine access to PHP's `token_get_all()` for 100% accurate `$locals` extraction, superior to regex-based inference.
 18. **Plugin-bundled MCP servers (Phase 9)**: Browser automation integrates via MCP server declared in `.mcp.json`, not via CJS CLI wrappers. Engines call browser tools (`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`) as native tool calls -- same invocation pattern as Read/Write/Grep. This keeps the integration lightweight: no new CJS modules, no new lib/ files, no build step. The MCP server is launched via `npx` (downloaded and cached automatically) with a pinned version (`@playwright/mcp@0.0.68`) to prevent breaking changes.
+19. **MCP in .mcp.json (not settings.json) (Phase 13)**: Playwright MCP server declared in a dedicated `.mcp.json` file at plugin root, superseding the Phase 9 approach of putting MCP declarations in `settings.json`. This follows Claude Code's standard `.mcp.json` convention and keeps MCP declarations cleanly separated from permission settings. The `settings.json` retains only the `permissions.allow` block.
 
 ---
 
