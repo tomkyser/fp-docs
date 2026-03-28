@@ -11,27 +11,9 @@
 
 ## Source-to-Documentation Mapping
 
-| Source Path | Documentation Target |
-|------------|---------------------|
-| functions.php | docs/01-architecture/bootstrap-sequence.md |
-| inc/post-types/ | docs/02-post-types/ |
-| inc/taxonomies/ | docs/03-taxonomies/ |
-| inc/custom-fields/ | docs/04-custom-fields/ |
-| components/ | docs/05-components/ |
-| helpers/ | docs/06-helpers/ |
-| inc/shortcodes/ | docs/07-shortcodes/ |
-| inc/hooks/ | docs/08-hooks/ |
-| inc/rest-api/ | docs/09-api/rest-api/ |
-| inc/endpoints/ | docs/09-api/custom-endpoints/ |
-| layouts/ | docs/10-layouts/ |
-| features/ | docs/11-features/ |
-| lib/autoloaded/ | docs/12-integrations/ |
-| inc/cli/ | docs/16-cli/ |
-| inc/admin-settings/ | docs/17-admin/ |
-| assets/src/scripts/ | docs/18-frontend-assets/js/ |
-| assets/src/styles/ | docs/18-frontend-assets/css/ |
-| build/ | docs/00-getting-started/build-system.md |
-| inc/roles/ | docs/20-exports-notifications/ |
+**Extracted to `source-map.json`** -- Source-to-doc mappings are now managed by `lib/source-map.cjs` and stored in `source-map.json` at the plugin root. Use `node {plugin-root}/fp-tools.cjs source-map lookup <source-path>` for lookups, or `source-map dump` for the full mapping.
+
+This extraction eliminates the previous three-way mapping divergence (config.json, project-config.md, mod-project module).
 
 ## Appendix Cross-References
 

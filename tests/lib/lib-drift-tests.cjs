@@ -50,27 +50,26 @@ function writeStalenessFile(tmpDir, data) {
 }
 
 /**
- * Write a config.json fixture with source_to_docs mapping for testing.
+ * Write a source-map.json fixture with source-to-doc mappings for testing.
  */
-function writeConfigFile(tmpDir) {
-  const configPath = path.join(tmpDir, 'config.json');
-  const config = {
-    system: {},
-    project: {
-      source_to_docs: {
-        'functions.php': 'docs/01-architecture/bootstrap-sequence.md',
-        'inc/post-types/': 'docs/02-post-types/',
-        'helpers/': 'docs/06-helpers/',
-        'inc/hooks/': 'docs/08-hooks/',
-        'inc/rest-api/': 'docs/09-api/rest-api/',
-        'components/': 'docs/05-components/',
-        'assets/src/scripts/': 'docs/18-frontend-assets/js/'
-      }
-    },
-    pipeline: { stages: [] }
+function writeSourceMapFile(tmpDir) {
+  const mapPath = path.join(tmpDir, 'source-map.json');
+  const sourceMap = {
+    version: 1,
+    generated: '2026-03-28T00:00:00Z',
+    generator: 'fp-tools source-map generate',
+    mappings: [
+      { source: 'functions.php', doc: 'docs/01-architecture/bootstrap-sequence.md', type: 'file', status: 'mapped' },
+      { source: 'inc/post-types/', doc: 'docs/02-post-types/', type: 'directory', status: 'mapped' },
+      { source: 'helpers/', doc: 'docs/06-helpers/', type: 'directory', status: 'mapped' },
+      { source: 'inc/hooks/', doc: 'docs/08-hooks/', type: 'directory', status: 'mapped' },
+      { source: 'inc/rest-api/', doc: 'docs/09-api/rest-api/', type: 'directory', status: 'mapped' },
+      { source: 'components/', doc: 'docs/05-components/', type: 'directory', status: 'mapped' },
+      { source: 'assets/src/scripts/', doc: 'docs/18-frontend-assets/js/', type: 'directory', status: 'mapped' }
+    ]
   };
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
-  return configPath;
+  fs.writeFileSync(mapPath, JSON.stringify(sourceMap, null, 2), 'utf-8');
+  return mapPath;
 }
 
 // ── Module Tests ──────────────────────────────────────────────────────────────
@@ -281,21 +280,21 @@ describe('lib/drift.cjs', () => {
 
   describe('analyzeDrift', () => {
     let tmpDir;
-    let configPath;
+    let mapPath;
 
     beforeEach(() => {
       tmpDir = makeTempDir();
-      configPath = writeConfigFile(tmpDir);
+      mapPath = writeSourceMapFile(tmpDir);
     });
 
     afterEach(() => {
       cleanTempDir(tmpDir);
     });
 
-    it('should map changed source files to affected docs via source_to_docs config', () => {
+    it('should map changed source files to affected docs via source-map.json', () => {
       const drift = require(path.join(LIB_DIR, 'drift.cjs'));
       const changedFiles = ['helpers/posts.php', 'helpers/posts-utils.php', 'inc/hooks/filters.php'];
-      const result = drift.analyzeDrift(null, null, configPath, changedFiles);
+      const result = drift.analyzeDrift(null, null, mapPath, changedFiles);
       assert.ok(result.affected_docs > 0, 'should have affected docs');
       // Check that helpers/ files map correctly
       const helperSignal = result.signals.find(s => s.doc_path === 'docs/06-helpers/');
@@ -308,10 +307,10 @@ describe('lib/drift.cjs', () => {
       assert.ok(hooksSignal.source_files_changed.includes('inc/hooks/filters.php'));
     });
 
-    it('should return empty affected map for files matching no source_to_docs pattern', () => {
+    it('should return empty affected map for files matching no source-map pattern', () => {
       const drift = require(path.join(LIB_DIR, 'drift.cjs'));
       const changedFiles = ['random/unknown-file.php', 'package.json'];
-      const result = drift.analyzeDrift(null, null, configPath, changedFiles);
+      const result = drift.analyzeDrift(null, null, mapPath, changedFiles);
       assert.equal(result.affected_docs, 0);
       assert.equal(result.signals.length, 0);
     });
@@ -319,7 +318,7 @@ describe('lib/drift.cjs', () => {
     it('should map functions.php to exact file target', () => {
       const drift = require(path.join(LIB_DIR, 'drift.cjs'));
       const changedFiles = ['functions.php'];
-      const result = drift.analyzeDrift(null, null, configPath, changedFiles);
+      const result = drift.analyzeDrift(null, null, mapPath, changedFiles);
       assert.equal(result.affected_docs, 1);
       const signal = result.signals[0];
       assert.equal(signal.doc_path, 'docs/01-architecture/bootstrap-sequence.md');
@@ -329,7 +328,7 @@ describe('lib/drift.cjs', () => {
       const drift = require(path.join(LIB_DIR, 'drift.cjs'));
       const outputPath = path.join(tmpDir, 'drift-output.json');
       const changedFiles = ['helpers/posts.php'];
-      drift.analyzeDrift(null, outputPath, configPath, changedFiles);
+      drift.analyzeDrift(null, outputPath, mapPath, changedFiles);
       assert.ok(fs.existsSync(outputPath), 'output file should exist');
       const raw = fs.readFileSync(outputPath, 'utf-8');
       const parsed = JSON.parse(raw);
@@ -478,11 +477,11 @@ describe('lib/drift.cjs', () => {
 
   describe('integration: analyzeDrift maps correctly', () => {
     let tmpDir;
-    let configPath;
+    let mapPath;
 
     beforeEach(() => {
       tmpDir = makeTempDir();
-      configPath = writeConfigFile(tmpDir);
+      mapPath = writeSourceMapFile(tmpDir);
     });
 
     afterEach(() => {
@@ -492,7 +491,7 @@ describe('lib/drift.cjs', () => {
     it('should handle multiple files mapping to the same doc target', () => {
       const drift = require(path.join(LIB_DIR, 'drift.cjs'));
       const changedFiles = ['helpers/posts.php', 'helpers/posts-utils.php', 'helpers/terms.php'];
-      const result = drift.analyzeDrift(null, null, configPath, changedFiles);
+      const result = drift.analyzeDrift(null, null, mapPath, changedFiles);
       assert.equal(result.affected_docs, 1, 'all helper files should map to one doc target');
       assert.equal(result.signals[0].source_files_changed.length, 3, 'should track all 3 source files');
     });
@@ -500,7 +499,7 @@ describe('lib/drift.cjs', () => {
     it('should handle mixed mapped and unmapped files', () => {
       const drift = require(path.join(LIB_DIR, 'drift.cjs'));
       const changedFiles = ['helpers/posts.php', 'random/unknown.php', 'inc/hooks/filters.php'];
-      const result = drift.analyzeDrift(null, null, configPath, changedFiles);
+      const result = drift.analyzeDrift(null, null, mapPath, changedFiles);
       assert.equal(result.affected_docs, 2, 'should have 2 affected doc targets');
     });
   });
