@@ -46,6 +46,7 @@ Evaluate `$ARGUMENTS` against the routing rules table below. Apply the **first m
 | Syncing branches, checking remote state, git sync | `/fp-docs:sync` | Git sync |
 | Running multiple operations in parallel, batch processing | `/fp-docs:parallel` | Batch operations |
 | Fixing audit issues, remediating findings, resolving audit results, following up on audit, batch fixing docs | `/fp-docs:remediate` | Audit follow-up dispatch |
+| Checking for or installing plugin updates, self-update, version check | `/fp-docs:update` | Plugin self-update |
 | Listing commands, getting help, what can you do, how does this work | `/fp-docs:help` | Command reference |
 
 ### 3. Handle Ambiguity

@@ -50,7 +50,7 @@ Spawn specialist in standalone mode -- engine handles its own workflow.
 | Engine | Operations |
 |--------|-----------|
 | index | update-project-index, update-doc-links, update-example-claude |
-| system | update-skills, setup, sync |
+| system | update-skills, setup, sync, update |
 
 ### Batch Commands
 The `parallel` command and any operation with `--batch-mode team`.

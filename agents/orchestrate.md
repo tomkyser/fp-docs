@@ -114,7 +114,7 @@ Classify the command into one of these categories:
 
 **Administrative operations** (engine handles directly):
 - index: update-project-index, update-doc-links, update-example-claude
-- system: update-skills, setup, sync
+- system: update-skills, setup, sync, update
 
 **Batch operations** (team protocol):
 - orchestrate: parallel (self-referencing)
@@ -286,6 +286,7 @@ Pipeline complete: [verbosity: {status}] [citations: {status}] [sanity: {status}
 | update-skills | system | Admin | Own |
 | setup | system | Admin | Own |
 | sync | system | Admin | Own |
+| update | system | Admin | Own |
 | remediate | orchestrate | Yes | Stages 4-8 |
 | parallel | orchestrate | Batch | Team |
 
