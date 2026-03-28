@@ -15,6 +15,7 @@
  *   route      - Routing table (lookup, table, validate)
  *   health     - System health checks (check, diagnose)
  *   security   - Security utilities (check, validate-path)
+ *   source-map - Source-to-doc mapping management (lookup, reverse-lookup, unmapped, generate, dump)
  *   state      - Operation state management (log, last, pipeline, get, dump)
  *   remediate  - Remediation plan management (save, load, list, update)
  *   git        - Three-repo git operations (sync-check, commit, remote-check, watermark, branches)
@@ -206,6 +207,12 @@ function main() {
     case 'drift': {
       const drift = require('./lib/drift.cjs');
       drift.cmdDrift(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'source-map': {
+      const sourceMap = require('./lib/source-map.cjs');
+      sourceMap.cmdSourceMap(args[1], args.slice(2), raw);
       break;
     }
 
