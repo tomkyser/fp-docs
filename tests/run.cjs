@@ -35,10 +35,11 @@ const filters = {
   git: args.includes('--git'),
   pipeline: args.includes('--pipeline'),
   drift: args.includes('--drift'),
+  'source-map': args.includes('--source-map'),
   update: args.includes('--update'),
   'engine-compliance': args.includes('--engine-compliance'),
 };
-const runAll = !filters.hooks && !filters['hooks-ab'] && !filters['locals-cli'] && !filters.commands && !filters.markers && !filters.cli && !filters.state && !filters.git && !filters.pipeline && !filters.drift && !filters.update && !filters['engine-compliance'];
+const runAll = !filters.hooks && !filters['hooks-ab'] && !filters['locals-cli'] && !filters.commands && !filters.markers && !filters.cli && !filters.state && !filters.git && !filters.pipeline && !filters.drift && !filters['source-map'] && !filters.update && !filters['engine-compliance'];
 
 const testFiles = [];
 if (runAll || filters.hooks) testFiles.push(path.join(__dirname, 'lib', 'fixture-runner.cjs'));
@@ -51,6 +52,7 @@ if (runAll || filters.cli || filters.git) testFiles.push(path.join(__dirname, 'l
 if (runAll || filters['hooks-ab']) testFiles.push(path.join(__dirname, 'lib', 'hooks-ab-runner.cjs'));
 if (runAll || filters.pipeline) testFiles.push(path.join(__dirname, 'lib', 'lib-pipeline-tests.cjs'));
 if (runAll || filters.drift) testFiles.push(path.join(__dirname, 'lib', 'lib-drift-tests.cjs'));
+if (runAll || filters['source-map']) testFiles.push(path.join(__dirname, 'lib', 'lib-source-map-tests.cjs'));
 if (runAll || filters.cli || filters.update) testFiles.push(path.join(__dirname, 'lib', 'lib-update-tests.cjs'));
 if (runAll || filters['engine-compliance']) testFiles.push(path.join(__dirname, 'lib', 'lib-engine-compliance-tests.cjs'));
 
