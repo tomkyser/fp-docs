@@ -1,6 +1,8 @@
 # fp-docs Architecture Research
 
-> **Updated 2026-03-26**: Phase 10 -- Version reset to 1.0.0 for independent repo era. Plugin extracted as git submodule. Added `/fp-docs:update` command (21st routing-table entry), `lib/update.cjs` module, SessionStart update-check hook, statusline hook template. Versioning governance rules added to CLAUDE.md.
+> **Updated 2026-03-28**: Phase 11 -- Fixed pipeline init/next sequence in Finalize Phase (orchestrate.md, delegate.md). Added `update` operation to system engine agent. Fixed update.md instruction field alignment with update.cjs output.
+>
+> Previously (2026-03-26): Phase 10 -- Version reset to 1.0.0 for independent repo era. Plugin extracted as git submodule. Added `/fp-docs:update` command (21st routing-table entry), `lib/update.cjs` module, SessionStart update-check hook, statusline hook template. Versioning governance rules added to CLAUDE.md.
 >
 > Previously (2026-03-25): Phase 8 -- All 9 engines invoke CJS tooling layer (`fp-tools.cjs`). Pipeline finalization uses callback loop. SubagentStop hooks verify CJS compliance. Instruction files contain literal CJS commands. Zero stale bash references remain.
 >

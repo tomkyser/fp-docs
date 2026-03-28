@@ -1,6 +1,8 @@
 # fp-docs Features and Capabilities Research
 
-> **Updated 2026-03-26**: Phase 10 -- Version reset to 1.0.0. Added `/fp-docs:update` command (21st routing-table entry). Update system: background check via GitHub Releases API, cache-based awareness, statusline hook template, git-based self-update. Plugin extracted as independent submodule.
+> **Updated 2026-03-28**: Phase 11 -- Fixed pipeline init/next sequence in finalization. Added `update` to system engine operations. Fixed update instruction field alignment.
+>
+> Previously (2026-03-26): Phase 10 -- Version reset to 1.0.0. Added `/fp-docs:update` command (21st routing-table entry). Update system: background check via GitHub Releases API, cache-based awareness, statusline hook template, git-based self-update. Plugin extracted as independent submodule.
 >
 > Previously (2026-03-25): Phase 8 -- All 9 engines invoke CJS tooling (`fp-tools.cjs`) for git, pipeline, state, and config operations. Pipeline finalization stages 6-8 are fully CJS-executed via callback loop. SubagentStop hooks include CJS compliance checking. Added Design Choice #12 (explicit CJS invocation in instruction files).
 >
@@ -210,11 +212,11 @@ Each engine is a subagent definition with a specific domain, tool permissions, a
 
 ### 9. system (color: blue)
 - **Domain**: Plugin self-maintenance and configuration
-- **Operations**: update-skills, setup, sync, parallel
+- **Operations**: update-skills, setup, sync, update
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
 - **Modules**: mod-standards, mod-project
 - **Model**: opus, maxTurns: 50
-- **Key behavior**: Setup runs 6 phases (plugin verification, docs repo setup, gitignore check, branch sync, git hook installation, shell prompt integration). Sync manages the three-repo branch mirroring model. Update-skills regenerates skill files while preserving customizations.
+- **Key behavior**: Setup runs 6 phases (plugin verification, docs repo setup, gitignore check, branch sync, git hook installation, shell prompt integration). Sync manages the three-repo branch mirroring model. Update-skills regenerates skill files while preserving customizations. Update checks GitHub Releases API and executes git-based self-update.
 
 ---
 

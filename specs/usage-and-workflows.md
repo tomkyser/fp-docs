@@ -1,6 +1,8 @@
 # fp-docs Usage and Workflows Research
 
-> **Updated 2026-03-26**: Phase 10 -- Version reset to 1.0.0 for independent repo era. Added `/fp-docs:update` command and "Updating fp-docs" workflow. Setup extended with Phase 7 (statusline hook installation).
+> **Updated 2026-03-28**: Phase 11 -- Fixed pipeline init/next sequence. System engine now routes `update` operation. Update instruction fields aligned with update.cjs output.
+>
+> Previously (2026-03-26): Phase 10 -- Version reset to 1.0.0 for independent repo era. Added `/fp-docs:update` command and "Updating fp-docs" workflow. Setup extended with Phase 7 (statusline hook installation).
 >
 > Previously (2026-03-25): Phase 8 -- Pipeline finalization is CJS-managed (no manual git commands needed). Setup Phase 5 installs drift hooks via `fp-tools drift install`. Setup Phase 6 installs shell integration via `fp-tools drift shell-install`.
 >
