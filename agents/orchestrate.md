@@ -172,6 +172,12 @@ If sanity-check returns LOW confidence, spawn the primary engine once more to fi
 
 After the Review Phase completes, continue the pipeline callback loop for stages 6-8:
 
+0. Initialize the pipeline for finalization stages:
+   ```bash
+   node {plugin-root}/fp-tools.cjs pipeline init --operation {operation} --files {comma-separated list of modified files from Write Phase} --changelog-summary "{brief description of changes made}"
+   ```
+   Parse the JSON response. Confirm initialization succeeded by checking for a `pipeline_id` field. If the response contains `error: true`, report the error and halt finalization.
+
 1. Run: `node {plugin-root}/fp-tools.cjs pipeline next`
 2. Parse the JSON response. Based on the `action` field:
 
