@@ -2,7 +2,7 @@
 
 Documentation management system for the Foreign Policy WordPress codebase. fp-docs is a Claude Code plugin that automates the creation, revision, validation, and maintenance of technical documentation by reading your source code directly and keeping docs in sync with every change.
 
-fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships 21 commands, 9 specialized engines (including a universal orchestration engine that coordinates multi-agent execution), and an automated 8-stage post-modification pipeline that runs after every documentation change.
+fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships over 20 commands, 9 specialized engines (including a universal orchestration engine that coordinates multi-agent execution), and an automated 8-stage post-modification pipeline that runs after every documentation change.
 
 ### What Problems It Solves
 
@@ -21,12 +21,14 @@ fp-docs enforces zero-tolerance verbosity (every source item must be documented)
 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Updating fp-docs](#updating-fp-docs)
 - [Command Reference](#command-reference)
 - [Common Workflows](#common-workflows)
 - [Architecture](#architecture)
 - [Development Guide](#development-guide)
 - [Configuration Reference](#configuration-reference)
 - [Troubleshooting](#troubleshooting)
+- [Version Management](#version-management)
 
 ---
 
@@ -84,6 +86,56 @@ The plugin auto-allows Read, Grep, and Glob. Write, Edit, and Bash operations wi
    ```
 
 From here, the SessionStart hooks handle branch detection and plugin context injection automatically on every new session.
+
+---
+
+## Updating fp-docs
+
+### Check for Updates
+
+```
+/fp-docs:update --check
+```
+
+This compares your installed version against the latest release on GitHub and reports whether an update is available.
+
+### Install an Update
+
+```
+/fp-docs:update
+```
+
+If an update is available, this pulls the latest version from the marketplace and applies it.
+
+### Background Update Checking
+
+fp-docs checks for updates automatically in the background on every session start. The SessionStart hook spawns a background process that queries the GitHub Releases API and writes the result to `.fp-docs/update-cache.json` with a 1-hour TTL. This means update checks never block your session startup, and repeated checks within an hour use the cached result.
+
+If an update is available, you will see a notification in the statusline (installed by `/fp-docs:setup`).
+
+### Manual Fallback
+
+If the `/fp-docs:update` command does not work as expected, you can update manually:
+
+1. Navigate to the local marketplace clone:
+
+   ```bash
+   cd ~/.claude/plugins/marketplaces/<marketplace-name>
+   ```
+
+2. Pull the latest changes:
+
+   ```bash
+   git pull origin master
+   ```
+
+3. Reinstall the plugin:
+
+   ```
+   /plugin install fp-docs@fp-tools
+   ```
+
+See [Plugin Not Updating to Latest Version](#plugin-not-updating-to-latest-version) in Troubleshooting for more details on edge cases.
 
 ---
 
@@ -910,3 +962,37 @@ Setup will detect whether the docs repo exists at `{codebase-root}/themes/foreig
 | `docs/About.md` | Documentation hub and table of contents |
 | `docs/claude-code-docs-system/PROJECT-INDEX.md` | Master codebase reference index |
 | `docs/diffs/` | Accumulated branch diff reports (do not clean up) |
+
+---
+
+## Version Management
+
+### Current Version
+
+**1.0.0** -- Clean break for the independent repository era. The version was reset from 2.8.0 when fp-docs was extracted as a standalone submodule.
+
+### Source of Truth
+
+The canonical version is declared in `fp-docs/.claude-plugin/plugin.json`. All other version references (manifest, specs, CHANGELOG, README) must match this file.
+
+### Versioning Governance
+
+Plugin versions are bumped by the maintainer only. Tooling (including GSD and Claude) is never allowed to automatically increment version numbers, create git tags, or publish releases. All version changes require explicit human instruction.
+
+### Release Flow
+
+```
+feature/task branch -> dev -> tag + dev release -> merge dev into master -> tag + master release
+```
+
+- **Feature/task branches**: Development work for specific phases or fixes
+- **dev branch**: Integration testing; tagged as `D.{major}.{minor}.{patch}`
+- **master branch**: Production releases; tagged as `{major}.{minor}.{patch}`
+- Tags and releases are human-created via explicit instruction
+
+### Tag Naming
+
+| Branch | Tag Format | Example |
+|--------|-----------|---------|
+| master | `{major}.{minor}.{patch}` | `1.0.0` |
+| dev | `D.{major}.{minor}.{patch}` | `D.1.0.0` |
