@@ -8,7 +8,7 @@
 ### Phase 1: Plugin Structure Verification
 1. Verify all required directories exist:
    - `agents/` — should contain 9 engine files
-   - `skills/` — should contain at least 20 user skill directories (19 document-operation commands plus meta-commands like do, help, remediate)
+   - `skills/` — should contain 23 user skill directories (21 routing-table commands + 2 meta-commands)
    - `modules/` — should contain 11 shared module directories
    - `hooks/` — should contain `hooks.json`
    - `lib/` — should contain CJS modules (hooks, locals-cli, git, pipeline, etc.)
@@ -31,7 +31,7 @@
    - `agents/index.md`
    - `agents/system.md`
 
-4. Verify all user skill files exist (at least 20 directories in `skills/`) and all 11 shared modules exist.
+4. Verify all user skill files exist (23 directories in `skills/`) and all 11 shared modules exist.
 
 5. Verify `hooks/hooks.json` is valid JSON and references existing CJS handler functions.
 

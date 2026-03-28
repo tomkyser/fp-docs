@@ -15,7 +15,7 @@ Verify AND initialize the fp-docs system:
 1. Check all required directories exist (agents/, skills/, hooks/, lib/, framework/)
 2. Validate `.claude-plugin/plugin.json` manifest
 3. Verify all 9 engine agent files exist
-4. Verify all user skill files exist (at least 20 directories in skills/) + 11 shared modules
+4. Verify all user skill files exist (23 directories in skills/) + 11 shared modules
 5. Verify hooks.json references CJS handlers and lib/ modules exist
 
 ### Phase 2: Docs Repo Setup

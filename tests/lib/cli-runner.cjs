@@ -90,10 +90,10 @@ describe('fp-tools CLI', () => {
   });
 
   describe('help', () => {
-    it('outputs JSON with commands array of length >= 19', () => {
+    it('outputs JSON with commands array of length >= 21', () => {
       const result = runCliJson('help');
       assert.ok(Array.isArray(result.commands), 'should have commands array');
-      assert.ok(result.commands.length >= 19, `expected >= 19 commands, got ${result.commands.length}`);
+      assert.ok(result.commands.length >= 21, `expected >= 21 commands, got ${result.commands.length}`);
     });
 
     it('each command entry has command, description, engine, type', () => {

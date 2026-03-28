@@ -2,7 +2,7 @@
 
 Documentation management system for the Foreign Policy WordPress codebase. fp-docs is a Claude Code plugin that automates the creation, revision, validation, and maintenance of technical documentation by reading your source code directly and keeping docs in sync with every change.
 
-fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships over 20 commands, 9 specialized engines (including a universal orchestration engine that coordinates multi-agent execution), and an automated 8-stage post-modification pipeline that runs after every documentation change.
+fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships 23 commands, 9 specialized engines (including a universal orchestration engine that coordinates multi-agent execution), and an automated 8-stage post-modification pipeline that runs after every documentation change.
 
 ### What Problems It Solves
 
@@ -530,7 +530,7 @@ fp-docs/                              # Git root (independent repo, submodule of
 ├── settings.json                     # Default permissions (Read, Grep, Glob)
 ├── agents/                           # 9 engine agent definitions
 ├── modules/                          # 11 shared modules (preloaded by engines)
-├── skills/                           # 22 user-facing commands
+├── skills/                           # 23 user-facing commands
 ├── hooks/
 │   └── hooks.json                    # 4 hook event definitions (CJS-backed)
 ├── lib/                              # CJS modules (hooks, locals-cli, core, paths, git, etc.)

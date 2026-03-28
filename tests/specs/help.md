@@ -25,7 +25,7 @@ flags: none
 
 - Output contains `# fp-docs Command Reference` heading
 - Output contains type-group headings (Documentation Creation & Modification, Validation & Auditing, System & Maintenance, Batch Operations)
-- Output contains all 19 commands in markdown tables
+- Output contains all 21 routing-table commands in markdown tables
 
 ## Error Paths
 
