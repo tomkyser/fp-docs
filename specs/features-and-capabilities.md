@@ -230,7 +230,7 @@ The drift detection module provides a full CLI surface via `fp-tools drift <subc
 
 | Subcommand | Description | Used By |
 |------------|-------------|---------|
-| `fp-tools drift analyze` | Analyze git diff against source-to-docs mapping. Maps changed source files to affected documentation targets and generates staleness signals. | Git hooks (post-merge, post-rewrite) |
+| `fp-tools drift analyze` | Analyze git diff against `source-map.json` mapping (via `lib/source-map.cjs`). Maps changed source files to affected documentation targets and generates staleness signals. | Git hooks (post-merge, post-rewrite) |
 | `fp-tools drift status` | Show current staleness signals from staleness.json. | Engines, users via CLI |
 | `fp-tools drift clear [doc_path]` | Clear staleness signals. Clears specific doc_path or all signals. | SubagentStop hooks (auto-clear), users via CLI |
 | `fp-tools drift add-signal` | Manually add a staleness signal with doc_path, source, reason, severity. | Audit engines, manual testing |
@@ -242,6 +242,20 @@ The drift detection module provides a full CLI surface via `fp-tools drift <subc
 
 `lib/drift.cjs` exports 12 functions: `analyzeDrift`, `addSignal`, `clearSignals`, `loadStaleness`, `saveStaleness`, `mergePending`, `sortByPriority`, `formatNudge`, `getChangedFiles`, `installGitHook`, `installAllHooks`, `installShellIntegration`, `cmdDrift`.
 
+### Source-Map CLI
+
+The source-map module provides the single source of truth for source-to-doc mapping via `fp-tools source-map <subcommand>`. This is a CJS module (`lib/source-map.cjs`) that replaces the previous three-way mapping divergence (config.json, project-config.md, mod-project inline table).
+
+| Subcommand | Description | Used By |
+|------------|-------------|---------|
+| `fp-tools source-map lookup <source-path>` | Look up the doc target for a source path (exact match, then directory prefix) | Engines, instruction files |
+| `fp-tools source-map reverse-lookup <doc-path>` | Find source entries that map to a given doc path | Engines (reverse mapping for visual verification) |
+| `fp-tools source-map unmapped` | List all source files without doc targets | Audit engine, gap analysis |
+| `fp-tools source-map generate` | Scan codebase and docs trees to build/refresh source-map.json | Pipeline stage 7 (index update) |
+| `fp-tools source-map dump` | Output full source-map.json contents | Debugging, engines |
+
+`lib/source-map.cjs` exports 7 functions: `loadSourceMap`, `saveSourceMap`, `lookupDoc`, `lookupSource`, `getUnmapped`, `generateSourceMap`, `cmdSourceMap`.
+
 ---
 
 ## The 11 Shared Modules
@@ -251,7 +265,7 @@ Modules are preloaded into engines via the `skills:` frontmatter field. They are
 | Module | Domain | Preloaded By |
 |--------|--------|-------------|
 | mod-standards | File naming, directory structure, document templates (10 types), content rules, depth requirements, cross-reference requirements, integrity rules | All 9 engines |
-| mod-project | FP-specific paths, source-to-doc mapping (30+ directories), appendix cross-references, environment settings | All 9 engines |
+| mod-project | FP-specific paths, source-map.json CLI reference (5 example rows), appendix cross-references, environment settings | All 9 engines |
 | mod-pipeline | 8-stage post-modification pipeline definition, trigger matrix, skip conditions, completion markers | modify |
 | mod-changelog | Changelog entry format (date, files changed, summary), append-only rules | modify |
 | mod-index | PROJECT-INDEX.md update modes (quick/update/full), git consistency rules | modify, index |
@@ -500,7 +514,7 @@ Controls configurable behavior for the plugin:
 ### project-config.md
 FP-specific configuration:
 - Project identity (theme root, docs root, WP-CLI prefix, local URL)
-- Source-to-documentation mapping (30+ source directories to doc targets)
+- Source-to-documentation mapping: **Extracted to `source-map.json`** (accessed via `lib/source-map.cjs`; project-config.md retains reference pointer only)
 - Appendix cross-references (7 appendix categories)
 - Key paths (changelog, revision tracker, index, shapes, flagged concerns)
 - Repository configuration (codebase repo, docs repo, plugin repo)

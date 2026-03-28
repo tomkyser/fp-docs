@@ -181,7 +181,7 @@ If the intent is ambiguous, the router presents 2-3 candidate commands and asks 
 **What it does**:
 1. Automatically runs `git diff --name-only HEAD~5` to detect recently changed source files
 2. Filters to documentation-relevant files (removes docs/, node_modules/, vendor/, etc.)
-3. Maps each changed source file to its documentation target using the source-to-docs mapping table (e.g., `helpers/posts.php` maps to `docs/06-helpers/posts.md`)
+3. Maps each changed source file to its documentation target using `source-map.json` via `lib/source-map.cjs` (e.g., `helpers/posts.php` maps to `docs/06-helpers/posts.md`)
 4. Reads the current source code and existing documentation
 5. Updates docs to reflect code changes; creates new docs for new files; adds REMOVED notices for deleted files
 6. Runs the full 8-stage post-modification pipeline (finalization stages 6-8 are CJS-managed via `fp-tools.cjs pipeline` -- no manual git commands needed)
@@ -248,7 +248,7 @@ Three levels of checking, from broad to deep:
 **Command**: `/fp-docs:audit --depth quick|standard|deep [scope]`
 **Engine**: validate (read-only)
 
-- **quick**: Checks file existence, cross-references source-to-doc mapping, validates markdown links
+- **quick**: Checks file existence, cross-references source-to-doc mapping (via `source-map.json`), validates markdown links
 - **standard** (default): Includes quick + checks git changes from last 30 days and flags discrepancies
 - **deep**: Includes standard + reads every doc and source file, compares all claims, checks citation coverage
 
@@ -385,7 +385,7 @@ Drift detection runs automatically after `git pull` or `git merge` via git hooks
 **Automatic flow**:
 1. You run `git pull` (or `git merge`, `git rebase`) in the codebase repo
 2. The post-merge (or post-rewrite) git hook fires automatically
-3. The hook runs `fp-tools drift analyze`, which maps changed source files to affected docs using the source-to-docs mapping in config.json
+3. The hook runs `fp-tools drift analyze`, which maps changed source files to affected docs using `source-map.json` (via `lib/source-map.cjs`)
 4. Drift signals are written to `.fp-docs/drift-pending.json`
 5. Next time you start a Claude Code session, the SessionStart drift-nudge hook merges pending signals into `.fp-docs/staleness.json` and shows a nudge
 
@@ -611,7 +611,7 @@ The sync command maintains a watermark file (`.sync-watermark`) in the docs repo
 This file contains FP-specific settings:
 
 - **Project identity**: Theme root, docs root, WP-CLI prefix (`ddev wp`), local URL (`https://foreignpolicy.local/`)
-- **Source-to-Documentation Mapping**: 17 mapping rules (e.g., `helpers/` maps to `docs/06-helpers/`)
+- **Source-to-Documentation Mapping**: **Extracted to `source-map.json`** (accessed via `lib/source-map.cjs`; project-config.md retains reference pointer only)
 - **Appendix Cross-References**: 7 appendix mappings for hooks, shortcodes, REST routes, constants, etc.
 - **Feature Enables**: Citations, API References, Locals contracts, Verbosity enforcement, Sanity-check (all enabled by default)
 - **Repository Configuration**: Git roots, remotes, branch strategies, path resolution rules, diff report location
@@ -676,7 +676,7 @@ This file controls thresholds, defaults, and feature flags:
 
 To customize fp-docs behavior:
 1. Modify `framework/config/system-config.md` to change thresholds and feature flags
-2. Modify `framework/config/project-config.md` to change source-to-docs mappings, paths, or feature enables
+2. Modify `framework/config/project-config.md` to change paths or feature enables; use `fp-tools source-map generate` to refresh source-to-doc mappings in `source-map.json`
 3. Use per-command flags (`--no-citations`, `--no-sanity-check`, etc.) for one-off overrides
 
 ---
@@ -906,31 +906,37 @@ The biggest pitfall is confusing the three git repos. The docs directory is a SE
 
 ---
 
-## 13. Source-to-Documentation Mapping Quick Reference
+## 13. Source-to-Documentation Mapping
 
-This is the core mapping that determines which source files correspond to which docs:
+Source-to-doc mapping is managed by `source-map.json` at the plugin root, accessed through `lib/source-map.cjs`. This is the single source of truth for all source-to-doc mapping -- no competing tables exist in config files, modules, or instruction files.
+
+**CLI commands** (run via Bash tool):
+```bash
+# Look up doc target for a source file
+node {plugin-root}/fp-tools.cjs source-map lookup <source-path>
+
+# Reverse lookup: find source entries for a doc
+node {plugin-root}/fp-tools.cjs source-map reverse-lookup <doc-path>
+
+# List all unmapped source files
+node {plugin-root}/fp-tools.cjs source-map unmapped
+
+# Regenerate mapping from codebase/docs scan
+node {plugin-root}/fp-tools.cjs source-map generate
+
+# Dump full source-map.json
+node {plugin-root}/fp-tools.cjs source-map dump
+```
+
+**Representative mappings** (full mapping in source-map.json, 30+ directory entries):
 
 | Source Path | Documentation Target |
 |------------|---------------------|
-| `functions.php` | `docs/01-architecture/bootstrap-sequence.md` |
 | `inc/post-types/` | `docs/02-post-types/` |
-| `inc/taxonomies/` | `docs/03-taxonomies/` |
-| `inc/custom-fields/` | `docs/04-custom-fields/` |
-| `components/` | `docs/05-components/` |
 | `helpers/` | `docs/06-helpers/` |
-| `inc/shortcodes/` | `docs/07-shortcodes/` |
+| `components/` | `docs/05-components/` |
 | `inc/hooks/` | `docs/08-hooks/` |
 | `inc/rest-api/` | `docs/09-api/rest-api/` |
-| `inc/endpoints/` | `docs/09-api/custom-endpoints/` |
-| `layouts/` | `docs/10-layouts/` |
-| `features/` | `docs/11-features/` |
-| `lib/autoloaded/` | `docs/12-integrations/` |
-| `inc/cli/` | `docs/16-cli/` |
-| `inc/admin-settings/` | `docs/17-admin/` |
-| `assets/src/scripts/` | `docs/18-frontend-assets/js/` |
-| `assets/src/styles/` | `docs/18-frontend-assets/css/` |
-| `build/` | `docs/00-getting-started/build-system.md` |
-| `inc/roles/` | `docs/20-exports-notifications/` |
 
 ---
 

@@ -195,7 +195,7 @@ Create documentation for new code that has no docs yet. Finds a sibling doc in t
 
 #### `/fp-docs:auto-update`
 
-Auto-detect recent code changes (via `git diff`) and update all affected docs. Maps changed source files to documentation targets using the source-to-docs mapping table, then updates each affected doc.
+Auto-detect recent code changes (via `git diff`) and update all affected docs. Maps changed source files to documentation targets using `source-map.json` (via `lib/source-map.cjs`), then updates each affected doc.
 
 ```
 /fp-docs:auto-update
@@ -232,7 +232,7 @@ These commands are read-only -- they never modify files.
 
 Compare docs against source code at three depth levels:
 
-- **quick**: File existence, source-to-doc cross-references, markdown link validation
+- **quick**: File existence, source-to-doc cross-references (via `source-map.json`), markdown link validation
 - **standard** (default): Quick checks plus git change detection from the last 30 days
 - **deep**: Standard checks plus full content comparison of every doc against its source
 
@@ -638,7 +638,7 @@ The 11 modules in `modules/` are shared rule files preloaded into engines via th
 | Module | Purpose |
 |--------|---------|
 | mod-standards | Universal formatting, naming, structural, and depth rules |
-| mod-project | FP-specific paths, source-to-doc mappings, environment config |
+| mod-project | FP-specific paths, source-map.json CLI reference, environment config |
 | mod-pipeline | 8-stage pipeline definition, trigger matrix, skip conditions, delegation protocol |
 | mod-changelog | Changelog entry format and update procedure |
 | mod-index | PROJECT-INDEX.md update rules and modes |
@@ -801,7 +801,7 @@ fp-docs operates across three independent git repositories:
 | File | Scope | What to Change |
 |------|-------|----------------|
 | `framework/config/system-config.md` | System-wide | Feature flags, thresholds, tier boundaries, banned phrases |
-| `framework/config/project-config.md` | FP-specific | Source-to-doc mappings, paths, repo URLs, feature enables |
+| `framework/config/project-config.md` | FP-specific | Paths, repo URLs, feature enables (source-to-doc mapping extracted to `source-map.json`) |
 
 Use per-command flags (`--no-citations`, `--no-sanity-check`, etc.) for one-off overrides instead of changing config files.
 
@@ -831,29 +831,33 @@ Use per-command flags (`--no-citations`, `--no-sanity-check`, etc.) for one-off 
 | `orchestration.validation_retry_limit` | `1` | Max retries on LOW validation confidence |
 | `orchestration.single_commit` | `true` | Aggregate changes into one git commit |
 
-### Source-to-Documentation Mapping (project-config.md)
+### Source-to-Documentation Mapping (source-map.json)
+
+Source-to-doc mapping is managed by `source-map.json` at the plugin root, accessed through `lib/source-map.cjs`. Use the CLI for lookups:
+
+```bash
+# Look up doc target for a source file
+node fp-tools.cjs source-map lookup <source-path>
+
+# Reverse lookup: doc to source
+node fp-tools.cjs source-map reverse-lookup <doc-path>
+
+# Regenerate mapping
+node fp-tools.cjs source-map generate
+
+# Dump full mapping
+node fp-tools.cjs source-map dump
+```
+
+Representative mappings (full mapping in source-map.json, 30+ directory entries):
 
 | Source Path | Documentation Target |
 |-------------|---------------------|
-| `functions.php` | `docs/01-architecture/bootstrap-sequence.md` |
 | `inc/post-types/` | `docs/02-post-types/` |
-| `inc/taxonomies/` | `docs/03-taxonomies/` |
-| `inc/custom-fields/` | `docs/04-custom-fields/` |
-| `components/` | `docs/05-components/` |
 | `helpers/` | `docs/06-helpers/` |
-| `inc/shortcodes/` | `docs/07-shortcodes/` |
+| `components/` | `docs/05-components/` |
 | `inc/hooks/` | `docs/08-hooks/` |
 | `inc/rest-api/` | `docs/09-api/rest-api/` |
-| `inc/endpoints/` | `docs/09-api/custom-endpoints/` |
-| `layouts/` | `docs/10-layouts/` |
-| `features/` | `docs/11-features/` |
-| `lib/autoloaded/` | `docs/12-integrations/` |
-| `inc/cli/` | `docs/16-cli/` |
-| `inc/admin-settings/` | `docs/17-admin/` |
-| `assets/src/scripts/` | `docs/18-frontend-assets/js/` |
-| `assets/src/styles/` | `docs/18-frontend-assets/css/` |
-| `build/` | `docs/00-getting-started/build-system.md` |
-| `inc/roles/` | `docs/20-exports-notifications/` |
 
 ---
 
