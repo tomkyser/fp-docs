@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.68",
+        "--ignore-https-errors",
+        "--caps",
+        "vision",
+        "--config",
+        "${CLAUDE_PLUGIN_ROOT}/framework/config/playwright-mcp-config.json"
+      ]
+    }
+  }
+}
