@@ -22,15 +22,15 @@ node {plugin-root}/fp-tools.cjs update status
 
 Parse the JSON output. Key fields:
 - `update_available` (boolean) — whether a newer version exists
-- `current_version` — the currently installed version
-- `latest_version` — the newest available version
+- `installed` — the currently installed version
+- `latest` — the newest available version
 - `release_notes` — changelog/release notes from GitHub
 - `release_url` — link to the GitHub release page
 
 If `update_available` is `false`, report:
 
 ```
-fp-docs is up to date (v{current_version}).
+fp-docs is up to date (v{installed}).
 ```
 
 Stop here — no further steps needed.
@@ -46,8 +46,8 @@ Format and display the update information:
  fp-docs > UPDATE AVAILABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Current version: v{current_version}
-Latest version:  v{latest_version}
+Current version: v{installed}
+Latest version:  v{latest}
 
 ## Release Notes
 
@@ -56,14 +56,14 @@ Latest version:  v{latest_version}
 GitHub: {release_url}
 ```
 
-If `--check-only` flag is present, stop here after displaying the changelog. Do not proceed to confirmation or execution.
+If `--check` flag is present, stop here after displaying the changelog. Do not proceed to confirmation or execution.
 
 ### Step 3: Confirm with User
 
 Ask the user to confirm the update:
 
 ```
-Update fp-docs from v{current_version} to v{latest_version}?
+Update fp-docs from v{installed} to v{latest}?
 
 This will:
 1. Fetch the latest release from the plugin repository
@@ -99,16 +99,16 @@ If `--force` flag is present, skip this confirmation step entirely and proceed d
 
 3. Check out the target version tag. Try without `v` prefix first (the tag format used by fp-docs):
    ```bash
-   git -C {plugin-root} checkout {latest_version}
+   git -C {plugin-root} checkout {latest}
    ```
    If that fails, try with `v` prefix as fallback:
    ```bash
-   git -C {plugin-root} checkout v{latest_version}
+   git -C {plugin-root} checkout v{latest}
    ```
 
-4. Clear the update cache so the statusline stops showing the nudge:
+4. Clear the update cache so the nudge stops appearing:
    ```bash
-   node {plugin-root}/fp-tools.cjs update run --clear-cache
+   rm -f {codebase-root}/.fp-docs/update-cache.json
    ```
 
 ### Step 5: Report
@@ -120,7 +120,7 @@ Display the completion report:
  fp-docs > UPDATE COMPLETE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Updated: v{current_version} → v{latest_version}
+Updated: v{installed} → v{latest}
 
 IMPORTANT: Restart Claude Code now for the update to take effect.
 Close this session and start a new one.
@@ -134,13 +134,13 @@ Update always runs standalone through the system engine. It is not a document op
 
 | Flag | Behavior |
 |------|----------|
-| `--check-only` | Stop after Step 2 (check and display only, no confirmation or execution) |
+| `--check` | Stop after Step 2 (check and display only, no confirmation or execution) |
 | `--force` | Skip Step 3 confirmation (execute immediately after displaying changelog) |
 
 ## Output
 
 Update report containing:
-- Version comparison (current vs latest)
+- Version comparison (installed vs latest)
 - Release notes / changelog from GitHub
 - Update execution status (success/failure)
 - Restart reminder
