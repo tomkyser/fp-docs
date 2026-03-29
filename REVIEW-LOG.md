@@ -42,14 +42,85 @@
 ---
 
 ## Phase 2: References
-**Reviewed**: pending
-**Verdict**: pending
+**Reviewed**: 2026-03-29
+**Verdict**: PASS
+
+### Files Reviewed
+**Module-to-reference conversions (Mira -- 10 files):**
+- `references/doc-standards.md` (from mod-standards)
+- `references/fp-project.md` (from mod-project)
+- `references/pipeline-enforcement.md` (from mod-pipeline)
+- `references/citation-rules.md` (from mod-citations)
+- `references/api-ref-rules.md` (from mod-api-refs)
+- `references/changelog-rules.md` (from mod-changelog)
+- `references/index-rules.md` (from mod-index)
+- `references/locals-rules.md` (from mod-locals)
+- `references/verbosity-rules.md` (from mod-verbosity)
+- `references/validation-rules.md` (from mod-validation)
+
+**Algorithm-to-reference moves (Kai -- 6 files):**
+- `references/verbosity-algorithm.md`
+- `references/citation-algorithm.md`
+- `references/api-ref-algorithm.md`
+- `references/validation-algorithm.md`
+- `references/git-sync-rules.md`
+- `references/codebase-analysis-guide.md`
+
+**Template moves (Kai -- 4 files):**
+- `templates/fp-docs-shell.zsh`
+- `templates/fp-docs-statusline.js`
+- `templates/post-merge.sh`
+- `templates/post-rewrite.sh`
+
+### Verification
+- [x] All 16 reference files present (10 modules + 6 algorithms)
+- [x] All 4 template files present
+- [x] Module conversions: exactly 7 lines removed per file (YAML frontmatter block) -- content body intact
+- [x] Algorithm files: MD5 byte-identical to originals (spot-checked 2/6)
+- [x] Template files: MD5 byte-identical to originals (spot-checked 2/4)
+- [x] No YAML frontmatter remains in any reference file
+- [x] `mod-orchestration` correctly excluded (absorbed in Phase 5)
+- [x] File count: 16 references + 4 templates = 20 files total (matches plan)
+
+### Issues Found
+#### CRITICAL
+- None
+
+#### MINOR (Second Pass)
+- None
 
 ---
 
 ## Phase 3: CLI Tooling
-**Reviewed**: pending
-**Verdict**: pending
+**Reviewed**: 2026-03-29
+**Verdict**: PASS
+
+### Files Reviewed
+- `lib/model-profiles.cjs` (new) -- resolveModel, listModels, cmdResolveModel
+- `lib/init.cjs` (new) -- cmdInit router + 5 subcommands
+- `fp-tools.cjs` (modified) -- added `init` and `resolve-model` routes
+
+### Verification
+- [x] `model-profiles.cjs`: follows existing CJS patterns (`'use strict'`, `module.exports`)
+- [x] `model-profiles.cjs`: uses `core.cjs` output/error, `config.cjs` getConfigValue
+- [x] `model-profiles.cjs`: fallback chain (agent config -> quality tier -> 'opus') is sound
+- [x] `model-profiles.cjs`: `--list` and `--profile` flags handled correctly
+- [x] `init.cjs`: all 5 subcommands present (write-op, read-op, admin-op, parallel, remediate)
+- [x] `init.cjs`: type validation rejects misclassified commands (write-op rejects read ops)
+- [x] `init.cjs`: engine-to-agent name mapping correct (modify->modifier, index->indexer, validate->validator)
+- [x] `init.cjs`: feature flags gathered from correct config paths
+- [x] `init.cjs`: pipeline config includes stages, triggeredStages, skipConditions
+- [x] `fp-tools.cjs`: lazy require pattern matches existing commands
+- [x] `fp-tools.cjs`: doc comment updated with new commands
+- [x] Zero external dependencies confirmed
+- [x] All Kai's test cases pass per report
+
+### Issues Found
+#### CRITICAL
+- None
+
+#### MINOR (Second Pass)
+- None
 
 ---
 
