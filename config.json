@@ -153,6 +153,21 @@
       }
     }
   },
+  "model_profile": {
+    "default": "quality",
+    "agents": {
+      "fp-docs-modifier": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
+      "fp-docs-validator": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-citations": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
+      "fp-docs-api-refs": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
+      "fp-docs-locals": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
+      "fp-docs-verbosity": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-indexer": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-system": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-researcher": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-planner": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" }
+    }
+  },
   "pipeline": {
     "stages": [
       { "id": 1, "name": "verbosity", "phase": "write", "agent": "primary", "skippable": true },
