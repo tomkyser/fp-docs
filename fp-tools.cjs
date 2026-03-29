@@ -19,7 +19,7 @@
  *   state      - Operation state management (log, last, pipeline, get, dump)
  *   remediate  - Remediation plan management (save, load, list, update)
  *   git        - Three-repo git operations (sync-check, commit, remote-check, watermark, branches)
- *   hooks      - Hook handler dispatch (run <event> [matcher])
+ *   hooks      - Hook handler dispatch (run <event> [matcher]) -- events: session-start, subagent-stop, pre-tool-use, teammate-idle, task-completed
  *   locals-cli - Ephemeral WP-CLI lifecycle (setup, teardown)
  *   pipeline   - Pipeline sequencing (init, next, run-stage, status, reset)
  *   drift      - Drift detection and staleness tracking (analyze, status, clear, add-signal, list)

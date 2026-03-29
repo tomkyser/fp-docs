@@ -1,5 +1,16 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run pre-tool-use bash"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
@@ -47,6 +58,51 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run subagent-stop locals"
+          }
+        ]
+      },
+      {
+        "matcher": "validate",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run subagent-stop validate"
+          }
+        ]
+      },
+      {
+        "matcher": "citations",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run subagent-stop citations"
+          }
+        ]
+      },
+      {
+        "matcher": "api-refs",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run subagent-stop api-refs"
+          }
+        ]
+      },
+      {
+        "matcher": "researcher",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run subagent-stop researcher"
+          }
+        ]
+      },
+      {
+        "matcher": "planner",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs\" hooks run subagent-stop planner"
           }
         ]
       }
