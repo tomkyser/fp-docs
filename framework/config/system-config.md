@@ -246,3 +246,30 @@ The `--visual` flag gates all browser-related operations in instruction files. T
 | Test evidence | `{codebase-root}/.fp-docs/screenshots/test-{timestamp}/` | Not committed (.fp-docs/ is gitignored) | Manual or periodic |
 | Operation evidence | `{codebase-root}/.fp-docs/screenshots/visual-{operation}-{timestamp}/` | Not committed | Manual or periodic |
 | Documentation assets | `{docs-root}/media/screenshots/` | Committed to docs repo | Permanent |
+
+---
+
+## 9. Agent Model Configuration
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `researcher.model` | `opus` | Model for the researcher agent. Deep code analysis benefits from strongest reasoning (D-12). |
+| `researcher.enabled` | `true` | Master switch for pre-operation research phase. When false, orchestrator skips research and goes directly to planning. |
+| `planner.model` | `sonnet` | Model for the planner agent. Planning is structured and formulaic, Sonnet is appropriate (D-12). |
+| `planner.enabled` | `true` | Master switch for pre-operation planning phase. When false, orchestrator skips planning and uses legacy 3-phase direct delegation. |
+| `plans.auto_prune` | `true` | Whether to auto-prune completed plans older than retention period |
+| `plans.retention_days` | `30` | Days to retain completed plan files before auto-pruning |
+| `plans.max_plans` | `200` | Maximum plan files to retain (oldest completed plans pruned first) |
+
+### Model Override Notes
+
+The agent frontmatter `model:` field IS the runtime model determinant in Claude Code's plugin system. The values in this table document the intended defaults. The agent frontmatter for researcher.md declares `model: opus` and planner.md declares `model: sonnet`, matching the defaults above. To change the runtime model for either agent, update the agent's frontmatter file directly.
+
+### Phase Skip Behavior
+
+| Flag / Config | Effect |
+|---------------|--------|
+| `--no-research` | Skip the Research Phase entirely. Planner works without source analysis. |
+| `--plan-only` | Stop after Plan Phase. Display plan summary. Do not execute Write/Review/Finalize. |
+| `researcher.enabled = false` | Config-level skip of Research Phase (same as always passing --no-research). |
+| `planner.enabled = false` | Config-level skip of Plan Phase. Orchestrator uses legacy 3-phase direct delegation. |

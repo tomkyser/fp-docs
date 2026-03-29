@@ -53,6 +53,8 @@ The orchestrator extracts only summary metrics from delegation results:
 | Stage PASS/FAIL status | Full enforcement stage output |
 | Issue count | Full issue text |
 | Overall success/failure | Debug context |
+| Analysis file path | Full analysis document content |
+| Plan file path and ID | Full plan file content |
 
 For batch operations, maintain running totals instead of accumulating individual results.
 
@@ -62,6 +64,8 @@ Target: Orchestrator context usage stays below 15% during operations.
 
 | Phase | Stages | Agent | Rationale |
 |-------|--------|-------|-----------|
+| Research Phase | Pre-pipeline | Researcher engine (delegated) | Deep source code analysis before any doc work |
+| Plan Phase | Pre-pipeline | Planner engine (delegated) | Strategy design, plan file creation |
 | Write Phase | Primary op + Stages 1-3 | Primary engine (delegated) | Needs write access + fresh context |
 | Review Phase | Stages 4-5 | Validate engine | Independent quality review |
 | Finalize Phase | Stages 6-8 | Orchestrator | Administrative — no domain expertise needed |
@@ -70,12 +74,12 @@ Target: Orchestrator context usage stays below 15% during operations.
 
 | Command Type | Examples | Min Agents | Breakdown |
 |---|---|---|---|
-| Write operations | revise, add, auto-update | 3 | orchestrate + primary + validate |
-| Read-only operations | audit, verify, test | 2 | orchestrate + specialist |
-| Batch operations | parallel, large auto-update | N+2 | orchestrate + N teammates + validate |
-| Specialist write ops | citations generate, locals annotate | 3 | orchestrate + specialist + validate |
-| Remediation ops | remediate | N+2 | orchestrate + N specialists + validate |
-| Administrative ops | setup, sync, update-skills | 2 | orchestrate + specialist |
+| Write operations | revise, add, auto-update | 5 | orchestrate + researcher + planner + primary + validate |
+| Read-only operations | audit, verify, test | 4 | orchestrate + researcher + planner + specialist |
+| Batch operations | parallel, large auto-update | N+4 | orchestrate + researcher + planner + N teammates + validate |
+| Specialist write ops | citations generate, locals annotate | 5 | orchestrate + researcher + planner + specialist + validate |
+| Remediation ops | remediate | N+4 | orchestrate + researcher + planner + N specialists + validate |
+| Administrative ops | setup, sync, update-skills | 4 | orchestrate + researcher + planner + specialist |
 
 ## Batching Strategy
 
@@ -112,6 +116,46 @@ Primary engines in delegated mode return:
 - {any concerns or [NEEDS INVESTIGATION] items}
 
 Delegation complete: [verbosity: {status}] [citations: {status}] [api-refs: {status}]
+```
+
+## Research Result Format
+
+The researcher engine returns:
+
+```markdown
+## Research Result
+### Analysis File
+- Path: {absolute-path-to-analysis-file}
+### Source Files Analyzed
+- {path}: {type}, {function-count} functions, {hook-count} hooks
+### Key Findings
+- {factual observations about the source code}
+### Scope Assessment
+- Files affected: {count}
+- Complexity: {LOW|MEDIUM|HIGH}
+
+Research complete.
+```
+
+## Plan Result Format
+
+The planner engine returns:
+
+```markdown
+## Plan Result
+### Plan File
+- ID: {plan_id}
+- Path: {plan-file-path}
+### Strategy Summary
+- Command type: {write|read|admin|batch}
+- Execution mode: {subagent|team|sequential}
+- Phases: {count}
+- Engines: {list of engines involved}
+- Target files: {count}
+### Research Analysis
+- Path: {analysis-file-path-or-none}
+
+Planning complete.
 ```
 
 ## Pipeline Validation Report Format
@@ -173,8 +217,12 @@ Pipeline complete: [verbosity: {status}] [citations: {status}] [sanity: {status}
 
 For read-only commands (audit, verify, sanity-check, test, verbosity-audit, citations verify/audit, api-ref audit, locals cross-ref/validate/coverage):
 
-1. Spawn the specialist engine in **standalone mode** (no Mode: DELEGATED header)
-2. The specialist runs its full standard workflow
-3. Return the specialist's report directly. The specialist's report includes per-issue command recommendations and a Remediation Summary (see audit, verify, sanity-check instruction files).
-4. No pipeline stages, no changelog, no git operations
-5. Minimum 2 agents: orchestrator + specialist
+1. Phase 1 (Research): Spawn researcher for pre-analysis (unless `--no-research` or `researcher.enabled = false`)
+2. Phase 2 (Plan): Spawn planner -- creates minimal 1-phase plan with specialist in standalone mode
+3. If `--plan-only`: stop after plan display
+4. Spawn the specialist engine in **standalone mode** (no Mode: DELEGATED header)
+5. The specialist runs its full standard workflow
+6. Return the specialist's report directly. The specialist's report includes per-issue command recommendations and a Remediation Summary (see audit, verify, sanity-check instruction files).
+7. No pipeline stages, no changelog, no git operations
+8. Update plan status to completed
+9. Minimum 4 agents: orchestrator + researcher + planner + specialist
