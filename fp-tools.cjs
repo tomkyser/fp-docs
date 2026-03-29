@@ -24,6 +24,7 @@
  *   pipeline   - Pipeline sequencing (init, next, run-stage, status, reset)
  *   drift      - Drift detection and staleness tracking (analyze, status, clear, add-signal, list)
  *   update     - Version checking and self-update (check, status, run)
+ *   plans      - Execution plan management (save, load, list, update, prune, save-analysis, load-analysis)
  *
  * Output protocol:
  *   Default: JSON to stdout
@@ -219,6 +220,12 @@ function main() {
     case 'update': {
       const update = require('./lib/update.cjs');
       update.cmdUpdate(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'plans': {
+      const plans = require('./lib/plans.cjs');
+      plans.cmdPlans(args[1], args.slice(2), raw);
       break;
     }
 
