@@ -1,0 +1,3 @@
+{
+  "additionalContext": "{{ENFORCEMENT VIOLATION: \\d+ fatal violation[\\s\\S]*pipeline_completion}}"
+}

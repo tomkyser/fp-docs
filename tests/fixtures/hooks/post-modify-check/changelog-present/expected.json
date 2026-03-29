@@ -1,0 +1,3 @@
+{
+  "additionalContext": "{{ENFORCEMENT VIOLATION: \\d+ fatal violation[\\s\\S]*delegation_structure[\\s\\S]*completion_marker[\\s\\S]*cjs_compliance}}"
+}

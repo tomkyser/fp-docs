@@ -64,7 +64,7 @@ const CJS_HANDLER_MAP = {
 };
 
 // Category A handlers return { additionalContext, stopMessage? } -- JSON stdout, exit 0
-const CATEGORY_A = new Set(['inject-manifest', 'branch-sync-check', 'locals-cli-cleanup-check']);
+const CATEGORY_A = new Set(['inject-manifest', 'branch-sync-check', 'locals-cli-cleanup-check', 'post-modify-check', 'post-orchestrate-check']);
 
 /**
  * Invoke CJS handler as fallback when bash scripts don't exist.
