@@ -2,22 +2,24 @@
 name: orchestrate
 description: |
   Universal orchestration engine for the FP documentation system. Pure dispatcher
-  that routes all 23 commands through multi-agent delegation: spawns specialist
-  engine subagents for domain work, delegates pipeline validation to the validate
-  engine as an independent quality reviewer, and handles finalization (changelog,
-  index, git) directly. Never executes fp-docs operations directly (D-06).
+  that routes all 23 commands through multi-agent delegation across 11 engines.
+  Write operations use 5 agents minimum (orchestrator + researcher + planner +
+  specialist + validator). Read-only operations use 4 agents. Pre-execution
+  intelligence via researcher and planner agents precedes all specialist work.
+  Handles finalization (changelog, index, git) directly. Never executes fp-docs
+  operations directly (D-06).
 
   <example>
   User: /fp-docs:revise fix the posts helper documentation
   <commentary>
-  Write operation -- orchestrator delegates to modify engine (stages 1-3), then validate engine (stages 4-5), then handles finalization (stages 6-8).
+  Write operation -- orchestrator spawns researcher for code analysis, planner for strategy, then delegates to modify engine (stages 1-3), validate engine (stages 4-5), handles finalization (stages 6-8).
   </commentary>
   </example>
 
   <example>
   User: /fp-docs:audit --depth deep docs/06-helpers/
   <commentary>
-  Read-only operation -- orchestrator delegates to validate engine, returns report with actionable recommendations. No pipeline.
+  Read-only operation -- orchestrator spawns researcher for pre-analysis, planner for minimal plan, then delegates to validate engine, returns report.
   </commentary>
   </example>
 
@@ -81,7 +83,7 @@ The fp-docs plugin root path is provided in your session context via the Session
 ### Step 1: Parse the Routing Information
 
 You will be invoked with a prompt containing routing metadata from the skill:
-- **Engine**: The specialist engine to delegate to (modify, validate, citations, api-refs, locals, verbosity, index, system, or orchestrate)
+- **Engine**: The specialist engine to delegate to (modify, validate, citations, api-refs, locals, verbosity, index, system, researcher, planner, or orchestrate)
 - **Operation**: The specific operation (revise, audit, generate, etc.)
 - **Instruction**: Path to the instruction file (if applicable)
 - **User request/scope/flags**: The user's arguments
@@ -99,7 +101,7 @@ This file contains the complete delegation protocol. Follow it for every invocat
 
 Classify the command into one of these categories:
 
-**Write operations** (require full pipeline delegation):
+**Write operations** (require full 5-phase delegation: Research -> Plan -> Write -> Review -> Finalize):
 - modify: revise, add, auto-update, auto-revise, deprecate
 - citations: generate, update
 - api-refs: generate
@@ -119,6 +121,8 @@ Classify the command into one of these categories:
 **Batch operations** (team protocol):
 - orchestrate: parallel (self-referencing)
 - Any write operation with scope exceeding thresholds
+
+After classification, proceed to the delegation algorithm (`delegate.md`) which handles the 5-phase execution: Research -> Plan -> Write/Read/Admin -> Review -> Finalize.
 
 ### Step 4: Scope Analysis
 
@@ -201,21 +205,25 @@ After the Review Phase completes, continue the pipeline callback loop for stages
 
 3. Repeat from step 1 until action is "complete" or "blocked".
 
-### Step 6: Execute — Read-Only Operations (Fast Path)
+### Step 6: Execute — Read-Only Operations
 
-For read-only commands, spawn the specialist engine with its standard prompt (no delegation mode — the engine runs normally in standalone mode):
-
-```
-Operation: {operation}
-{original skill body content}
-User request: {arguments}
-```
+For read-only commands, follow the 5-phase model from `delegate.md`:
+1. Phase 1 (Research): Spawn researcher for pre-analysis (unless `--no-research`)
+2. Phase 2 (Plan): Spawn planner for minimal 1-phase plan
+3. If `--plan-only`: stop after plan display
+4. Execute plan: Spawn specialist engine in standalone mode
+5. Update plan status to completed
 
 Return the specialist's report directly. No pipeline stages. No changelog. No git.
 
 ### Step 7: Execute — Administrative Operations
 
-For index and system commands, spawn the specialist engine in standalone mode (same as read-only fast path). These engines handle their own finalization logic internally.
+For index and system commands, follow the 5-phase model from `delegate.md`:
+1. Phase 1 (Research): Spawn researcher with minimal depth (unless `--no-research`)
+2. Phase 2 (Plan): Spawn planner for 1-phase admin plan
+3. If `--plan-only`: stop after plan display
+4. Execute plan: Spawn specialist engine in standalone mode
+5. Update plan status to completed
 
 ### Step 8: Execute — Batch/Team Operations
 

@@ -1,7 +1,7 @@
 # Master Delegation Algorithm
 
 > Read by the orchestrate engine for every invocation. Defines the complete delegation protocol.
-> Updated Phase 6.1: Subagent-always execution model (D-06), batch-mode flag (D-08), context offloading (D-09).
+> Updated Phase 16: 5-phase delegation model (D-09/D-10), researcher and planner agents, plan-based execution (D-06/D-07/D-08).
 
 ---
 
@@ -91,11 +91,61 @@ Scan user arguments for `--batch-mode` flag:
 3. For team mode, scope determines teammate count and batch size:
    - Use mod-orchestration thresholds for max_teammates and max_files_per_batch
 
+### 3c. Parse Pre-Execution Flags
+
+Scan user arguments for pre-execution flags:
+- `--no-research`: Skip the Research Phase entirely. Planner works without source analysis.
+- `--plan-only`: Stop after Plan Phase. Display plan summary. Do not execute Write/Review/Finalize phases.
+
+Config overrides (read from system-config §9):
+- `researcher.enabled = false`: Config-level equivalent of always passing --no-research
+- `planner.enabled = false`: Config-level skip of Plan Phase. Orchestrator uses legacy 3-phase direct delegation.
+
 ### Architectural Rule (D-06)
 
 **The orchestrator NEVER directly executes fp-docs operations.** All work is delegated to subagents via the Agent tool. The orchestrator is a pure dispatcher: it decides what to do, spawns agents to do it, and aggregates results.
 
 ## Step 4: Construct Delegation Prompts
+
+### Research Phase Prompt Template (for researcher engine)
+
+```
+Mode: DELEGATED
+
+Operation: {operation}
+Target: {target-scope}
+Flags: {flags}
+
+Analyze the source code relevant to this operation. Read the codebase analysis
+guide at {plugin-root}/framework/algorithms/codebase-analysis-guide.md for
+scanning patterns. Use source-map for target-to-source mapping.
+
+Produce a structured analysis document and save it via:
+node {plugin-root}/fp-tools.cjs plans save-analysis --operation {operation} --content "{analysis-markdown}"
+
+Return a Research Result with the analysis file path, source files analyzed,
+key findings, and scope assessment.
+```
+
+### Plan Phase Prompt Template (for planner engine)
+
+```
+Mode: DELEGATED
+
+Operation: {operation}
+Target: {target-scope}
+Flags: {flags}
+Research Analysis: {analysis-file-path}
+
+Design the execution strategy for this operation. Load the research analysis
+file. Use mod-orchestration thresholds for batching decisions.
+
+Create a plan file via:
+node {plugin-root}/fp-tools.cjs plans save '{plan-json}'
+
+Return a Plan Result with the plan ID, file path, strategy summary, and
+research analysis reference.
+```
 
 ### Write Phase Prompt Template (for primary engine)
 
@@ -182,33 +232,70 @@ Do NOT commit to git.
 When complete, return a Delegation Result for your batch.
 ```
 
-## Step 5: Execute Delegation
+## Step 5: Execute Delegation (5-Phase Model)
+
+### 5-Phase Execution (Default)
+
+All command types (write, read-only, administrative) proceed through the 5-phase model. The phases are: Research, Plan, Write/Read/Admin, Review, Finalize. Read-only and administrative operations create minimal plans and skip the Review and Finalize phases.
+
+#### Phase 1: Research (Researcher Engine)
+
+If `--no-research` flag is NOT set AND `researcher.enabled` config is true:
+1. Spawn the researcher engine as a subagent via Agent tool with the Research Phase prompt
+2. Wait for Research Result
+3. Extract analysis file path from the result
+4. If researcher fails: log warning, proceed to Phase 2 without analysis (graceful degradation)
+
+If `--no-research` IS set OR `researcher.enabled` is false:
+- Skip to Phase 2 with no analysis file path
+
+#### Phase 2: Plan (Planner Engine)
+
+If `planner.enabled` config is true:
+1. Spawn the planner engine as a subagent via Agent tool with the Plan Phase prompt
+   (include the analysis file path from Phase 1, or "none" if research was skipped)
+2. Wait for Plan Result
+3. Extract plan_id and plan file path from the result
+4. Load the plan file: `node {plugin-root}/fp-tools.cjs plans load {plan-id}`
+5. Parse the plan JSON
+
+If `--plan-only` flag IS set:
+- Display the plan summary to the user
+- Output: "Plan created: {plan-id}. Run without --plan-only to execute."
+- STOP. Do not proceed to Phase 3.
+
+If `planner.enabled` is false:
+- Skip to Phase 3 using legacy direct delegation (construct strategy inline as before)
+
+#### Phase 3: Write (per plan strategy)
+
+Execute the write phase driven by the plan file's `strategy.phases` array.
+For each phase entry in the plan with `phase="write"`:
+- Use the engine, operation, and targets from the plan
+- Construct delegation prompt as before (Write Phase Prompt Template)
+- After completion, update plan: `node {plugin-root}/fp-tools.cjs plans update {plan-id} '{"completed":["write"]}'`
+
+**Within Phase 3, the execution mode determines HOW specialist engines are spawned:**
 
 ### Subagent Mode (default -- D-06, D-08)
 
 #### For scope = 1 file:
 1. Spawn primary engine with Write Phase prompt via Agent tool
-2. Extract summary from Delegation Result (see Step 5a)
-3. Spawn validate engine with Review Phase prompt via Agent tool
-4. Extract summary from Pipeline Validation Report
-5. If sanity-check confidence is LOW: retry once (see Error Recovery)
-6. Execute Finalize Phase directly (changelog, index, git)
+2. Extract summary from Delegation Result (see Context Offloading below)
+3. Continue to Phase 4
 
 #### For scope = 2-8 files:
 1. Partition files into logical groups (by section when possible, max 3 per group)
 2. Spawn multiple primary engines in PARALLEL via multiple Agent tool calls
 3. Extract summaries from all Delegation Results
-4. Spawn ONE validate engine for ALL modified files
-5. Handle validation issues (same retry logic)
-6. Execute ONE Finalize Phase covering all changes
+4. Continue to Phase 4
 
 #### For scope = 9+ files:
 1. Partition files into batches (max 5 per batch)
 2. Execute batches in waves of max 5 concurrent Agent calls
 3. Wait for each wave to complete before starting next wave
 4. Extract summaries from all Delegation Results
-5. Spawn ONE validate engine for ALL modified files
-6. Execute ONE Finalize Phase covering all changes
+5. Continue to Phase 4
 
 ### Team Mode (explicit request -- D-07, D-08)
 
@@ -231,8 +318,8 @@ Wait for user confirmation. If "no", fall back to subagent mode.
 2. Create Tasks via TaskCreate (one per batch of files)
 3. Spawn teammates -- each teammate runs as a specialist engine in delegated mode, working on its assigned batch directly (teammates do NOT spawn sub-subagents)
 4. Monitor via TaskList until all complete
-5. Spawn ONE validate engine for ALL modified files
-6. Execute ONE Finalize Phase
+5. Continue to Phase 4
+6. Execute ONE Finalize Phase (Phase 5)
 7. Clean up team
 
 **Critical constraint:** Teammates cannot spawn their own subagents or teams. Each teammate IS the specialist -- it reads the instruction file and does the work directly.
@@ -244,10 +331,22 @@ Wait for user confirmation. If "no", fall back to subagent mode.
    b. Wait for completion
    c. Extract summary from Delegation Result
    d. Proceed to next file
-2. Spawn ONE validate engine for ALL modified files
-3. Execute ONE Finalize Phase
+2. Continue to Phase 4
 
-### 5a. Context Offloading: Extracting Summaries (D-09)
+#### Phase 4: Review (per plan strategy)
+
+Spawn ONE validate engine for ALL modified files with the Review Phase prompt:
+1. Spawn validate engine with Review Phase prompt via Agent tool
+2. Extract summary from Pipeline Validation Report
+3. If sanity-check confidence is LOW: retry once (see Error Recovery)
+4. After completion, update plan: `node {plugin-root}/fp-tools.cjs plans update {plan-id} '{"completed":["review"]}'`
+
+#### Phase 5: Finalize (CJS Pipeline Loop)
+
+Execute the Finalize Phase (stages 6-8) using the CJS pipeline callback loop (see Step 6).
+After completion, update plan: `node {plugin-root}/fp-tools.cjs plans update {plan-id} '{"status":"completed","completed":["write","review","finalize"]}'`
+
+### Context Offloading: Extracting Summaries (D-09)
 
 When a subagent returns a Delegation Result, do NOT retain the full result in your context. Extract only:
 
@@ -255,8 +354,10 @@ When a subagent returns a Delegation Result, do NOT retain the full result in yo
 2. **Stage status** -- PASS/FAIL for each enforcement stage
 3. **Issue count** -- number of issues flagged
 4. **Overall status** -- success or failure
+5. **Analysis file path** -- from Research Result (Phase 1)
+6. **Plan file path and ID** -- from Plan Result (Phase 2)
 
-Discard the detailed descriptions, full issue text, and enforcement stage details. The subagent's context held the full picture during its lifecycle.
+Discard the detailed descriptions, full issue text, full analysis document content, full plan file content, and enforcement stage details. The subagent's context held the full picture during its lifecycle.
 
 For batch operations with many subagents, maintain running totals:
 - Total files modified: {N}
@@ -288,7 +389,7 @@ After the Review Phase completes, continue the pipeline for stages 6-8 using the
    **If action = "complete"**:
    - Extract `summary.completion_marker` from the response.
    - Include the completion marker verbatim in the Orchestration Report.
-   - Pipeline is done. Proceed to Step 7 (Aggregate Report).
+   - Pipeline is done. Proceed to Step 9 (Aggregate Report).
 
    **If action = "blocked"**:
    - A HALLUCINATION was detected during sanity-check. Report the diagnostic to the user.
@@ -299,11 +400,33 @@ After the Review Phase completes, continue the pipeline for stages 6-8 using the
 
 3. Repeat from step 1 until action is "complete" or "blocked".
 
-## Step 7: Aggregate Report
+## Step 7: Execute -- Read-Only Operations
+
+For read-only commands (audit, verify, sanity-check, test, verbosity-audit, citations verify/audit, api-ref audit, locals cross-ref/validate/coverage):
+
+1. Phase 1 (Research): Spawn researcher (unless `--no-research` or `researcher.enabled = false`)
+2. Phase 2 (Plan): Spawn planner -- creates minimal 1-phase plan with specialist in standalone mode
+3. If `--plan-only`: stop after plan display
+4. Execute plan: Spawn specialist engine in standalone mode (existing fast-path logic)
+5. Update plan status to completed: `node {plugin-root}/fp-tools.cjs plans update {plan-id} '{"status":"completed","completed":["standalone"]}'`
+
+No pipeline stages. No changelog. No git operations.
+
+## Step 8: Execute -- Administrative Operations
+
+For index and system commands (setup, sync, update-skills, update, update-project-index, update-doc-links, update-example-claude):
+
+1. Phase 1 (Research): Spawn researcher with minimal depth (unless `--no-research` or `researcher.enabled = false`)
+2. Phase 2 (Plan): Spawn planner -- creates 1-phase admin plan
+3. If `--plan-only`: stop after plan display
+4. Execute plan: Spawn specialist engine in standalone mode
+5. Update plan status to completed: `node {plugin-root}/fp-tools.cjs plans update {plan-id} '{"status":"completed","completed":["standalone"]}'`
+
+## Step 9: Aggregate Report
 
 Combine all subagent summaries into the Orchestration Report format defined in the orchestrate engine system prompt. Include the pipeline completion marker for hook validation.
 
-Use only the summary metrics extracted in Step 5a -- not full delegation results.
+Use only the summary metrics extracted in Context Offloading -- not full delegation results.
 
 ## Error Recovery Protocol
 
