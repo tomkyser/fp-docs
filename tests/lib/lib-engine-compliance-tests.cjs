@@ -53,9 +53,10 @@ describe('Engine Compliance: Baseline', () => {
   const ENGINE_NAMES = [
     'orchestrate', 'modify', 'validate', 'citations',
     'api-refs', 'locals', 'verbosity', 'index', 'system',
+    'researcher', 'planner',
   ];
 
-  it('all 9 engine agent .md files exist', () => {
+  it('all 11 engine agent .md files exist', () => {
     for (const name of ENGINE_NAMES) {
       const filePath = path.join(AGENTS_DIR, `${name}.md`);
       assert.ok(
@@ -89,6 +90,76 @@ describe('Engine Compliance: Baseline', () => {
       parsed = JSON.parse(content);
     }, 'hooks.json should be valid JSON');
     assert.ok(parsed.hooks, 'hooks.json should have a hooks property');
+  });
+
+  // -- Phase 16: New engine compliance tests --
+
+  it('researcher and planner are delegation-only agents', () => {
+    const delegationOnlyEngines = ['researcher.md', 'planner.md'];
+    for (const file of delegationOnlyEngines) {
+      const content = readFile(path.join(AGENTS_DIR, file));
+      assert.ok(
+        content.includes('DELEGATED'),
+        `${file} should reference DELEGATED mode`
+      );
+      assert.ok(
+        !content.includes('disallowedTools'),
+        `${file} should not have disallowedTools (they need Write for file output)`
+      );
+    }
+  });
+
+  it('researcher agent has opus model and 75 maxTurns', () => {
+    const content = readFile(path.join(AGENTS_DIR, 'researcher.md'));
+    assert.ok(content.includes('model: opus'), 'researcher should use opus model');
+    assert.ok(content.includes('maxTurns: 75'), 'researcher should have 75 maxTurns');
+  });
+
+  it('planner agent has sonnet model and 75 maxTurns', () => {
+    const content = readFile(path.join(AGENTS_DIR, 'planner.md'));
+    assert.ok(content.includes('model: sonnet'), 'planner should use sonnet model');
+    assert.ok(content.includes('maxTurns: 75'), 'planner should have 75 maxTurns');
+  });
+
+  it('researcher agent does not have Edit tool', () => {
+    const content = readFile(path.join(AGENTS_DIR, 'researcher.md'));
+    // Check the tools section in frontmatter - should not contain Edit
+    const frontmatter = content.split('---')[1];
+    assert.ok(
+      !frontmatter.includes('- Edit'),
+      'researcher should not have Edit tool (analysis only, no file modification)'
+    );
+  });
+
+  it('planner agent preloads mod-orchestration module', () => {
+    const content = readFile(path.join(AGENTS_DIR, 'planner.md'));
+    assert.ok(
+      content.includes('mod-orchestration'),
+      'planner should preload mod-orchestration for batching thresholds'
+    );
+  });
+
+  it('delegate.md defines 5-phase delegation model', () => {
+    const content = readFile(path.join(INSTRUCTIONS_DIR, 'orchestrate', 'delegate.md'));
+    assert.ok(content.includes('Research Phase'), 'delegate.md should define Research Phase');
+    assert.ok(content.includes('Plan Phase'), 'delegate.md should define Plan Phase');
+    assert.ok(content.includes('--plan-only'), 'delegate.md should document --plan-only flag');
+    assert.ok(content.includes('--no-research'), 'delegate.md should document --no-research flag');
+  });
+
+  it('system-config has section 9 for agent model configuration', () => {
+    const content = readFile(path.join(CONFIG_DIR, 'system-config.md'));
+    assert.ok(content.includes('## 9'), 'system-config should have section 9');
+    assert.ok(content.includes('researcher.model'), 'system-config should have researcher.model');
+    assert.ok(content.includes('planner.model'), 'system-config should have planner.model');
+    assert.ok(content.includes('researcher.enabled'), 'system-config should have researcher.enabled');
+    assert.ok(content.includes('planner.enabled'), 'system-config should have planner.enabled');
+  });
+
+  it('mod-orchestration reflects 5-phase pipeline grouping', () => {
+    const content = readFile(path.join(MODULES_DIR, 'mod-orchestration', 'SKILL.md'));
+    assert.ok(content.includes('Research Phase'), 'mod-orchestration should list Research Phase');
+    assert.ok(content.includes('Plan Phase'), 'mod-orchestration should list Plan Phase');
   });
 
   it('all 30 instruction files exist', () => {
