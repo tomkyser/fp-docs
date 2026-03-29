@@ -1,9 +1,12 @@
 # fp-docs Usage and Workflows Research
 
+<!-- Updated 2026-03-29: Phase 17 — Pipeline gate validation, enforcement violation handling, two new gotchas -->
 <!-- Updated 2026-03-29: Phase 16 — 5-phase delegation, --plan-only and --no-research flags, plan file persistence -->
 <!-- Updated 2026-03-28: Phase 13 — MCP reference confirmed, command count aligned -->
 
-> **Updated 2026-03-29**: Phase 16 -- 5-phase delegation model (Research -> Plan -> Write -> Review -> Finalize), `--plan-only` and `--no-research` flags, plan file persistence at `.fp-docs/plans/`. Researcher (opus) and planner (sonnet) engines added.
+> **Updated 2026-03-29**: Phase 17 -- Pipeline gate validation (`gate_failed` action), enforcement violation handling, `record-output` subcommand, two new gotchas (raw git commands blocked, gate_failed handling).
+>
+> Previously (2026-03-29): Phase 16 -- 5-phase delegation model (Research -> Plan -> Write -> Review -> Finalize), `--plan-only` and `--no-research` flags, plan file persistence at `.fp-docs/plans/`. Researcher (opus) and planner (sonnet) engines added.
 >
 > Previously (2026-03-28): Phase 13 -- MCP `.mcp.json` reference confirmed in installation and visual verification sections. Plugin compliance validated.
 >
@@ -713,7 +716,31 @@ Under the 5-phase delegation model (Phase 16), all operations proceed through Re
 | 7 | Index Update | Update PROJECT-INDEX.md (only on structural changes) | Auto (only when needed) |
 | 8 | Docs Repo Commit | `git -C {docs-root} add -A && commit` | Never (skips if no docs repo) |
 
-Pipeline completion is validated by the `post-modify-check.sh` SubagentStop hook, which checks for changelog update confirmation in the transcript.
+Pipeline completion is validated by the SubagentStop hooks (`handlePostModifyCheck`, `handlePostOrchestrateCheck`), which check for delegation result structure, enforcement stage markers, and completion confirmation in the transcript. Violations produce `ENFORCEMENT VIOLATION` diagnostics (Phase 17).
+
+### Pipeline Gate Validation (Phase 17)
+
+When the orchestrator records a stage's output via `fp-tools pipeline record-output <stage-id>`, the next `fp-tools pipeline next` call validates the completed stage's output before returning the next action. If validation fails:
+
+- Action: `gate_failed` (not `spawn` or `execute`)
+- Diagnostic: Which check failed, what was expected vs found
+- Recovery: Orchestrator decides to retry the failed stage or abort the operation
+
+Stage output recording:
+```
+fp-tools pipeline record-output <stage-id>   # Stage ID 1-5; reads output from remaining args
+```
+
+Gate checks per stage:
+
+| Stage | What's Checked |
+|-------|---------------|
+| 1 (Verbosity) | Completion indicator present |
+| 2 (Citations) | Citation completion marker |
+| 3 (API Refs) | API ref completion or N/A marker |
+| 4 (Sanity Check) | No HALLUCINATION markers, confidence level present |
+| 5 (Verification) | Checklist completion marker |
+| 6-8 | CJS-deterministic (no LLM gate check) |
 
 ---
 
@@ -919,6 +946,12 @@ The biggest pitfall is confusing the three git repos. The docs directory is a SE
 - The plugin configures triple-layer SSL bypass for ddev's self-signed certificates (CLI flag, Chromium launch arg, browser context option)
 - If SSL errors still occur, verify `.mcp.json` is loaded by Claude Code and the Playwright MCP server is running
 - Check with a manual navigation attempt: the `browser_navigate` tool should be available as a callable tool
+
+### Raw Git Commands Blocked in Engines (Phase 17)
+If an engine tries to run `git commit`, `git push`, or any other git-write command directly in Bash, it will be blocked by the PreToolUse hook with exit code 2. Use `fp-tools.cjs git commit` or `fp-tools.cjs git sync-check` instead. This is enforced programmatically for all engines except the orchestrator (which uses CJS-mediated git via `fp-tools.cjs git ...`). Read-only git operations (`git diff`, `git log`, `git status`, `git blame`, `git show`, `git rev-parse`) are always allowed.
+
+### Pipeline gate_failed Action (Phase 17)
+If `fp-tools pipeline next` returns `action: gate_failed`, do NOT ignore it and call `next` again. The gate failure means the previous stage's output did not meet validation criteria (e.g., missing verbosity completion marker, HALLUCINATION detected in sanity check). The orchestrator must address the violation (retry the stage or abort) before the pipeline can progress. Gate validation covers stages 1-5; stages 6-8 are CJS-deterministic and bypass gate checks.
 
 ### Visual Tests Skip with "ddev not running"
 - Visual scope requires the local WordPress environment

@@ -1,9 +1,12 @@
 # fp-docs Features and Capabilities Research
 
+<!-- Updated 2026-03-29: Phase 17 — Runtime enforcement: PreToolUse hook, fatal SubagentStop, pipeline gating, enforcement.cjs module -->
 <!-- Updated 2026-03-29: Phase 16 — 11 engines, 5-phase delegation, --plan-only and --no-research flags -->
 <!-- Updated 2026-03-28: Phase 13 — MCP wiring confirmed, command count aligned, design choice added -->
 
-> **Updated 2026-03-29**: Phase 16 -- 11 engines (added researcher + planner), 5-phase delegation model (Research -> Plan -> Write -> Review -> Finalize), `--plan-only` and `--no-research` flags. Plans mandatory for all operations (D-07), auto-execute by default (D-08).
+> **Updated 2026-03-29**: Phase 17 -- Runtime enforcement: PreToolUse hook blocks raw git-write commands, fatal SubagentStop enforcement with structured violation diagnostics, CJS pipeline stage gating, `enforcement.cjs` module (6 exports). Hook events expanded from 4 to 5 (PreToolUse added), SubagentStop matchers from 3 to 8, handler count from 8 to 11.
+>
+> Previously (2026-03-29): Phase 16 -- 11 engines (added researcher + planner), 5-phase delegation model (Research -> Plan -> Write -> Review -> Finalize), `--plan-only` and `--no-research` flags. Plans mandatory for all operations (D-07), auto-execute by default (D-08).
 >
 > Previously (2026-03-28): Phase 13 -- MCP server declared in `.mcp.json` at plugin root (confirmed). Plugin compliance validated. Design choice #15 added for MCP declarations.
 >
@@ -319,6 +322,8 @@ The pipeline outputs a completion marker checked by the SubagentStop hook:
 Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: PASS] [changelog: updated] [docs-commit: committed|skipped]
 ```
 
+Pipeline actions now include `gate_failed` in addition to `spawn`, `execute`, `complete`, `blocked` (Phase 17). When a gate fails, the orchestrator receives a diagnostic with the specific violation(s) and decides whether to retry or abort. Stage output is recorded via `fp-tools pipeline record-output <stage-id>`.
+
 ---
 
 ## The Documentation Lifecycle
@@ -449,18 +454,32 @@ Key rules:
 
 ## Hook System
 
-fp-docs uses 4 hook events with 8 CJS handlers in `lib/hooks.cjs`, invoked via `fp-tools.cjs hooks run <event> [matcher]`:
+fp-docs uses 5 hook events with 11 CJS handler functions (15 total hook entries in `hooks.json`), all in `lib/hooks.cjs`, invoked via `fp-tools.cjs hooks run <event> [matcher]`:
 
 | Event | Handler | CLI Command | Purpose |
 |-------|---------|-------------|---------|
+| PreToolUse (Bash) | `handlePreToolUseBashGitCheck` | `hooks run pre-tool-use bash` | Blocks raw git-write commands in non-orchestrator engines (D-01). Exit 2 = block, exit 0 = allow. CJS-mediated git (`fp-tools.cjs git`) is always exempt (D-03). |
 | SessionStart | `handleInjectManifest` | `hooks run session-start inject-manifest` | Injects the plugin root path and manifest into the session context so engines can locate their instruction files |
 | SessionStart | `handleBranchSyncCheck` | `hooks run session-start branch-sync` | Detects codebase/docs branch alignment and reads the sync watermark to report codebase change state (current, stale with commit count, invalid, or none) |
 | SessionStart | `handleDriftNudge` | `hooks run session-start drift-nudge` | Merges pending drift signals from git hooks, formats nudge summary if stale docs exist (top 3 + actionable commands) |
-| SubagentStop (modify) | `handlePostModifyCheck` | `hooks run subagent-stop modify` | Validates that the modify engine completed its full pipeline by checking for the completion marker. Auto-clears drift signals for modified docs. |
-| SubagentStop (orchestrate) | `handlePostOrchestrateCheck` | `hooks run subagent-stop orchestrate` | Validates that the orchestrate engine completed its full delegation cycle, including pipeline phase coordination and git commit serialization |
+| SessionStart | `handleUpdateCheck` | `hooks run session-start update-check` | Spawns background update version check |
+| SubagentStop (modify) | `handlePostModifyCheck` | `hooks run subagent-stop modify` | Validates modify engine delegation result structure and pipeline completion. Produces structured `ENFORCEMENT VIOLATION` diagnostics. Category A (upgraded from B in Phase 17, D-04). Auto-clears drift signals for modified docs. |
+| SubagentStop (orchestrate) | `handlePostOrchestrateCheck` | `hooks run subagent-stop orchestrate` | Validates orchestrate engine delegation cycle completion. Produces structured `ENFORCEMENT VIOLATION` diagnostics. Category A (upgraded from B in Phase 17, D-04). |
 | SubagentStop (locals) | `handleLocalsCLICleanup` | `hooks run subagent-stop locals` | Safety net for ephemeral WP-CLI tool -- detects and removes orphaned CLI artifacts |
+| SubagentStop (validate, citations, api-refs, researcher, planner) | `handleSubagentEnforcementCheck` | `hooks run subagent-stop <matcher>` | Validates specialist engine delegation results for structural compliance and stage authority. Single handler with agent_type-based validation. Category A. |
 | TeammateIdle | `handleTeammateIdleCheck` | `hooks run teammate-idle` | Validates that teammates completed their assigned pipeline phases before going idle |
 | TaskCompleted | `handleTaskCompletedCheck` | `hooks run task-completed` | Validates task outputs -- checks for empty modifications, missing pipeline markers, and incomplete phase handoffs |
+
+### Runtime Enforcement (Phase 17)
+
+The plugin enforces delegation architecture rules programmatically via `lib/enforcement.cjs` (6 exports, zero external dependencies):
+
+- **Git-write blocking**: PreToolUse hook on Bash tool blocks raw `git commit/push/tag/merge/rebase/checkout/reset/clean/rm/mv/stash/cherry-pick/revert/am/pull` commands. Only CJS-mediated git (`fp-tools.cjs git ...`) is allowed. Applies to all non-orchestrator engines.
+- **Delegation result validation**: SubagentStop hooks parse delegation results via `enforcement.parseDelegationResult()` for structural completeness (`## Delegation Result`, `### Files Modified`, `### Enforcement Stages`), enforcement stage markers, and completion indicators (`Delegation complete: ...`).
+- **Stage authority checking**: `enforcement.verifyStageAuthority()` verifies that the correct engine executed the correct pipeline phase (e.g., modify/citations/api-refs/locals = write phase, validate = review phase, orchestrate = finalize phase).
+- **Pipeline gating**: CJS validates LLM-executed stage outputs (1-5) at each boundary before allowing progression. Failed gates return `action: gate_failed` with diagnostic. Stage output recorded via `fp-tools pipeline record-output <stage-id>`.
+
+All violations are fatal (D-04). No warnings, no exemptions. Violation output uses `ENFORCEMENT VIOLATION: N fatal violation(s)...` prefix for orchestrator detection.
 
 Git operations (including docs-commit) are centralized in `lib/git.cjs` and invoked via `fp-tools.cjs git commit`.
 
@@ -515,6 +534,9 @@ Visual verification is opt-in via `--visual` flag, never default-on. Browser aut
 
 ### 15. MCP Declarations in .mcp.json (Phase 13)
 Dedicated `.mcp.json` file at plugin root for MCP server declarations, separate from `settings.json` permission grants. Follows Claude Code's standard `.mcp.json` convention. This keeps MCP declarations cleanly separated from tool permission settings and aligns with the platform's expected file layout for MCP server configuration.
+
+### 16. Fatal Runtime Enforcement (Phase 17)
+Reverses Phase 8 D-05 (non-blocking compliance) and Phase 12 D-05 (documentation-only enforcement). All enforcement checks are now fatal: if a check triggers, the operation stops. This trades operational flexibility for architectural guarantee -- delegation rules cannot be silently violated. Three enforcement layers: PreToolUse hooks block raw git-write commands at the tool-call level, SubagentStop hooks produce structured violation diagnostics with `ENFORCEMENT VIOLATION` prefix that the orchestrator must act on, and pipeline gating validates LLM stage outputs before progression. Enforcement logic is centralized in `lib/enforcement.cjs` (6 exports: `isGitWriteCommand`, `isCjsMediatedGit`, `parseDelegationResult`, `verifyStageAuthority`, `validateStageOutput`, `STAGE_AUTHORITY_MAP`).
 
 ---
 
