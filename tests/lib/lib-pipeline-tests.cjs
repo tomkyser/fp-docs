@@ -1002,5 +1002,170 @@ describe('lib/pipeline.cjs', () => {
       assert.notEqual(result.exitCode, 0, 'should exit non-zero');
       assert.ok(result.stderr.includes('Stages 1-5 are LLM-executed'), 'should explain why stage 1 is rejected');
     });
+
+    it('should include record-output in usage error message', () => {
+      const result = runCli('pipeline');
+      assert.notEqual(result.exitCode, 0, 'should exit non-zero');
+      assert.ok(result.stderr.includes('record-output'), 'stderr should mention record-output subcommand');
+    });
+  });
+
+  // ── Plan 03: Stage Gate Validation ──────────────────────────────────────────
+
+  describe('validateStageGate', () => {
+    it('should export validateStageGate function', () => {
+      const pipeline = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      assert.equal(typeof pipeline.validateStageGate, 'function');
+    });
+
+    it('returns valid for CJS-deterministic stages (6-8)', () => {
+      const { validateStageGate } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const result6 = validateStageGate(6, { stage_6_status: 'PASS' });
+      assert.strictEqual(result6.valid, true);
+      assert.strictEqual(result6.violations.length, 0);
+
+      const result7 = validateStageGate(7, { stage_7_status: 'PASS' });
+      assert.strictEqual(result7.valid, true);
+
+      const result8 = validateStageGate(8, { stage_8_status: 'PASS' });
+      assert.strictEqual(result8.valid, true);
+    });
+
+    it('returns valid for skipped stages', () => {
+      const { validateStageGate } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const result = validateStageGate(1, { stage_1_status: 'SKIP' });
+      assert.strictEqual(result.valid, true);
+    });
+
+    it('returns valid for N/A stages', () => {
+      const { validateStageGate } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const result = validateStageGate(3, { stage_3_status: 'N/A' });
+      assert.strictEqual(result.valid, true);
+    });
+
+    it('fails gate for FAIL status', () => {
+      const { validateStageGate } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const result = validateStageGate(2, { stage_2_status: 'FAIL' });
+      assert.strictEqual(result.valid, false);
+      assert.ok(result.violations.length > 0);
+      assert.ok(result.violations[0].found.includes('FAIL'));
+    });
+
+    it('fails gate for HALLUCINATION status', () => {
+      const { validateStageGate } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const result = validateStageGate(4, { stage_4_status: 'HALLUCINATION' });
+      assert.strictEqual(result.valid, false);
+      assert.ok(result.violations[0].found.includes('HALLUCINATION'));
+    });
+
+    it('passes gate for PASS status with no output recorded', () => {
+      const { validateStageGate } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const result = validateStageGate(1, { stage_1_status: 'PASS' });
+      assert.strictEqual(result.valid, true);
+    });
+
+    it('passes gate for PASS status with valid output', () => {
+      const { validateStageGate } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const result = validateStageGate(1, {
+        stage_1_status: 'PASS',
+        stage_1_output: 'Verbosity enforcement complete. All banned phrases removed.',
+      });
+      assert.strictEqual(result.valid, true);
+    });
+
+    it('fails gate for stage 4 output containing HALLUCINATION', () => {
+      const { validateStageGate } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const result = validateStageGate(4, {
+        stage_4_status: 'PASS',
+        stage_4_output: 'Sanity check found HALLUCINATION in claim about widget rendering.',
+      });
+      assert.strictEqual(result.valid, false);
+      assert.ok(result.violations.some(v => v.check.includes('hallucination')));
+    });
+
+    it('returns valid for null stage status (not yet completed)', () => {
+      const { validateStageGate } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const result = validateStageGate(3, { stage_3_status: null });
+      assert.strictEqual(result.valid, true);
+    });
+  });
+
+  describe('getNextAction gate integration', () => {
+    let tmpDir;
+
+    beforeEach(() => {
+      tmpDir = makeTempDir();
+    });
+
+    afterEach(() => {
+      cleanTempDir(tmpDir);
+    });
+
+    it('returns gate_failed when last completed stage has FAIL status', () => {
+      const { initPipeline, getNextAction } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const statePath = writeStateFile(tmpDir, { version: 1, operations: [], pipeline: null });
+      initPipeline({ operation: 'revise', files: ['docs/test.md'], flags: [] }, statePath);
+
+      // Set stage 1 to FAIL
+      const state = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
+      state.pipeline.stage_1_status = 'FAIL';
+      fs.writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf-8');
+
+      const action = getNextAction(statePath);
+      assert.equal(action.action, 'gate_failed');
+      assert.equal(action.stage.id, 1);
+      assert.ok(action.violations.length > 0, 'should have violations');
+      assert.ok(action.diagnostic.includes('gate validation failed'), 'diagnostic should mention gate failure');
+    });
+
+    it('proceeds normally when completed stages pass gate', () => {
+      const { initPipeline, getNextAction } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const statePath = writeStateFile(tmpDir, { version: 1, operations: [], pipeline: null });
+      initPipeline({ operation: 'revise', files: ['docs/test.md'], flags: [] }, statePath);
+
+      // Set stage 1 to PASS (no output -- allowed through)
+      const state = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
+      state.pipeline.stage_1_status = 'PASS';
+      fs.writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf-8');
+
+      const action = getNextAction(statePath);
+      assert.equal(action.action, 'spawn', 'should proceed to next stage');
+      assert.equal(action.stage.id, 2, 'should advance to stage 2');
+    });
+
+    it('returns gate_failed when stage output contains HALLUCINATION text', () => {
+      const { initPipeline, getNextAction } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const statePath = writeStateFile(tmpDir, { version: 1, operations: [], pipeline: null });
+      initPipeline({ operation: 'revise', files: ['docs/test.md'], flags: [] }, statePath);
+
+      // Set stage 1 PASS, stage 2 PASS, stage 3 PASS, stage 4 PASS with bad output
+      const state = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
+      state.pipeline.stage_1_status = 'PASS';
+      state.pipeline.stage_2_status = 'PASS';
+      state.pipeline.stage_3_status = 'PASS';
+      state.pipeline.stage_4_status = 'PASS';
+      state.pipeline.stage_4_output = 'Found HALLUCINATION in function description';
+      fs.writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf-8');
+
+      const action = getNextAction(statePath);
+      assert.equal(action.action, 'gate_failed', 'should fail gate due to hallucination in output');
+      assert.equal(action.stage.id, 4, 'should identify stage 4 as the failing stage');
+    });
+
+    it('returns complete when all stages pass with valid outputs', () => {
+      const { initPipeline, getNextAction } = require(path.join(LIB_DIR, 'pipeline.cjs'));
+      const statePath = writeStateFile(tmpDir, { version: 1, operations: [], pipeline: null });
+      initPipeline({ operation: 'revise', files: ['docs/test.md'], flags: [] }, statePath);
+
+      // All stages pass
+      const state = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
+      for (let i = 1; i <= 8; i++) {
+        state.pipeline['stage_' + i + '_status'] = 'PASS';
+      }
+      fs.writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf-8');
+
+      const action = getNextAction(statePath);
+      assert.equal(action.action, 'complete', 'should complete successfully');
+    });
   });
 });
