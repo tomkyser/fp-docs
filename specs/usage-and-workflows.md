@@ -1,8 +1,11 @@
 # fp-docs Usage and Workflows Research
 
+<!-- Updated 2026-03-29: Phase 16 — 5-phase delegation, --plan-only and --no-research flags, plan file persistence -->
 <!-- Updated 2026-03-28: Phase 13 — MCP reference confirmed, command count aligned -->
 
-> **Updated 2026-03-28**: Phase 13 -- MCP `.mcp.json` reference confirmed in installation and visual verification sections. Plugin compliance validated.
+> **Updated 2026-03-29**: Phase 16 -- 5-phase delegation model (Research -> Plan -> Write -> Review -> Finalize), `--plan-only` and `--no-research` flags, plan file persistence at `.fp-docs/plans/`. Researcher (opus) and planner (sonnet) engines added.
+>
+> Previously (2026-03-28): Phase 13 -- MCP `.mcp.json` reference confirmed in installation and visual verification sections. Plugin compliance validated.
 >
 > Previously (2026-03-28): Phase 11 -- Fixed pipeline init/next sequence. System engine now routes `update` operation. Update instruction fields aligned with update.cjs output.
 >
@@ -95,7 +98,7 @@ This command routes to the `system` engine and runs a 6-phase verification and i
 #### Phase 1: Plugin Structure Verification
 - Checks all required directories exist (agents/, skills/, hooks/, lib/, framework/)
 - Validates `plugin.json` manifest has required fields
-- Verifies all 9 engine agent files exist
+- Verifies all 11 engine agent files exist
 - Verifies all 23 user skill files + 11 shared modules
 - Checks `hooks.json` is valid JSON and references existing scripts
 
@@ -528,7 +531,8 @@ The "Engine" column refers to the specialist engine that receives the delegation
 | `--dry-run` | (auto-revise) Preview what would be processed without making changes |
 | `--batch-mode subagent\|team\|sequential` | Control execution mode (default: subagent). Team mode requires confirmation. |
 | `--use-agent-team` | Shorthand for `--batch-mode team`, bypasses confirmation prompt |
-| `--plan-only` | (remediate) Save remediation plan without executing |
+| `--plan-only` | Stop after Plan Phase. Display plan summary. Do not execute Write/Review/Finalize phases. Available on all operations (remediate: save remediation plan without executing). |
+| `--no-research` | Skip the Research Phase entirely. Planner works without source analysis. Useful for quick operations when latency matters. |
 | `--visual` | Enable visual verification via browser automation (Playwright MCP). Available on modify operations. |
 
 ---
@@ -672,6 +676,17 @@ This file controls thresholds, defaults, and feature flags:
 | `visual.docs_screenshot_dir` | `media/screenshots` | Persistent doc screenshots |
 | `visual.local_url` | `https://foreignpolicy.local` | Local dev environment URL |
 
+#### Agent Model Configuration (system-config §9, Phase 16)
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `researcher.model` | `opus` | Model for the researcher agent. Deep code analysis benefits from strongest reasoning (D-12). |
+| `researcher.enabled` | `true` | Master switch for pre-operation Research Phase. When false, equivalent to always passing `--no-research`. |
+| `planner.model` | `sonnet` | Model for the planner agent. Planning is structured/formulaic, Sonnet is appropriate (D-12). |
+| `planner.enabled` | `true` | Master switch for pre-operation Plan Phase. When false, orchestrator uses legacy 3-phase direct delegation. |
+| `plans.auto_prune` | `true` | Whether to auto-prune completed plans older than retention period |
+| `plans.retention_days` | `30` | Days to retain completed plan files before auto-pruning |
+| `plans.max_plans` | `200` | Maximum plan files to retain (oldest completed plans pruned first) |
+
 ### How to Customize Behavior
 
 To customize fp-docs behavior:
@@ -684,6 +699,8 @@ To customize fp-docs behavior:
 ## 7. The Post-Modification Pipeline
 
 Every doc-modifying operation runs an 8-stage pipeline after the core work. Under the multi-agent orchestration architecture, these stages are split into 3 phases: **Write Phase** (primary op + stages 1-3, assigned to specialist), **Review Phase** (stages 4-5, assigned to validate engine), and **Finalize Phase** (stages 6-8, handled by orchestrator). Only the orchestrator commits to git in delegated mode.
+
+Under the 5-phase delegation model (Phase 16), all operations proceed through Research Phase (researcher engine pre-analyzes source code) and Plan Phase (planner engine creates execution strategy) before the 8 pipeline stages. The `--no-research` flag skips the Research Phase; `--plan-only` stops after the Plan Phase.
 
 | Stage | Name | Description | Skippable? |
 |-------|------|-------------|------------|
@@ -804,6 +821,11 @@ The `/fp-docs:test` command can validate documentation against a running local d
 3. Review the generated docs for accuracy
 4. Run `/fp-docs:sanity-check` on the new doc to verify all claims
 
+### Pre-Execution Control (Phase 16)
+- Use `--no-research` for quick operations when latency matters -- skips the Research Phase. The planner will create a strategy without pre-analyzed source context, which is fine for simple operations.
+- Use `--plan-only` to preview what an operation will do before executing -- stops after the Plan Phase and displays the execution plan. Run the same command without `--plan-only` to execute.
+- Plan files persist at `.fp-docs/plans/` and auto-prune after 30 days (configurable via `plans.retention_days`).
+
 ### Batch Operations
 - Use `/fp-docs:auto-revise` to process the needs-revision tracker in bulk
 - Use `/fp-docs:parallel` for large-scope operations across many files (requires Agent Teams)
@@ -856,10 +878,13 @@ The biggest pitfall is confusing the three git repos. The docs directory is a SE
 
 ### Multi-Agent Orchestration
 - All 23 commands route through the orchestrate engine, which is a pure dispatcher (D-06) that never executes operations directly
-- Write operations (revise, add, auto-update, remediate, etc.) use 3+ agents: orchestrate + specialist + validate
-- Read-only operations (audit, verify, sanity-check, test, verbosity-audit) use a 2-agent fast path with actionable output
+- All operations proceed through a 5-phase model: Research (researcher) -> Plan (planner) -> Write/Read/Admin (specialist) -> Review (validate) -> Finalize (orchestrator)
+- Write operations use 5 agents: orchestrate + researcher + planner + specialist + validate
+- Read-only operations use a 4-agent path: orchestrate + researcher + planner + specialist (with actionable output)
 - Only the orchestrator commits to git in delegated mode -- specialist engines do not execute git operations
 - The orchestrator extracts only summary metrics from delegation results (D-09) to keep context lean
+- Use `--no-research` for quick operations when latency matters (skips Research Phase)
+- Use `--plan-only` to preview what an operation will do before executing (stops after Plan Phase)
 
 ### Execution Mode (`--batch-mode`)
 - `--batch-mode subagent` (default): Smart subagent spawning. 1 file = single call, 2-8 = parallel, 9+ = batched waves.
@@ -885,9 +910,10 @@ The biggest pitfall is confusing the three git repos. The docs directory is a SE
 - If git hooks are not installed, drift detection is passive-only (no automatic analysis on pull) -- run `/fp-docs:setup` to install hooks
 
 ### Model Allocation
-- The `orchestrate`, `modify`, `validate`, `citations`, `api-refs`, and `locals` engines use Opus (the most capable model)
-- The `verbosity`, `index`, and `system` engines use Sonnet (sufficient for their simpler tasks)
+- The `orchestrate`, `modify`, `validate`, `citations`, `api-refs`, `locals`, and `researcher` engines use Opus (the most capable model)
+- The `verbosity`, `index`, `system`, and `planner` engines use Sonnet (sufficient for their structured tasks)
 - All engines inherit the user's configured model via `model: inherit` or `model: opus`/`model: sonnet`
+- Researcher uses opus for deep code analysis (D-12); planner uses sonnet since planning is structured/formulaic (D-12)
 
 ### Visual Verification SSL Errors
 - The plugin configures triple-layer SSL bypass for ddev's self-signed certificates (CLI flag, Chromium launch arg, browser context option)

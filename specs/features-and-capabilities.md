@@ -1,8 +1,11 @@
 # fp-docs Features and Capabilities Research
 
+<!-- Updated 2026-03-29: Phase 16 — 11 engines, 5-phase delegation, --plan-only and --no-research flags -->
 <!-- Updated 2026-03-28: Phase 13 — MCP wiring confirmed, command count aligned, design choice added -->
 
-> **Updated 2026-03-28**: Phase 13 -- MCP server declared in `.mcp.json` at plugin root (confirmed). Plugin compliance validated. Design choice #15 added for MCP declarations.
+> **Updated 2026-03-29**: Phase 16 -- 11 engines (added researcher + planner), 5-phase delegation model (Research -> Plan -> Write -> Review -> Finalize), `--plan-only` and `--no-research` flags. Plans mandatory for all operations (D-07), auto-execute by default (D-08).
+>
+> Previously (2026-03-28): Phase 13 -- MCP server declared in `.mcp.json` at plugin root (confirmed). Plugin compliance validated. Design choice #15 added for MCP declarations.
 >
 > Previously (2026-03-28): Phase 11 -- Fixed pipeline init/next sequence in finalization. Added `update` to system engine operations. Fixed update instruction field alignment.
 >
@@ -47,7 +50,7 @@ The plugin is distributed via the `fp-tools` marketplace and operates entirely t
 
 All commands are namespaced as `/fp-docs:*` and run in isolated subagent contexts (`context: fork`). Every command routes through the **orchestrate** engine, which acts as a pure dispatcher (D-06) -- it never executes fp-docs operations directly.
 
-The 21 routing-table commands are managed by the ROUTING_TABLE in `lib/routing.cjs` and delegate to specialist engines. Write operations use 3+ agents (orchestrate + specialist + validate); read-only operations use a 2-agent fast path (orchestrate + specialist) with actionable output including per-issue command recommendations.
+The 21 routing-table commands are managed by the ROUTING_TABLE in `lib/routing.cjs` and delegate to specialist engines. Write operations use 5 agents (orchestrate + researcher + planner + specialist + validate); read-only operations use a 4-agent path (orchestrate + researcher + planner + specialist) with actionable output including per-issue command recommendations.
 
 The 2 meta-commands (`/fp-docs:do` and `/fp-docs:help`) bypass the standard delegation pattern -- they are handled directly by the orchestrate engine without entering the ROUTING_TABLE or delegating to specialist engines.
 
@@ -146,9 +149,9 @@ These commands are handled directly by the orchestrate engine. They do NOT appea
 
 ---
 
-## The 9 Engines
+## The 11 Engines
 
-Each engine is a subagent definition with a specific domain, tool permissions, and preloaded modules. All 9 engines can operate in **Delegation Mode** (orchestrator-coordinated, executing assigned pipeline phases) or **Standalone Mode** (self-contained, full pipeline). All 9 engines use CJS tooling (`fp-tools.cjs`) for git operations, pipeline sequencing, state management, and configuration access. Instruction files contain literal `fp-tools.cjs` commands to prevent engine improvisation.
+Each engine is a subagent definition with a specific domain, tool permissions, and preloaded modules. All 11 engines can operate in **Delegation Mode** (orchestrator-coordinated, executing assigned pipeline phases) or **Standalone Mode** (self-contained, full pipeline), except researcher and planner which are delegation-only (never standalone). All 11 engines use CJS tooling (`fp-tools.cjs`) for git operations, pipeline sequencing, state management, and configuration access. Instruction files contain literal `fp-tools.cjs` commands to prevent engine improvisation.
 
 ### 1. orchestrate (color: white)
 - **Domain**: Universal command routing, multi-agent delegation, pipeline phase coordination, meta-command handling
@@ -222,6 +225,22 @@ Each engine is a subagent definition with a specific domain, tool permissions, a
 - **Model**: opus, maxTurns: 50
 - **Key behavior**: Setup runs 6 phases (plugin verification, docs repo setup, gitignore check, branch sync, git hook installation, shell prompt integration). Sync manages the three-repo branch mirroring model. Update-skills regenerates skill files while preserving customizations. Update checks GitHub Releases API and executes git-based self-update.
 
+### 10. researcher (color: orange) -- Phase 16
+- **Domain**: Pre-operation source code analysis
+- **Operations**: (none -- always invoked as pre-pipeline phase, not via user command)
+- **Tools**: Read, Write, Grep, Glob, Bash (no Edit -- analysis only, no file modification)
+- **Modules**: mod-standards, mod-project
+- **Model**: opus, maxTurns: 75
+- **Key behavior**: Runs before specialist engines to read source code, map dependencies, identify changes, and produce structured analysis documents at `.fp-docs/analyses/`. Uses `codebase-analysis-guide.md` for scanning patterns and `source-map.json` for target-to-source mapping. Calibrates analysis depth by operation type: full (write operations), summary (read-only), minimal (admin). Always invoked in DELEGATED mode by the orchestrator -- never runs standalone. Returns a Research Result with analysis file path, source files analyzed, key findings, and complexity assessment.
+
+### 11. planner (color: purple) -- Phase 16
+- **Domain**: Operation strategy design and plan creation
+- **Operations**: (none -- always invoked as pre-pipeline phase, not via user command)
+- **Tools**: Read, Write, Grep, Glob, Bash (no Edit -- creates plan files, never modifies existing)
+- **Modules**: mod-standards, mod-project, mod-orchestration
+- **Model**: sonnet, maxTurns: 75
+- **Key behavior**: Receives researcher analysis and user command, designs execution strategy, creates persistent plan files at `.fp-docs/plans/` via `fp-tools.cjs plans save`. Uses mod-orchestration thresholds for batching decisions. Classifies commands as write/read/admin/batch and creates appropriately structured plans. All operations produce plan files (D-07) for consistent architecture and full audit trail. Plans auto-execute by default (D-08) unless `--plan-only` flag is passed. Always invoked in DELEGATED mode by the orchestrator -- never runs standalone.
+
 ---
 
 ## Drift Detection CLI Surface (`lib/drift.cjs`)
@@ -264,8 +283,8 @@ Modules are preloaded into engines via the `skills:` frontmatter field. They are
 
 | Module | Domain | Preloaded By |
 |--------|--------|-------------|
-| mod-standards | File naming, directory structure, document templates (10 types), content rules, depth requirements, cross-reference requirements, integrity rules | All 9 engines |
-| mod-project | FP-specific paths, source-map.json CLI reference (5 example rows), appendix cross-references, environment settings | All 9 engines |
+| mod-standards | File naming, directory structure, document templates (10 types), content rules, depth requirements, cross-reference requirements, integrity rules | All 11 engines |
+| mod-project | FP-specific paths, source-map.json CLI reference (5 example rows), appendix cross-references, environment settings | All 11 engines |
 | mod-pipeline | 8-stage post-modification pipeline definition, trigger matrix, skip conditions, completion markers | modify |
 | mod-changelog | Changelog entry format (date, files changed, summary), append-only rules | modify |
 | mod-index | PROJECT-INDEX.md update modes (quick/update/full), git consistency rules | modify, index |
@@ -274,7 +293,7 @@ Modules are preloaded into engines via the `skills:` frontmatter field. They are
 | mod-locals | @locals PHPDoc format, @controller format (HTMX), contract table columns, Required/Optional classification, shared shapes, ground truth engine (WP-CLI `wp fp-locals`), ephemeral CLI lifecycle, CLI subcommands, extraction capabilities, fallback rules | modify, locals |
 | mod-verbosity | Anti-compression directives, banned phrases (15+), banned patterns (4 regex), scope manifest format, self-audit protocol, context window management tiers | modify, verbosity |
 | mod-validation | 10-point verification checklist, sanity-check algorithm (zero-tolerance), confidence levels (HIGH/LOW), severity classification (CRITICAL/HIGH/MEDIUM/LOW) | modify, validate |
-| mod-orchestration | Orchestration rules: delegation thresholds, pipeline phase assignments (Write/Review/Finalize), team protocol, git serialization rules, read-only fast-path classification, specialist-to-phase mapping | orchestrate |
+| mod-orchestration | Orchestration rules: delegation thresholds, pipeline phase assignments (Research/Plan/Write/Review/Finalize), team protocol, git serialization rules, read-only fast-path classification, specialist-to-phase mapping, Research/Plan Result formats | orchestrate, planner |
 
 ---
 
@@ -282,7 +301,7 @@ Modules are preloaded into engines via the `skills:` frontmatter field. They are
 
 This is the core quality enforcement mechanism. It runs after every doc-modifying operation.
 
-Under the multi-agent orchestration architecture, the pipeline is split into **3 phases** for delegation across specialist agents: **Write Phase** (primary op + stages 1-3, assigned to specialist engine), **Review Phase** (stages 4-5, assigned to validate engine), and **Finalize Phase** (stages 6-8, fully CJS-executed via the pipeline callback loop -- `fp-tools.cjs pipeline init` then `fp-tools.cjs pipeline next` for each stage, handled by orchestrator). In Standalone Mode, a single engine executes all 8 stages as before.
+Under the multi-agent orchestration architecture, all operations proceed through a **5-phase** delegation model: **Research Phase** (pre-pipeline, researcher engine), **Plan Phase** (pre-pipeline, planner engine), **Write Phase** (primary op + stages 1-3, assigned to specialist engine), **Review Phase** (stages 4-5, assigned to validate engine), and **Finalize Phase** (stages 6-8, fully CJS-executed via the pipeline callback loop -- `fp-tools.cjs pipeline init` then `fp-tools.cjs pipeline next` for each stage, handled by orchestrator). The existing 8 pipeline stages are unchanged -- Research and Plan are pre-pipeline phases. In Standalone Mode, a single engine executes all 8 stages as before.
 
 | Stage | Name | What It Does | Skip Condition |
 |-------|------|-------------|----------------|
@@ -351,8 +370,8 @@ fp-docs enables a complete documentation lifecycle:
 
 ### Multi-Agent Orchestration (Default)
 Every command now uses multi-agent execution by default via the orchestrate engine, which acts as a pure dispatcher (D-06):
-- **Write operations** use 3+ agents: orchestrate (coordinator) + specialist engine (Write Phase) + validate engine (Review Phase)
-- **Read-only operations** use 2 agents: orchestrate (coordinator) + specialist engine (fast path, with actionable output)
+- **Write operations** use 5 agents: orchestrate (coordinator) + researcher (code analysis) + planner (strategy) + specialist engine (Write Phase) + validate engine (Review Phase)
+- **Read-only operations** use 4 agents: orchestrate (coordinator) + researcher (pre-analysis) + planner (minimal plan) + specialist engine (standalone, with actionable output)
 - The orchestrator handles all git commits (Finalize Phase), ensuring atomic documentation updates
 - The orchestrator extracts only summary metrics from delegation results (D-09) to keep context lean during large operations
 
@@ -480,7 +499,7 @@ Every engine includes memory management instructions: update agent memory when d
 The locals engine addresses a WordPress-specific pattern where template components communicate via `$locals` arrays without formal type contracts. The engine annotates source code, generates contract tables, traces caller chains, and reports coverage -- solving a real problem specific to the FP codebase's architecture. Uses an ephemeral WP-CLI tool (`wp fp-locals`) backed by PHP's `token_get_all()` for 100% accurate extraction of keys, types, required/optional status, and default values -- far superior to regex or AI inference. The CLI source lives in the plugin and is copied to the theme during operations, then removed after.
 
 ### 11. Universal Multi-Agent Orchestration
-All 21 routing-table commands route through the orchestrate engine, which acts as a pure dispatcher (D-06) that never executes fp-docs operations directly. Write operations use a 3-phase pipeline delegation (Write Phase to specialist, Review Phase to validate engine, Finalize Phase handled by orchestrator). Read-only operations use a 2-agent fast path with actionable output. Execution mode is controlled by the `--batch-mode` flag (D-08): subagent (default), team (explicit request with confirmation per D-07), or sequential. The orchestrator extracts only summary metrics from delegation results (D-09). Engines support both Delegation Mode (orchestrator-coordinated) and Standalone Mode (self-contained) for backward compatibility.
+All 21 routing-table commands route through the orchestrate engine, which acts as a pure dispatcher (D-06) that never executes fp-docs operations directly. All operations proceed through a 5-phase delegation model: Research Phase (researcher engine) -> Plan Phase (planner engine) -> Write Phase (specialist) -> Review Phase (validate engine) -> Finalize Phase (orchestrator). Read-only operations still route through Research + Plan for consistent architecture, but the specialist runs standalone without Write/Review/Finalize splitting. Execution mode is controlled by the `--batch-mode` flag (D-08): subagent (default), team (explicit request with confirmation per D-07), or sequential. The orchestrator extracts only summary metrics from delegation results (D-09). Engines support both Delegation Mode (orchestrator-coordinated) and Standalone Mode (self-contained) for backward compatibility. Researcher and planner are delegation-only (never standalone).
 
 ### 12. Explicit CJS Invocation in Instruction Files (Phase 8)
 Engines invoke CJS CLI commands explicitly -- instruction files contain literal `fp-tools.cjs` commands (e.g., `fp-tools.cjs pipeline init`, `fp-tools.cjs git commit`, `fp-tools.cjs locals-cli setup`) to prevent engine improvisation. This eliminates the risk of engines inventing ad-hoc git or pipeline commands, ensures deterministic execution of finalization stages, and provides a compliance verification layer via SubagentStop hooks that emit non-blocking warnings when write-capable engines skip expected CJS calls.
@@ -510,6 +529,7 @@ Controls configurable behavior for the plugin:
 - **Verification** (§5): 10-check count
 - **Orchestration** (§6): Enabled/disabled, delegation thresholds (docs and stages), max team size, git serialization mode, fast-path read-only classification, phase assignment rules
 - **Locals CLI Tool** (§7): Enabled/disabled, auto-teardown, CLI source path in plugin, CLI target path in theme, ephemeral lifecycle, subcommand-to-CLI mapping
+- **Agent Model Configuration** (§9): researcher.model (opus), planner.model (sonnet), researcher.enabled, planner.enabled, plans.auto_prune, plans.retention_days, plans.max_plans, Phase Skip Behavior table
 
 ### project-config.md
 FP-specific configuration:
@@ -592,6 +612,10 @@ fp-docs defines 10 document type templates in mod-standards:
 
 ### Visual Verification
 - `--visual` -- Enable visual verification via browser automation (Playwright MCP). Available on modify operations and test visual scope.
+
+### Pre-Execution Flags (Phase 16)
+- `--plan-only` -- Stop after Plan Phase. Display plan summary. Do not execute Write/Review/Finalize phases. Available on all operations.
+- `--no-research` -- Skip the Research Phase entirely. Planner works without source analysis. Useful for quick operations when latency matters.
 
 ### API Ref Layers
 - `--layer helpers|components|hooks|shortcodes|rest-api|cli|all` -- Target specific code layer
