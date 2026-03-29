@@ -25,6 +25,8 @@
  *   drift      - Drift detection and staleness tracking (analyze, status, clear, add-signal, list)
  *   update     - Version checking and self-update (check, status, run)
  *   plans      - Execution plan management (save, load, list, update, prune, save-analysis, load-analysis)
+ *   init       - Workflow bootstrapping (write-op, read-op, admin-op, parallel, remediate)
+ *   resolve-model - Model resolution for agents (agent-name [--profile tier] | --list)
  *
  * Output protocol:
  *   Default: JSON to stdout
@@ -226,6 +228,18 @@ function main() {
     case 'plans': {
       const plans = require('./lib/plans.cjs');
       plans.cmdPlans(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'init': {
+      const init = require('./lib/init.cjs');
+      init.cmdInit(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'resolve-model': {
+      const modelProfiles = require('./lib/model-profiles.cjs');
+      modelProfiles.cmdResolveModel(args.slice(1), raw);
       break;
     }
 
