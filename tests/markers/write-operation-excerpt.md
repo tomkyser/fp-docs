@@ -6,16 +6,16 @@
 
 == ORCHESTRATOR START ==
 
-Received revise request. Classifying as write operation (engine: modify).
+Received revise request. Classifying as write operation (agent: fp-docs-modifier).
 
-Delegating Write Phase to modify engine...
+Delegating Write Phase to fp-docs-modifier agent...
 
-== MODIFY ENGINE (DELEGATED MODE) ==
+== FP-DOCS-MODIFIER (DELEGATED MODE) ==
 
 Mode: DELEGATED
 Phase: Write (operation + stages 1-3)
 
-Reading instruction file: framework/instructions/modify/revise.md
+Reading workflow: workflows/revise.md
 
 Analyzing source code at themes/foreign-policy-2017/includes/hooks.php...
 Updating documentation at docs/04-hooks/actions.md...
@@ -44,7 +44,7 @@ API references verified. 2 function signatures confirmed current.
 
 delegation complete: all enforcement stages passed
 
-== VALIDATE ENGINE (DELEGATED MODE) ==
+== FP-DOCS-VALIDATOR (DELEGATED MODE) ==
 
 Mode: PIPELINE-VALIDATION
 Phase: Review (stages 4-5)

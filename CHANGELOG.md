@@ -4,7 +4,9 @@ All notable changes to the fp-docs plugin will be documented in this file.
 
 ## [Unreleased] - GSD Architecture Conversion
 
-### Changed
+### Round 1 (2026-03-29): Core GSD Migration
+
+#### Changed
 - **Architecture converted from skill-engine to GSD command-workflow-agent model** -- 10-phase migration preserving all domain logic while adopting GSD's structural patterns
 - Commands: 23 skill files (`skills/*/SKILL.md`) replaced with GSD-style command files (`commands/fp-docs/*.md`) using YAML frontmatter + XML body (`<objective>`, `<execution_context>`, `<process>`, `<success_criteria>`)
 - Workflows: 23 instruction files (`framework/instructions/`) replaced with workflow orchestrators (`workflows/*.md`) using XML-structured multi-agent orchestration
@@ -14,7 +16,7 @@ All notable changes to the fp-docs plugin will be documented in this file.
 - Configuration: `framework/config/system-config.md` + `project-config.md` merged into unified `config.json` with system, project, model_profile, and pipeline sections
 - Routing: Implicit skill-body routing metadata replaced with canonical routing table in `lib/routing.cjs` (23 entries, 5-field schema: agent, engine, workflow, operation, type)
 
-### Added
+#### Added
 - `lib/init.cjs` -- Command initialization module (initWriteOp, initReadOp, initAdminOp, initParallel, initRemediate)
 - `lib/model-profiles.cjs` -- Agent model resolution from config.json model_profile section
 - `lib/health.cjs` -- Plugin health check (GSD directories, fp-docs-* agents, standalone hooks, routing table validation)
@@ -25,12 +27,48 @@ All notable changes to the fp-docs plugin will be documented in this file.
 - 10 agent model profiles in config.json (quality/balanced/budget tiers)
 - STAGE_AUTHORITY_MAP expanded to 15 entries (7 new fp-docs-* + 8 legacy agent names)
 
-### Removed
+#### Removed
 - `hooks/hooks.json` -- replaced by standalone JS hook files in settings.json
 - `framework/manifest.md` -- content rolled into README.md
 - `framework/config/system-config.md` -- merged into config.json
 - `framework/config/project-config.md` -- merged into config.json
 - Old engine agent files (orchestrate.md, modify.md, validate.md, etc.) -- replaced by fp-docs-* agents
+
+### Round 2 (2026-03-30): v2 Workflow Architecture + Infrastructure Hardening
+
+#### Changed
+- **All 23 workflows rewritten to v2 pattern** -- 10-step write workflow (init, scope-assess, research, plan, write, verbosity, citations, api-refs, review, finalize), 5-step read workflow (init, scope-assess, research, plan, execute), admin/batch patterns
+- Pipeline stages 1-3 now spawn dedicated enforcement agents (`fp-docs-verbosity-enforcer`, `fp-docs-citations`, `fp-docs-api-refs`) instead of folding into primary modifier
+- Pipeline config in `config.json` updated from generic agent names (`primary`, `validate`) to explicit GSD agent names per stage
+- `lib/routing.cjs` -- Removed legacy `engine` field from all 23 routing entries; schema now 4 fields (agent, workflow, operation, type)
+- `lib/enforcement.cjs` -- Imports STAGE_AUTHORITY_MAP from `lib/agent-map.cjs` instead of maintaining inline copy
+- `hooks/fp-docs-subagent-stop.js` -- Imports AGENT_NAME_MAP from `lib/agent-map.cjs` instead of maintaining inline copy
+- `lib/init.cjs` -- Added featureFlags and scopeAssess to read-op and admin-op init payloads for v2 workflow compatibility; fixed stale `engine:null` fallback to `agent:null`
+- `framework/` directory relocated: PHP tool to `tools/`, playwright config to root; directory deleted
+- `README.md` -- Architecture section trimmed to overview + spec pointers (979 to 803 lines)
+- Test fixture excerpts updated from `framework/instructions/` paths to `workflows/` paths and from engine names to GSD agent names
+- Root `CLAUDE.md` (cc-plugins/) -- Holistic refresh: 15+ stale `framework/` references updated, "instruction files" terminology replaced with "workflow files", `system-config.md`/`project-config.md` references replaced with `config.json`, defunct `manifest.md` removed from version sync list
+- `specs/architecture.md` -- Updated to 11 agents, 10-step write template, 7-phase delegation model with dedicated enforcement, scope-assess/tracker/source-map CLI sections, agent-map/scope-assess/tracker CJS modules in directory listing
+- `specs/features-and-capabilities.md` -- Updated to 11 agents with fp-docs-verbosity-enforcer entry, config.json replaces system-config/project-config section, v2 pipeline description with dedicated enforcement
+- `specs/usage-and-workflows.md` -- Updated to 11 agents, v2 7-phase pipeline description, multi-agent orchestration section rewritten
+
+#### Added
+- `lib/agent-map.cjs` -- Single source of truth for agent name mapping (AGENT_NAME_MAP) and pipeline phase authority (STAGE_AUTHORITY_MAP), preventing silent divergence between hook routing and enforcement
+- `lib/scope-assess.cjs` -- Pre-delegation scope assessment: complexity estimation, researcher count recommendation, delegation strategy selection (7 exports)
+- `lib/tracker.cjs` -- JSON tracker document management: create/read/summary/update/close/addIssue/addNote/list/prune with atomic writes and config-driven retention (10 exports)
+- `agents/fp-docs-verbosity-enforcer.md` -- Write-capable verbosity enforcement agent for pipeline stage 1 (Option A: separate agent preserves fp-docs-verbosity as read-only for audit)
+- `specs/patterns/write-workflow-template-v2.md` -- Canonical v2 write workflow template
+- `specs/patterns/scope-assessment.md` -- Scope assessment design pattern
+- `specs/patterns/tracker-doc.md` -- Tracker doc system design pattern
+- `specs/patterns/cjs-implementation-spec.md` -- CJS implementation specification
+- `tests/lib/lib-agent-map-tests.cjs` -- 31 unit tests for agent-map.cjs
+- `tests/lib/lib-scope-assess-tests.cjs` -- 33 unit tests for scope-assess.cjs
+- `tests/lib/lib-tracker-tests.cjs` -- 19 unit tests for tracker.cjs
+- `fp-tools.cjs` CLI routes for `scope-assess` and `tracker` subcommands
+- `settings.json` SubagentStop matcher for `fp-docs-verbosity-enforcer`
+- STAGE_AUTHORITY_MAP expanded to 17 entries (+2 for verbosity-enforcer)
+- 11 agent model profiles in config.json (+1 for verbosity-enforcer)
+- Test suite expanded from 412 to 495 lib tests + 68 marker tests (563 total, 0 failures)
 
 ## [1.0.0] - 2026-03-26
 

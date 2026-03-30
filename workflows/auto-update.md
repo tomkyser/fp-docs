@@ -172,7 +172,7 @@ Collect summaries from all spawns. Merge file lists for enforcement agents.
 Skip if `--no-verbosity` flag is set or `verbosity.enabled` is false.
 
 ```bash
-VERBOSITY_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-verbosity --raw)
+VERBOSITY_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-verbosity-enforcer --raw)
 ```
 Spawn ONE dedicated verbosity agent for ALL files from write phase:
 ```
@@ -196,8 +196,8 @@ Agent(
 
     Return a Verbosity Enforcement Result with per-file status (PASS/FIXED/FAIL).
 
-    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step verbosity --agent fp-docs-verbosity --status done --detail {summary}",
-  agent="fp-docs-verbosity",
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step verbosity --agent fp-docs-verbosity-enforcer --status done --detail {summary}",
+  agent="fp-docs-verbosity-enforcer",
   model="${VERBOSITY_MODEL}"
 )
 ```

@@ -2,7 +2,7 @@
 
 <!-- Updated 2026-03-29: Full rewrite for GSD command-workflow-agent architecture (Phase 10 conversion) -->
 
-> **Updated 2026-03-29**: Architecture converted from skill-engine-module to GSD command-workflow-agent chain. 23 commands route through workflows that spawn specialized agents. References replace modules and algorithms. Hooks migrated from hooks.json to settings.json with standalone JS files. 10 agents (fp-docs-* prefix) replace 11 engines.
+> **Updated 2026-03-30**: v2 workflow architecture with dedicated enforcement agents. 23 commands route through workflows that spawn specialized agents. References replace modules and algorithms. 11 agents (fp-docs-* prefix) including new fp-docs-verbosity-enforcer for pipeline stage 1. Scope assessment, tracker documents, and dynamic researcher scaling added.
 
 ## What fp-docs Is
 
@@ -132,7 +132,7 @@ These commands use inline meta workflows that execute directly without agent spa
 
 ---
 
-## The 10 Agents
+## The 11 Agents
 
 Each agent is defined in `agents/` with GSD-style YAML frontmatter (name, description, tools, model) and an XML system prompt body. Agents load shared knowledge via `@-reference` to files in `references/`. All agents use CJS tooling (`fp-tools.cjs`) for git operations, pipeline sequencing, state management, and configuration access. Workflows contain literal `fp-tools.cjs` commands to prevent agent improvisation.
 
@@ -142,7 +142,7 @@ Each agent is defined in `agents/` with GSD-style YAML frontmatter (name, descri
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash (full write access)
 - **References**: doc-standards.md, fp-project.md, pipeline-enforcement.md, changelog-rules.md, index-rules.md
 - **Model**: opus, maxTurns: 75
-- **Key behavior**: The primary write agent. Executes the Write Phase (stages 1-3) of the pipeline. Always reads actual source code before writing docs. Uses `[NEEDS INVESTIGATION]` instead of guessing.
+- **Key behavior**: The primary write agent. Executes the Write Phase (primary operation ONLY -- stages 1-3 are handled by dedicated enforcement agents). Always reads actual source code before writing docs. Uses `[NEEDS INVESTIGATION]` instead of guessing.
 
 ### 2. fp-docs-validator
 - **Domain**: Documentation validation and accuracy verification
@@ -184,7 +184,15 @@ Each agent is defined in `agents/` with GSD-style YAML frontmatter (name, descri
 - **Model**: opus, maxTurns: 50
 - **Key behavior**: Read-only scanner. Enforces a banned phrase list (e.g., "etc.", "and more", "various") and banned regex patterns. Reports violations at HIGH (banned phrases), MEDIUM (incomplete lists), LOW (style issues) severity. Deep scans also check scope manifests.
 
-### 7. fp-docs-indexer
+### 7. fp-docs-verbosity-enforcer
+- **Domain**: Write-capable verbosity enforcement for pipeline stage 1
+- **Operations**: (none -- always spawned as dedicated enforcement agent during pipeline stage 1)
+- **Tools**: Read, Write, Edit, Grep, Glob, Bash (full write access for fixing gaps)
+- **References**: doc-standards.md, fp-project.md, verbosity-rules.md, verbosity-algorithm.md
+- **Model**: opus, maxTurns: 50
+- **Key behavior**: Write-capable companion to the read-only fp-docs-verbosity agent. Spawned as a dedicated agent during pipeline stage 1 of every write workflow. Builds scope manifests, detects verbosity gaps and banned phrases, then **fixes** issues by expanding incomplete sections and adding missing items. Returns a Verbosity Enforcement Result with per-file PASS/FIXED/FAIL status. Created in v2 to isolate enforcement from primary specialists.
+
+### 8. fp-docs-indexer
 - **Domain**: Documentation index maintenance and metadata synchronization
 - **Operations**: update-project-index, update-doc-links, update-example-claude
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
@@ -192,7 +200,7 @@ Each agent is defined in `agents/` with GSD-style YAML frontmatter (name, descri
 - **Model**: opus, maxTurns: 50
 - **Key behavior**: Uses `git ls-files` as source of truth, not filesystem listing. Supports incremental (update), quick, and full regeneration modes. CLAUDE.md regeneration only touches documentation sections.
 
-### 8. fp-docs-system
+### 9. fp-docs-system
 - **Domain**: Plugin self-maintenance and configuration
 - **Operations**: update-skills, setup, sync, update
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
@@ -200,7 +208,7 @@ Each agent is defined in `agents/` with GSD-style YAML frontmatter (name, descri
 - **Model**: opus, maxTurns: 50
 - **Key behavior**: Setup runs 7 phases (plugin verification, docs repo setup, gitignore check, branch sync, git hook installation, shell prompt integration, update notification setup). Sync manages the three-repo branch mirroring model. Update-skills regenerates command files while preserving customizations. Update checks GitHub Releases API and executes git-based self-update.
 
-### 9. fp-docs-researcher
+### 10. fp-docs-researcher
 - **Domain**: Pre-operation source code analysis
 - **Operations**: (none -- always invoked as pre-pipeline phase, not via user command)
 - **Tools**: Read, Write, Grep, Glob, Bash (no Edit -- analysis only, no file modification)
@@ -208,7 +216,7 @@ Each agent is defined in `agents/` with GSD-style YAML frontmatter (name, descri
 - **Model**: opus, maxTurns: 75
 - **Key behavior**: Runs before specialist agents to read source code, map dependencies, identify changes, and produce structured analysis documents at `.fp-docs/analyses/`. Uses `codebase-analysis-guide.md` for scanning patterns and `source-map.json` for target-to-source mapping. Calibrates analysis depth by operation type: full (write operations), summary (read-only), minimal (admin). Always invoked in DELEGATED mode -- never runs standalone. Returns a Research Result with analysis file path, source files analyzed, key findings, and complexity assessment.
 
-### 10. fp-docs-planner
+### 11. fp-docs-planner
 - **Domain**: Operation strategy design and plan creation
 - **Operations**: (none -- always invoked as pre-pipeline phase, not via user command)
 - **Tools**: Read, Write, Grep, Glob, Bash (no Edit -- creates plan files, never modifies existing)
@@ -260,15 +268,15 @@ References are shared knowledge files in `references/` loaded by agents and work
 
 | Reference | Domain | Used By |
 |-----------|--------|---------|
-| doc-standards.md | File naming, directory structure, document templates (10 types), content rules, depth requirements, cross-reference requirements, integrity rules | All 10 agents (via every command) |
-| fp-project.md | FP-specific paths, source-map.json CLI reference (5 example rows), appendix cross-references, environment settings | All 10 agents (via every command) |
+| doc-standards.md | File naming, directory structure, document templates (10 types), content rules, depth requirements, cross-reference requirements, integrity rules | All 11 agents (via every command) |
+| fp-project.md | FP-specific paths, source-map.json CLI reference (5 example rows), appendix cross-references, environment settings | All 11 agents (via every command) |
 | pipeline-enforcement.md | 8-stage post-modification pipeline definition, trigger matrix, skip conditions, completion markers | fp-docs-modifier, fp-docs-planner |
 | changelog-rules.md | Changelog entry format (date, files changed, summary), append-only rules | fp-docs-modifier |
 | index-rules.md | PROJECT-INDEX.md update modes (quick/update/full), git consistency rules | fp-docs-modifier, fp-docs-indexer |
 | citation-rules.md | Citation block format (3 tiers), marker grammar, placement rules, freshness model (5 states), excerpt rules | fp-docs-modifier, fp-docs-citations |
 | api-ref-rules.md | API Reference table format (5 columns), provenance rules, scope by doc type, completeness rule, ordering | fp-docs-modifier, fp-docs-api-refs |
 | locals-rules.md | @locals PHPDoc format, @controller format (HTMX), contract table columns, Required/Optional classification, shared shapes, ground truth engine (WP-CLI `wp fp-locals`), ephemeral CLI lifecycle, CLI subcommands, extraction capabilities, fallback rules | fp-docs-modifier, fp-docs-locals |
-| verbosity-rules.md | Anti-compression directives, banned phrases (15+), banned patterns (4 regex), scope manifest format, self-audit protocol, context window management tiers | fp-docs-modifier, fp-docs-verbosity |
+| verbosity-rules.md | Anti-compression directives, banned phrases (15+), banned patterns (4 regex), scope manifest format, self-audit protocol, context window management tiers | fp-docs-modifier, fp-docs-verbosity, fp-docs-verbosity-enforcer |
 | validation-rules.md | 10-point verification checklist, sanity-check algorithm (zero-tolerance), confidence levels (HIGH/LOW), severity classification (CRITICAL/HIGH/MEDIUM/LOW) | fp-docs-modifier, fp-docs-validator |
 
 ### Algorithm References (6 files, moved from framework/algorithms/)
@@ -288,7 +296,7 @@ References are shared knowledge files in `references/` loaded by agents and work
 
 This is the core quality enforcement mechanism. It runs after every doc-modifying operation.
 
-Under the command-workflow-agent architecture, write operations proceed through a **5-phase** delegation model: **Research Phase** (pre-pipeline, fp-docs-researcher), **Plan Phase** (pre-pipeline, fp-docs-planner), **Write Phase** (primary op + stages 1-3, assigned to specialist agent), **Review Phase** (stages 4-5, assigned to fp-docs-validator), and **Finalize Phase** (stages 6-8, fully CJS-executed via the pipeline callback loop -- `fp-tools.cjs pipeline init` then `fp-tools.cjs pipeline next` for each stage, handled by the workflow). The existing 8 pipeline stages are unchanged -- Research and Plan are pre-pipeline phases. In Standalone Mode, a single agent executes all 8 stages as before.
+Under the v2 workflow architecture, write operations proceed through a **7-phase** delegation model: **Scope Assessment** (CJS, determines complexity/researcher count/tracker), **Research Phase** (1-N fp-docs-researcher spawns based on scope), **Plan Phase** (fp-docs-planner), **Write Phase** (primary operation ONLY -- specialist agent does NOT run enforcement stages), **Enforce Phase** (stages 1-3 each handled by a **dedicated** agent: fp-docs-verbosity-enforcer for stage 1, fp-docs-citations for stage 2, fp-docs-api-refs for stage 3), **Review Phase** (stages 4-5, fp-docs-validator), and **Finalize Phase** (stages 6-8 via `fp-tools pipeline init/next/run-stage`). Key v2 change: enforcement stages are isolated from the primary specialist, allowing each agent to focus on its domain.
 
 | Stage | Name | What It Does | Skip Condition |
 |-------|------|-------------|----------------|
@@ -526,25 +534,24 @@ Reverses Phase 8 D-05 (non-blocking compliance) and Phase 12 D-05 (documentation
 
 ## Configuration System
 
-### system-config.md
-Controls configurable behavior for the plugin:
-- **Citations** (§1): Enabled/disabled, tier line thresholds (15/100 lines), line number inclusion, excerpt comment limit
-- **Sanity Check** (§2): Default enabled, multi-agent review thresholds (5 docs / 3 sections)
-- **API Reference** (§3): Enabled/disabled, valid provenance values, scope by doc type
-- **Verbosity** (§4): Enabled/disabled, gap tolerance (0 = zero tolerance), chunk-and-delegate thresholds, complete banned phrase and pattern lists
-- **Verification** (§5): 10-check count
-- **Orchestration** (§6): Enabled/disabled, delegation thresholds (docs and stages), max team size, git serialization mode, fast-path read-only classification, phase assignment rules
-- **Locals CLI Tool** (§7): Enabled/disabled, auto-teardown, CLI source path in plugin, CLI target path in theme, ephemeral lifecycle, subcommand-to-CLI mapping
-- **Agent Model Configuration** (§9): researcher.model (opus), planner.model (sonnet), researcher.enabled, planner.enabled, plans.auto_prune, plans.retention_days, plans.max_plans, Phase Skip Behavior table
+### config.json (Unified Configuration)
+All plugin configuration is centralized in `config.json` at the plugin root. Sections:
 
-### project-config.md
-FP-specific configuration:
-- Project identity (theme root, docs root, WP-CLI prefix, local URL)
-- Source-to-documentation mapping: **Extracted to `source-map.json`** (accessed via `lib/source-map.cjs`; project-config.md retains reference pointer only)
-- Appendix cross-references (7 appendix categories)
-- Key paths (changelog, revision tracker, index, shapes, flagged concerns)
-- Repository configuration (codebase repo, docs repo, plugin repo)
-- Feature enables (all 5 features enabled)
+- **system**: Feature flags and thresholds
+  - citations, sanity_check, api_reference, verbosity, verification, orchestration, locals_cli
+  - **scope_assess**: Complexity thresholds, max_researchers per tier
+  - **tracker**: Retention days, auto_create_threshold, prune settings
+- **project**: FP-specific identity and paths
+  - Theme root, docs root, WP-CLI prefix, local URL
+  - Appendix cross-references (7 categories)
+  - Key paths (changelog, revision tracker, index, shapes, flagged concerns)
+  - Repository configuration (codebase, docs, plugin repos)
+- **model_profile**: Per-agent model assignments (primary/enforcement/fallback)
+  - Entries for all 11 agents (e.g., fp-docs-modifier: opus/opus/sonnet)
+- **pipeline**: Stage definitions with gate validation
+  - 8 stages with assigned agents (stages 1-3 use dedicated GSD agent names)
+  - Gate validation flags per stage
+- **Source-to-documentation mapping**: Extracted to `source-map.json` (accessed via `lib/source-map.cjs`)
 
 ### settings.json
 Default tool permissions: Read, Grep, Glob are auto-allowed for all operations.

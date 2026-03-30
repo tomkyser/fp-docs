@@ -437,7 +437,7 @@ All 3 MINOR items resolved. Zero outstanding issues across 10 phases. Second Pas
 | 1 | Retrospective follow-ups + dynamic delegation infrastructure | PASS |
 | 2 | Write workflow architecture redesign (9 workflows) | PASS WITH NOTES |
 | 3 | Read + other workflow redesign + command updates | PASS WITH NOTES |
-| 4 | Testing + documentation + final validation | Pending |
+| 4 | Testing + documentation + final validation | PASS |
 
 ---
 
@@ -630,5 +630,89 @@ One note for future: the template-to-implementation gap (template says fp-docs-v
 
 ### Labor Division Assessment
 Good split. Mira handled 8 workflow rewrites + 6 reviews. Kai handled CJS init updates, routing validation, and test updates. Lighter CJS work this phase (as expected from Kai's Phase 3 prep analysis). No rebalancing needed -- Phase 4 (testing + docs) will give Kai more to do.
+
+---
+
+## Phase 4: Testing + Documentation + Final Validation
+**Reviewed**: 2026-03-30
+**Verdict**: PASS
+
+### Files Reviewed
+
+**New test files (Kai -- 3 files):**
+- `tests/lib/lib-agent-map-tests.cjs` -- 31 unit tests: exports validation, AGENT_NAME_MAP (11 entries, prefix/value checks), STAGE_AUTHORITY_MAP (17 entries, phase value checks), getCanonicalName (known/unknown/null), getPhaseAuthority (known/unknown), isGsdAgentName, getGsdAgentNames (11 entries), getCanonicalNames (unique values), cross-map consistency (all AGENT_NAME_MAP keys present in STAGE_AUTHORITY_MAP)
+- `tests/lib/lib-scope-assess-tests.cjs` -- 33 unit tests: exports validation (7 functions), estimateComplexity (meta/admin always low, write thresholds at 3/8, read thresholds), recommendResearcherCount (per-tier caps), recommendStrategy (4 operation types), parseTargets (empty/single/multi/quoted), analyzeFileScope (empty/single/multi), assessScope orchestrator (meta/admin fast path, write delegation)
+- `tests/lib/lib-tracker-tests.cjs` -- 19 unit tests: exports validation (10 functions), create (id format, JSON structure, default operation), read/update/close lifecycle, addIssue/addNote (array population, field validation), summary (compact format), list (returns array), prune (expired removal)
+
+**Verbosity agent name fix (Kai -- 12 workflows + 1 template):**
+- `workflows/revise.md`, `workflows/add.md`, `workflows/auto-update.md`, `workflows/auto-revise.md`, `workflows/deprecate.md`, `workflows/citations.md`, `workflows/api-ref.md`, `workflows/locals.md`, `workflows/remediate.md` -- 6 lines per workflow: resolve-model, tracker update, and agent= changed from `fp-docs-verbosity` to `fp-docs-verbosity-enforcer`
+- `workflows/update-index.md`, `workflows/update-claude.md`, `workflows/parallel.md` -- Same fix applied
+- `specs/patterns/write-workflow-template-v2.md` -- Template fixed: resolve-model, tracker update, agent= changed; stale TODO section ("Agent Definition Changes Required") replaced with resolved status note
+
+**Test fixture updates (Kai -- 2 files):**
+- `tests/markers/write-operation-excerpt.md` -- engine->agent terminology, framework/instructions->workflows paths, engine names->GSD agent names
+- `tests/markers/read-operation-excerpt.md` -- Same: engine->agent, framework/instructions->workflows, engine names->GSD names
+
+**CHANGELOG (Kai -- 1 file):**
+- `CHANGELOG.md` -- Round 2 section added under [Unreleased]. Round 1 subsection headers promoted. Complete scope: 3 Changed items (23 workflow rewrites, pipeline stage isolation, 12 infrastructure updates), 2 Added items (5 new CJS modules, 4 new test/spec/pattern files, expanded counts). Accurate and thorough.
+
+**Spec updates (Mira -- 3 files):**
+- `specs/architecture.md` -- Updated header (2026-03-30, v2 workflow architecture). 11 agents in directory listing (verbosity-enforcer annotated). agent-map.cjs/scope-assess.cjs/tracker.cjs in lib listing. Workflow templates rewritten: write 10-step, read 5-step, admin write, admin no-pipeline. Agent inventory: 11 entries with role-based descriptions. Pipeline: 7-phase delegation model with dedicated enforcement. Scope-assess and tracker CLI sections added.
+- `specs/features-and-capabilities.md` -- Updated header (2026-03-30). 11 agents heading. fp-docs-verbosity-enforcer entry (#7) with full description. Modifier key behavior updated (primary only, no enforcement). Config section rewritten from system-config.md/project-config.md to unified config.json. Pipeline description: 7-phase with dedicated enforcement.
+- `specs/usage-and-workflows.md` -- Updated header (2026-03-30). 11 agents count. Pipeline section rewritten: 7-phase model, dedicated enforcement. Multi-agent orchestration: up to 8 agents for write ops, scope-assess and tracker integration.
+
+**Root CLAUDE.md refresh (Mira -- 1 file in parent repo):**
+- `cc-plugins/CLAUDE.md` -- ~15 stale `framework/` references updated, instruction files->workflow files, system-config.md/project-config.md->config.json, manifest.md removed from version sync. This is in the parent repo (cc-plugins/), needs separate commit.
+
+### Verification
+- [x] Test suite: 721 pass, 0 fail, 7 skipped (baseline maintained)
+- [x] `fp-tools route validate`: valid (0 mismatches)
+- [x] Verbosity agent name fix confirmed via grep: only `verbosity-audit.md` references `fp-docs-verbosity` (correct -- read-only audit). All other workflows use `fp-docs-verbosity-enforcer`.
+- [x] New test files: 31 + 33 + 19 = 83 new unit tests, all passing
+- [x] Test files use node:test + node:assert/strict (matches existing patterns)
+- [x] tracker.cjs tests use temp directories, clean up after themselves
+- [x] scope-assess.cjs tests exercise boundary conditions at threshold values
+- [x] agent-map.cjs tests include cross-map consistency check (all AGENT_NAME_MAP keys in STAGE_AUTHORITY_MAP)
+- [x] CHANGELOG Round 2 section: accurate scope, no missing items, Round 1 headers correctly promoted to subsections
+- [x] All 3 spec files: consistent 11-agent count, v2 terminology, dedicated enforcement language
+- [x] architecture.md: 7-phase delegation diagram, scope-assess/tracker CLI sections present
+- [x] features-and-capabilities.md: fp-docs-verbosity-enforcer entry complete with role/tools/model/behavior
+- [x] usage-and-workflows.md: pipeline section accurate, multi-agent section updated
+- [x] Write-workflow-template-v2.md: stale TODO replaced with "Resolved (Phase 2)" note
+- [x] Fixture excerpts: engine->agent, framework/instructions->workflows -- consistent with Round 1+2 architecture
+- [x] Test count: 563 (Kai's lib-only count) + 158 (other suites) = 721 total -- consistent
+
+### Issues Found
+#### CRITICAL
+- None
+
+#### MINOR (Second Pass)
+- Root CLAUDE.md (cc-plugins/) modified in parent repo -- needs separate commit (carried from Phase 1)
+- Complexity tier naming inconsistency: scope-assess.cjs uses low/medium/high, tracker design spec uses light/standard/heavy (carried from Phase 1, cosmetic)
+- init.cjs test output mock architecture deferred (Kai flagged in Phase 3) -- process.exit prevents assertion execution in some CLI paths. Low priority, tests still cover the important paths.
+
+### Labor Division Assessment
+Well balanced. Kai delivered 83 new tests, the verbosity name hotfix across 13 files, CHANGELOG, and fixture updates -- heavy implementation. Mira delivered 3 spec updates, root CLAUDE.md refresh, and workflow cross-validation -- heavy documentation. Equal volume and complementary domains. The verbosity name fix (runtime-breaking if unfixed) was correctly prioritized as Phase 4's first task.
+
+---
+
+## Second Pass
+**Reviewed**: 2026-03-30
+**Verdict**: PASS
+
+### MINOR Items from Phases 1-4
+
+1. **Root CLAUDE.md stale references** (Phase 1, carried to Phase 4) -- Mira updated ~15 stale `framework/` references, instruction files->workflow files, system-config/project-config->config.json. In parent repo (cc-plugins/). **Disposition**: needs separate commit in cc-plugins/ repo.
+
+2. **Complexity tier naming inconsistency** (Phase 1) -- scope-assess.cjs uses low/medium/high, tracker design spec (specs/patterns/tracker-doc.md) uses light/standard/heavy. **Disposition**: cosmetic only. CJS code is the runtime truth; design spec is reference documentation. No runtime impact. Can be harmonized in a future cleanup pass.
+
+3. **Verbosity agent name mismatch** (Phase 2, fixed Phase 4) -- All write workflows referenced `fp-docs-verbosity` instead of `fp-docs-verbosity-enforcer` for pipeline stage 1. **Disposition**: FIXED. Kai applied the fix across 12 workflows + template (33 occurrences). Grep-verified: only verbosity-audit.md uses fp-docs-verbosity (correct).
+
+4. **init.cjs test output mock** (Phase 3) -- process.exit in CLI paths prevents assertion execution. **Disposition**: deferred. Low priority -- all important logic paths have test coverage. A proper mock architecture can be added when init.cjs CLI paths need expansion.
+
+5. **Phase completion summary backfill** (Phase 2) -- PHASE-STATUS.md completion summaries were sometimes written late. **Disposition**: process note for future team rounds, not a code issue.
+
+### Conclusion
+5 MINOR items total. 1 fixed (verbosity name), 1 needs separate commit (root CLAUDE.md), 3 deferred (cosmetic/process/low-priority). Zero CRITICAL issues across all 4 phases. Second Pass complete.
 
 ---

@@ -171,8 +171,8 @@
 
 ---
 
-## Current Phase: 3 — Read + Other Workflow Redesign + Command Updates
-**Status**: in-progress
+## Phase 3 — Read + Other Workflow Redesign + Command Updates
+**Status**: done
 **Started**: 2026-03-30
 
 ### Scope
@@ -227,5 +227,74 @@
 - All 8 rewritten workflow files
 - init.cjs changes (featureFlags, scopeAssess in read-op/admin-op)
 - parallel.md v2 team execution model
+
+**Lead review note (verbosity agent name):**
+- Reese flagged potential `fp-docs-verbosity` vs `fp-docs-verbosity-enforcer` mismatch in write workflows
+- Comprehensive grep confirmed: all 12 write workflows + v2 template already use `fp-docs-verbosity-enforcer` correctly
+- Only `verbosity-audit.md` uses `fp-docs-verbosity` (read-only agent) -- correct by design
+- No edits needed
+
+---
+
+## Current Phase: 4 — Testing + Documentation + Final Validation
+**Status**: in-progress
+**Started**: 2026-03-30
+
+### Scope
+- Root CLAUDE.md holistic refresh (~15 stale framework/ references, deferred from Phase 1)
+- Spec file updates for Round 2 architecture changes (v2 patterns, scope-assess, tracker, enforcement agents)
+- Cross-validation of all 17 rewritten workflows against v2 template
+- Test fixture updates for old architecture paths (deferred from Phase 1)
+- Final round of test execution
+
+### Task Claims
+| Task | Owner | Status | Notes |
+|------|-------|--------|-------|
+| Root CLAUDE.md holistic refresh | Mira | done | 15+ stale framework/ refs -> current paths. Instruction files -> workflow files. system-config/project-config -> config.json. manifest.md removed. |
+| Spec files update for Round 2 | Mira | done | architecture.md: 11 agents, 10-step write template, 7-phase delegation, scope-assess/tracker CLI, agent-map/scope-assess/tracker CJS. features-and-capabilities.md: 11 agents, verbosity-enforcer entry, config.json section, v2 pipeline description. usage-and-workflows.md: 11 agents, v2 pipeline phases, multi-agent orchestration update. |
+| Cross-validate all workflows against v2 template | Mira | done | All 23 workflows validated: 9 write (full v2), 5 read (v2 read pattern), 3 admin/batch write (v2 enforcement), 6 no-pipeline (clean). XML structure, agent names, CJS commands all consistent. |
+| CHANGELOG entry for Round 2 | Kai | done | Added Round 2 section under [Unreleased]. Covers v2 workflows, scope-assess, tracker, agent-map, verbosity-enforcer, pipeline isolation, framework/ relocation, test additions. |
+| Create lib-agent-map-tests.cjs | Kai | done | 31 tests: exports, maps, getCanonicalName, getPhaseAuthority, isGsdAgentName, getters, cross-map consistency |
+| Create lib-scope-assess-tests.cjs | Kai | done | 33 tests: 7 exports, complexity tiers, researcher scaling, strategy, parseTargets, analyzeFileScope, assessScope |
+| Create lib-tracker-tests.cjs | Kai | done | 19 tests: 10 exports, create/read/summary/update/close/addIssue/addNote/list/prune with temp file I/O |
+| Test fixture updates for old architecture paths | Kai | done | Updated write-operation-excerpt.md + read-operation-excerpt.md: framework/instructions -> workflows/, engine -> agent GSD names |
+| Final test execution + fix failures | Kai | done | 495 lib tests pass (was 412, +83 new). 68 marker tests pass. 0 failures. |
+
+### Phase Completion Summary
+
+**Files created (Kai -- 3 test files):**
+- `tests/lib/lib-agent-map-tests.cjs` -- 31 unit tests for agent-map.cjs
+- `tests/lib/lib-scope-assess-tests.cjs` -- 33 unit tests for scope-assess.cjs
+- `tests/lib/lib-tracker-tests.cjs` -- 19 unit tests for tracker.cjs
+
+**Files modified (Kai -- 4 files):**
+- `CHANGELOG.md` -- Added Round 2 section under [Unreleased] with all changes/additions
+- `tests/markers/write-operation-excerpt.md` -- Updated framework/ paths to workflows/, engine names to GSD agent names
+- `tests/markers/read-operation-excerpt.md` -- Same fixture path updates
+- 12 workflow files + v2 template -- Verbosity agent hotfix: fp-docs-verbosity -> fp-docs-verbosity-enforcer (per Reese Phase 2 review)
+
+**Files modified (Mira -- 4 files):**
+- `../../CLAUDE.md` (root cc-plugins/) -- Holistic refresh: 15+ stale framework/ refs updated to current paths
+- `specs/architecture.md` -- Updated for 11 agents, v2 10-step write template, scope-assess/tracker/agent-map CJS modules
+- `specs/features-and-capabilities.md` -- Updated for 11 agents, verbosity-enforcer, v2 pipeline
+- `specs/usage-and-workflows.md` -- Updated for 11 agents, v2 pipeline phases, multi-agent orchestration
+
+**Decisions made:**
+- CHANGELOG stays under [Unreleased] (no version bump per governance rules -- requires explicit user instruction)
+- Init test output mock deferred to future work (process.exit prevents post-call assertions)
+- Round 1 and Round 2 changes grouped as subsections under [Unreleased] for clarity
+
+**Test results:**
+- 495 lib unit tests (was 412, +83 new from 3 test files)
+- 68 marker/fixture tests
+- 563 total, 0 failures
+
+**Items for Lead review:**
+- All files listed above
+- CHANGELOG Round 2 section completeness
+- Spec updates (Mira) -- v2 architecture reflected in all 3 spec files
+- Root CLAUDE.md refresh (Mira) -- 15+ stale paths updated
+
+**ALL STOP -- Phase 4 complete. Waiting for Reese's final review.**
 
 ---

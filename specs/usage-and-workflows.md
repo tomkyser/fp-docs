@@ -2,9 +2,9 @@
 
 <!-- Updated 2026-03-29: Full rewrite for GSD command-workflow-agent architecture (Phase 10 conversion) -->
 
-> **Updated 2026-03-29**: Architecture converted from skill-engine-module to GSD command-workflow-agent chain. 23 commands route through workflows that spawn specialized agents. References replace modules. Hooks migrated from hooks.json to settings.json with standalone JS files.
+> **Updated 2026-03-30**: v2 workflow architecture with dedicated enforcement agents, scope assessment, tracker documents, and dynamic researcher scaling. 23 commands route through workflows that spawn specialized agents. 11 agents including fp-docs-verbosity-enforcer.
 
-> Research compiled from reading all 23 command files, 10 agents, workflows, hooks, CJS modules, configuration files, and references. This document covers installation, setup, daily workflows, command reference, branch sync, configuration, best practices, and gotchas.
+> Research compiled from reading all 23 command files, 11 agents, workflows, hooks, CJS modules, configuration files, and references. This document covers installation, setup, daily workflows, command reference, branch sync, configuration, best practices, and gotchas.
 
 ---
 
@@ -683,9 +683,9 @@ To customize fp-docs behavior:
 
 ## 7. The Post-Modification Pipeline
 
-Every doc-modifying operation runs an 8-stage pipeline after the core work. Under the command-workflow-agent architecture, these stages are split into 3 phases: **Write Phase** (primary op + stages 1-3, assigned to specialist agent), **Review Phase** (stages 4-5, assigned to fp-docs-validator), and **Finalize Phase** (stages 6-8, handled by workflow). Only the workflow commits to git in delegated mode.
+Every doc-modifying operation runs an 8-stage pipeline after the core work. Under the v2 workflow architecture, write operations proceed through a 7-phase model: **Scope Assessment** (CJS determines complexity/researcher count/tracker) -> **Research** (1-N fp-docs-researchers) -> **Plan** (fp-docs-planner) -> **Write** (primary specialist, operation ONLY) -> **Enforce** (stages 1-3 via dedicated agents: fp-docs-verbosity-enforcer, fp-docs-citations, fp-docs-api-refs) -> **Review** (stages 4-5, fp-docs-validator) -> **Finalize** (stages 6-8, workflow). Only the workflow commits to git.
 
-All operations proceed through Research Phase (fp-docs-researcher pre-analyzes source code) and Plan Phase (fp-docs-planner creates execution strategy) before the 8 pipeline stages. The `--no-research` flag skips the Research Phase; `--plan-only` stops after the Plan Phase.
+Key v2 change: enforcement stages 1-3 are each handled by a **dedicated** agent spawn, not folded into the primary specialist. The `--no-research` flag skips Scope Assessment + Research; `--plan-only` stops after Plan.
 
 | Stage | Name | Description | Skippable? |
 |-------|------|-------------|------------|
@@ -887,10 +887,12 @@ The biggest pitfall is confusing the three git repos. The docs directory is a SE
 
 ### Multi-Agent Orchestration
 - All 23 commands route through workflows that orchestrate agent spawning and pipeline execution
-- All operations proceed through a 5-phase model: Research (fp-docs-researcher) -> Plan (fp-docs-planner) -> Write/Read/Admin (specialist) -> Review (fp-docs-validator) -> Finalize (workflow)
-- Write operations use 5 agents: workflow + fp-docs-researcher + fp-docs-planner + specialist + fp-docs-validator
-- Read-only operations use a 4-agent path: workflow + fp-docs-researcher + fp-docs-planner + specialist (with actionable output)
-- Only the workflow commits to git in delegated mode -- specialist agents do not execute git operations
+- Write operations proceed through a 7-phase model: Scope-Assess -> Research (1-N) -> Plan -> Write (primary only) -> Enforce (stages 1-3, dedicated agents) -> Review (stages 4-5) -> Finalize (stages 6-8)
+- Write operations use up to 8 agents: workflow + researcher(s) + planner + specialist + verbosity-enforcer + citations + api-refs + validator
+- Read-only operations use a 5-step path: init + scope-assess + research (1-N) + plan + specialist (with actionable output)
+- Scope assessment (`fp-tools scope-assess`) determines complexity, researcher count, and tracker creation
+- Tracker documents (`fp-tools tracker`) provide cross-agent state tracking for complex operations
+- Only the workflow commits to git -- specialist and enforcement agents do not execute git operations
 - The workflow extracts only summary metrics from delegation results to keep context lean
 - Use `--no-research` for quick operations when latency matters (skips Research Phase)
 - Use `--plan-only` to preview what an operation will do before executing (stops after Plan Phase)

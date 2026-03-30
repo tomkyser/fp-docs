@@ -6,16 +6,16 @@
 
 == ORCHESTRATOR START ==
 
-Received audit request. Classifying as read operation (engine: validate).
+Received audit request. Classifying as read operation (agent: fp-docs-validator).
 
-Delegating to validate engine (2-agent fast path)...
+Delegating to fp-docs-validator agent (2-agent fast path)...
 
-== VALIDATE ENGINE (DELEGATED MODE) ==
+== FP-DOCS-VALIDATOR (DELEGATED MODE) ==
 
 Mode: DELEGATED
 Phase: Read-only audit
 
-Reading instruction file: framework/instructions/validate/audit.md
+Reading workflow: workflows/audit.md
 
 Depth: standard
 Scope: docs/04-hooks/

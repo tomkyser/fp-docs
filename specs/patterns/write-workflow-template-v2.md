@@ -163,7 +163,7 @@ Extract: files modified, summary. These feed into the dedicated enforcement agen
 Skip if `--no-verbosity` flag is set or `verbosity.enabled` is false.
 
 ```bash
-VERBOSITY_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-verbosity --raw)
+VERBOSITY_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-verbosity-enforcer --raw)
 ```
 Spawn dedicated verbosity agent:
 ```
@@ -187,12 +187,12 @@ Agent(
 
     Return a Verbosity Enforcement Result with per-file status (PASS/FIXED/FAIL).
 
-    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update {TRACKER_ID} --step verbosity --agent fp-docs-verbosity --status done --detail {summary}",
-  agent="fp-docs-verbosity",
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update {TRACKER_ID} --step verbosity --agent fp-docs-verbosity-enforcer --status done --detail {summary}",
+  agent="fp-docs-verbosity-enforcer",
   model="${VERBOSITY_MODEL}"
 )
 ```
-Note: fp-docs-verbosity is currently read-only (disallowedTools: [Write, Edit]). For v2, verbosity needs write capability when fixing gaps. This requires updating the agent definition.
+Note: fp-docs-verbosity-enforcer is write-capable (has Write/Edit tools). fp-docs-verbosity remains read-only for audit commands.
 </step>
 
 <step name="enforce-citations">
@@ -343,17 +343,9 @@ Include completion marker verbatim in final report.
 
 ---
 
-## Agent Definition Changes Required
+## Agent Definition Status
 
-### fp-docs-verbosity needs Write/Edit
-
-Currently `disallowedTools: [Write, Edit]`. For v2 pipeline stage isolation, verbosity needs to fix gaps it finds. Two options:
-
-**Option A (preferred):** Create a new agent `fp-docs-verbosity-enforcer` that has Write/Edit, used only in pipeline stage 1. Keep fp-docs-verbosity as read-only for the `/fp-docs:verbosity-audit` command.
-
-**Option B:** Remove disallowedTools from fp-docs-verbosity and trust the workflow to only give it write permissions when spawned as a pipeline enforcer.
-
-Recommend Option A for safety -- read-only commands should never accidentally get write tools.
+**Resolved (Phase 2):** Option A implemented -- `fp-docs-verbosity-enforcer` agent created with Write/Edit tools for pipeline stage 1 enforcement. `fp-docs-verbosity` remains read-only for `/fp-docs:verbosity-audit`.
 
 ---
 
