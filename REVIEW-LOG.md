@@ -210,14 +210,75 @@
 ---
 
 ## Phase 6: Commands
-**Reviewed**: pending
-**Verdict**: pending
+**Reviewed**: 2026-03-29
+**Verdict**: PASS
+
+### Files Reviewed
+**All 23 command files (Mira):**
+- `commands/fp-docs/revise.md`, `commands/fp-docs/add.md`, `commands/fp-docs/auto-update.md`, `commands/fp-docs/auto-revise.md`, `commands/fp-docs/deprecate.md`
+- `commands/fp-docs/audit.md`, `commands/fp-docs/verify.md`, `commands/fp-docs/sanity-check.md`, `commands/fp-docs/test.md`, `commands/fp-docs/verbosity-audit.md`
+- `commands/fp-docs/citations.md`, `commands/fp-docs/api-ref.md`, `commands/fp-docs/locals.md`
+- `commands/fp-docs/setup.md`, `commands/fp-docs/sync.md`, `commands/fp-docs/update.md`, `commands/fp-docs/update-skills.md`, `commands/fp-docs/update-index.md`, `commands/fp-docs/update-claude.md`
+- `commands/fp-docs/parallel.md`, `commands/fp-docs/remediate.md`
+- `commands/fp-docs/do.md`, `commands/fp-docs/help.md`
+
+### Verification
+- [x] All 23 command files present in `commands/fp-docs/`
+- [x] Frontmatter schema consistent: name (fp-docs:{command}), description, argument-hint, allowed-tools
+- [x] All 5 XML sections present in all 23: `<objective>`, `<execution_context>`, `<context>`, `<process>`, `<success_criteria>`
+- [x] `doc-standards.md` and `fp-project.md` in every command's `<execution_context>` (23/23 -- user decision enforced)
+- [x] Read commands (audit, verify, sanity-check, test, verbosity-audit): no Write/Edit in allowed-tools
+- [x] Meta commands (do, help): no Task in allowed-tools
+- [x] Write/admin commands: full tool sets (Read, Write, Edit, Bash, Grep, Glob, Task)
+- [x] All workflow references use `@${CLAUDE_PLUGIN_ROOT}/workflows/` prefix
+- [x] All reference file paths use `@${CLAUDE_PLUGIN_ROOT}/references/` prefix
+- [x] No hardcoded paths -- all use `${CLAUDE_PLUGIN_ROOT}`
+- [x] No files outside phase scope modified
+
+### Issues Found
+#### CRITICAL
+- None
+
+#### MINOR (Second Pass)
+- None
 
 ---
 
 ## Phase 7: Hooks
-**Reviewed**: pending
-**Verdict**: pending
+**Reviewed**: 2026-03-29
+**Verdict**: PASS
+
+### Files Reviewed
+**New hook files (Kai -- 6 files):**
+- `hooks/fp-docs-session-start.js` -- combines inject-manifest + branch-sync + drift-nudge
+- `hooks/fp-docs-check-update.js` -- plugin update check
+- `hooks/fp-docs-git-guard.js` -- PreToolUse Bash guard (exit 0 allow / exit 2 block)
+- `hooks/fp-docs-subagent-stop.js` -- AGENT_NAME_MAP for all 10 new agent names
+- `hooks/fp-docs-teammate-idle.js` -- TeammateIdle handler
+- `hooks/fp-docs-task-completed.js` -- TaskCompleted handler
+
+**Modified:**
+- `settings.json` -- full hook registrations replacing hooks.json
+
+### Verification
+- [x] All 6 JS hook files pass `node -c` syntax check
+- [x] settings.json: PreToolUse Bash matcher -> fp-docs-git-guard.js
+- [x] settings.json: SessionStart -> fp-docs-session-start.js + fp-docs-check-update.js
+- [x] settings.json: SubagentStop 7 matchers (modifier, validator, citations, api-refs, locals, indexer, system) -> fp-docs-subagent-stop.js
+- [x] settings.json: TeammateIdle -> fp-docs-teammate-idle.js
+- [x] settings.json: TaskCompleted -> fp-docs-task-completed.js
+- [x] fp-docs-subagent-stop.js: AGENT_NAME_MAP covers all 10 new fp-docs-* agent names
+- [x] All hooks import from lib/hooks.cjs directly
+- [x] All hooks use async stdin reading pattern
+- [x] Hook file paths in settings.json use `${CLAUDE_PLUGIN_ROOT}/hooks/` prefix
+- [x] No files outside phase scope modified
+
+### Issues Found
+#### CRITICAL
+- None
+
+#### MINOR (Second Pass)
+- None
 
 ---
 
