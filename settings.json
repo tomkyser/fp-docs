@@ -6,5 +6,134 @@
       "Glob"
     ]
   },
-  "hooks": {}
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-git-guard.js\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-session-start.js\""
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-check-update.js\""
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "fp-docs-modifier",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-subagent-stop.js\""
+          }
+        ]
+      },
+      {
+        "matcher": "fp-docs-validator",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-subagent-stop.js\""
+          }
+        ]
+      },
+      {
+        "matcher": "fp-docs-citations",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-subagent-stop.js\""
+          }
+        ]
+      },
+      {
+        "matcher": "fp-docs-api-refs",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-subagent-stop.js\""
+          }
+        ]
+      },
+      {
+        "matcher": "fp-docs-locals",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-subagent-stop.js\""
+          }
+        ]
+      },
+      {
+        "matcher": "fp-docs-indexer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-subagent-stop.js\""
+          }
+        ]
+      },
+      {
+        "matcher": "fp-docs-system",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-subagent-stop.js\""
+          }
+        ]
+      },
+      {
+        "matcher": "fp-docs-researcher",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-subagent-stop.js\""
+          }
+        ]
+      },
+      {
+        "matcher": "fp-docs-planner",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-subagent-stop.js\""
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-teammate-idle.js\""
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-task-completed.js\""
+          }
+        ]
+      }
+    ]
+  }
 }
