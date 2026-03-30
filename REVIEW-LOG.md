@@ -125,8 +125,44 @@
 ---
 
 ## Phase 4: Agents
-**Reviewed**: pending
-**Verdict**: pending
+**Reviewed**: 2026-03-29
+**Verdict**: PASS
+
+### Files Reviewed
+**New agent files (Mira -- 10 files):**
+- `agents/fp-docs-modifier.md` -- write agent (revise, add, auto-update, auto-revise, deprecate)
+- `agents/fp-docs-validator.md` -- read-only agent (audit, verify, sanity-check, test)
+- `agents/fp-docs-citations.md` -- write agent (generate, update, verify, audit)
+- `agents/fp-docs-api-refs.md` -- write agent (generate, audit)
+- `agents/fp-docs-locals.md` -- write agent (annotate, contracts, cross-ref, validate, shapes, coverage)
+- `agents/fp-docs-verbosity.md` -- read-only agent (audit)
+- `agents/fp-docs-indexer.md` -- write agent (update-project-index, update-example-claude)
+- `agents/fp-docs-system.md` -- write agent (setup, sync, update, update-skills)
+- `agents/fp-docs-researcher.md` -- pre-op analysis agent
+- `agents/fp-docs-planner.md` -- execution strategy agent
+
+**Modified CJS (Kai):**
+- `lib/enforcement.cjs` -- STAGE_AUTHORITY_MAP updated with 7 new + 8 legacy entries
+
+### Verification
+- [x] All 10 agent files present with correct names
+- [x] Frontmatter: name, description, tools (comma-separated), color -- consistent across all 10
+- [x] No `model`, `maxTurns`, or `skills` in frontmatter (removed per plan)
+- [x] XML body: all 10 have `<role>`, `<project_context>`, `<execution_protocol>`, `<quality_gate>`
+- [x] Read-only agents (validator, verbosity): tools exclude Write and Edit
+- [x] Write agents: tools include Read, Write, Edit, Bash, Grep, Glob
+- [x] Planner/researcher: tools include Write but not Edit (correct for plan file creation)
+- [x] Delegation Mode sections removed from all agents
+- [x] `<files_to_read>` pattern referenced in execution protocols
+- [x] STAGE_AUTHORITY_MAP: 7 new fp-docs-* entries correct, 8 legacy retained for compat
+- [x] No files outside phase scope modified
+
+### Issues Found
+#### CRITICAL
+- None
+
+#### MINOR (Second Pass)
+- None
 
 ---
 
