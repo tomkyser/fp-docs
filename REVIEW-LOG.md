@@ -167,8 +167,45 @@
 ---
 
 ## Phase 5: Workflows
-**Reviewed**: pending
-**Verdict**: pending
+**Reviewed**: 2026-03-29
+**Verdict**: PASS
+
+### Files Reviewed
+**Write workflows (Mira -- 5, Kai -- 4):**
+- `workflows/revise.md`, `workflows/add.md`, `workflows/auto-update.md`, `workflows/auto-revise.md`, `workflows/deprecate.md` (Mira)
+- `workflows/citations.md` (4 subcmds), `workflows/api-ref.md` (2 subcmds), `workflows/locals.md` (6 subcmds), `workflows/remediate.md` (Kai)
+
+**Read workflows (Mira -- 5):**
+- `workflows/audit.md`, `workflows/verify.md`, `workflows/sanity-check.md`, `workflows/test.md`, `workflows/verbosity-audit.md`
+
+**Admin workflows (Kai -- 6):**
+- `workflows/setup.md`, `workflows/sync.md`, `workflows/update.md`, `workflows/update-skills.md`, `workflows/update-index.md`, `workflows/update-claude.md`
+
+**Meta workflows (Mira -- 2):**
+- `workflows/do.md` (routing table), `workflows/help.md`
+
+**Batch workflow (Kai -- 1):**
+- `workflows/parallel.md` (Agent Teams with fallback)
+
+### Verification
+- [x] All 23 workflow files present (matches plan exactly)
+- [x] All 23 have required XML sections: `<purpose>`, `<required_reading>`, `<process>`, `<success_criteria>`
+- [x] Init routing correct: 8 write-op, 5 read-op, 6 admin-op, 1 parallel, 1 remediate, 2 meta (no init)
+- [x] Write workflows include 3-phase delegation: research -> plan -> write (stages 1-3) -> review (stages 4-5) -> finalize (stages 6-8)
+- [x] Read workflows: research -> plan -> specialist, no pipeline
+- [x] Admin workflows: init -> execute, no pipeline
+- [x] Multi-subcommand workflows parse first arg as subcommand with usage errors
+- [x] Agent spawning uses `resolve-model` for dynamic model resolution
+- [x] `${CLAUDE_PLUGIN_ROOT}` used consistently (no hardcoded paths)
+- [x] `@file:` protocol handled in init parse blocks
+- [x] No files outside phase scope modified
+
+### Issues Found
+#### CRITICAL
+- None
+
+#### MINOR (Second Pass)
+- None
 
 ---
 
