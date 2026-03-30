@@ -2,10 +2,9 @@
 command: api-ref
 engine: api-refs
 operation: (subcommand)
-instruction: framework/instructions/api-refs/{subcommand}.md
-agent: orchestrate
-context: fork
-type: varies
+workflow: workflows/api-ref.md
+agent: fp-docs-api-refs
+type: write
 pipeline_stages: varies
 subcommands: generate, audit
 flags: none
@@ -16,8 +15,8 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:api-ref "generate|audit [scope]"`
-2. Skill SKILL.md parses first word as subcommand, passes to orchestrate engine
-3. Orchestrate classifies based on subcommand:
+2. Command file loads workflow `workflows/api-ref.md` via `@-reference`
+3. Workflow classifies based on subcommand:
    - `generate`: write operation with pipeline stages 1, 2, 4-8
    - `audit`: read operation with no pipeline stages
 

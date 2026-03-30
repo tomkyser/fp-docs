@@ -2,9 +2,8 @@
 command: update-skills
 engine: system
 operation: update-skills
-instruction: framework/instructions/system/update-skills.md
-agent: orchestrate
-context: fork
+workflow: workflows/update-skills.md
+agent: fp-docs-system
 type: admin
 pipeline_stages: none
 subcommands: none
@@ -16,9 +15,9 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:update-skills`
-2. Skill SKILL.md passes context to orchestrate engine
-3. Orchestrate classifies as admin operation (engine: system)
-4. Orchestrate delegates directly to system engine
+2. Command file loads workflow `workflows/update-skills.md` via `@-reference`
+3. Workflow initializes via `fp-tools init admin-op`
+4. Workflow spawns fp-docs-system for command file regeneration
 5. No pipeline triggered -- admin operation with direct execution
 
 ## Pipeline Stages
@@ -32,8 +31,8 @@ None. Admin operations execute directly without the 8-stage pipeline.
 
 ## Files Typically Touched
 
-- skills/*/SKILL.md files (regenerated from prompt definitions)
-- Preserves customizations in existing skill files
+- commands/fp-docs/*.md files (regenerated from current definitions)
+- Preserves customizations in existing command files
 
 ## Error Paths
 

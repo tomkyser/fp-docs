@@ -2,9 +2,8 @@
 command: audit
 engine: validate
 operation: audit
-instruction: framework/instructions/validate/audit.md
-agent: orchestrate
-context: fork
+workflow: workflows/audit.md
+agent: fp-docs-validator
 type: read
 pipeline_stages: none
 subcommands: none
@@ -16,9 +15,9 @@ flags: --depth quick|standard|deep
 ## Routing Path
 
 1. User invokes `/fp-docs:audit "--depth quick|standard|deep [scope]"`
-2. Skill SKILL.md passes `$ARGUMENTS` to orchestrate engine
-3. Orchestrate classifies as read operation (engine: validate)
-4. Orchestrate delegates to validate engine (2-agent fast path)
+2. Command file loads workflow `workflows/audit.md` via `@-reference`
+3. Workflow initializes via `fp-tools init read-op`
+4. Workflow spawns fp-docs-validator in standalone mode
 5. No pipeline stages triggered -- read operations skip full pipeline
 
 ## Pipeline Stages

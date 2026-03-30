@@ -447,7 +447,7 @@ describe('STAGE_AUTHORITY_MAP', () => {
     assert.equal(typeof enforcement.STAGE_AUTHORITY_MAP, 'object');
   });
 
-  it('maps all expected agents', () => {
+  it('maps all legacy agent names', () => {
     const map = enforcement.STAGE_AUTHORITY_MAP;
     assert.equal(map.researcher, 'research');
     assert.equal(map.planner, 'plan');
@@ -459,7 +459,18 @@ describe('STAGE_AUTHORITY_MAP', () => {
     assert.equal(map.orchestrate, 'finalize');
   });
 
-  it('has exactly 8 entries', () => {
-    assert.equal(Object.keys(enforcement.STAGE_AUTHORITY_MAP).length, 8);
+  it('maps all new fp-docs-* agent names', () => {
+    const map = enforcement.STAGE_AUTHORITY_MAP;
+    assert.equal(map['fp-docs-researcher'], 'research');
+    assert.equal(map['fp-docs-planner'], 'plan');
+    assert.equal(map['fp-docs-modifier'], 'write');
+    assert.equal(map['fp-docs-citations'], 'write');
+    assert.equal(map['fp-docs-api-refs'], 'write');
+    assert.equal(map['fp-docs-locals'], 'write');
+    assert.equal(map['fp-docs-validator'], 'review');
+  });
+
+  it('has exactly 15 entries (7 new fp-docs-* + 8 legacy)', () => {
+    assert.equal(Object.keys(enforcement.STAGE_AUTHORITY_MAP).length, 15);
   });
 });

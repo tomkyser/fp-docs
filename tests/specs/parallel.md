@@ -2,9 +2,8 @@
 command: parallel
 engine: orchestrate
 operation: parallel
-instruction: framework/instructions/orchestrate/delegate.md
-agent: orchestrate
-context: fork
+workflow: workflows/parallel.md
+agent: none
 type: batch
 pipeline_stages: varies
 subcommands: none
@@ -16,9 +15,9 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:parallel "operation scope flags"`
-2. Skill SKILL.md passes `$ARGUMENTS` to orchestrate engine
-3. Orchestrate parses operation, scope, and flags from arguments
-4. Orchestrate creates Agent Team via TeamCreate tool
+2. Command file loads workflow `workflows/parallel.md` via `@-reference`
+3. Workflow parses operation, scope, and flags from arguments
+4. Workflow creates Agent Team via TeamCreate tool
 5. Team members execute the specified operation in parallel across target files
 6. TeammateIdle hook validates each teammate's completion
 7. TaskCompleted hook validates each task's output

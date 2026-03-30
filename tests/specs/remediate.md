@@ -2,9 +2,8 @@
 command: remediate
 engine: orchestrate
 operation: remediate
-instruction: framework/instructions/orchestrate/remediate.md
-agent: orchestrate
-context: fork
+workflow: workflows/remediate.md
+agent: none
 type: write
 pipeline_stages: stages 4-8 (validation + finalization after specialist execution)
 subcommands: none
@@ -16,9 +15,8 @@ flags: --plan-only, --batch-mode
 ## Routing Path
 
 1. User invokes `/fp-docs:remediate` (optionally with plan-id, plan-number, plan-path, or `--plan-only`)
-2. Skill SKILL.md passes `$ARGUMENTS` to orchestrate engine
-3. Orchestrate reads instruction file `framework/instructions/orchestrate/remediate.md`
-4. Orchestrate determines remediation source: session audit results, saved plan, or `--plan-only` mode
+2. Command file loads workflow `workflows/remediate.md` via `@-reference`
+3. Workflow determines remediation source: session audit results, saved plan, or `--plan-only` mode
 5. If `--plan-only`: build plan from session audit results, save via `fp-tools.cjs remediate save`, display summary, stop
 6. If plan-id/path/number: load saved plan via `fp-tools.cjs remediate load`
 7. If no arguments: build plan from session audit results, proceed to execution

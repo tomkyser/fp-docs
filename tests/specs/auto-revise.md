@@ -2,9 +2,8 @@
 command: auto-revise
 engine: modify
 operation: auto-revise
-instruction: framework/instructions/modify/auto-revise.md
-agent: orchestrate
-context: fork
+workflow: workflows/auto-revise.md
+agent: fp-docs-modifier
 type: write
 pipeline_stages: [1, 2, 3, 4, 5, 6, 7, 8]
 subcommands: none
@@ -16,11 +15,13 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:auto-revise "optional flags like --dry-run"`
-2. Skill SKILL.md passes `$ARGUMENTS` to orchestrate engine
-3. Orchestrate classifies as write operation (engine: modify)
-4. Orchestrate delegates Write Phase (operation + stages 1-3) to modify engine
-5. Orchestrate delegates Review Phase (stages 4-5) to validate engine
-6. Orchestrate handles Finalize Phase (stages 6-8) itself
+2. Command file loads workflow `workflows/auto-revise.md` via `@-reference`
+3. Workflow initializes via `fp-tools init write-op`
+4. Workflow reads needs-revision-tracker.md, selects items to process
+5. Workflow spawns fp-docs-modifier for Write Phase (operation + stages 1-3)
+6. Workflow spawns fp-docs-validator for Review Phase (stages 4-5)
+7. Workflow handles Finalize Phase (stages 6-8) via pipeline callback loop
+8. Workflow updates tracker status for processed items
 
 ## Pipeline Stages
 

@@ -2,11 +2,11 @@
 
 // Behavioral spec structural validation module.
 // Validates that behavioral spec files in tests/specs/ have correct
-// routing metadata matching actual skill files in skills/.
+// routing metadata matching the routing table in lib/routing.cjs
+// and corresponding command/workflow files on disk.
 //
-// Uses parseFrontmatter and parseBodyField from frontmatter-parser.cjs
-// to parse both spec files and skill files, then cross-references
-// their routing metadata.
+// Uses parseFrontmatter from frontmatter-parser.cjs to parse spec files,
+// then cross-references against the canonical routing table.
 //
 // Registered in run.cjs as the --commands test module.
 
@@ -14,13 +14,16 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
-const { parseFrontmatter, parseBodyField } = require('./frontmatter-parser.cjs');
+const { parseFrontmatter } = require('./frontmatter-parser.cjs');
 
 const SPECS_DIR = path.join(__dirname, '..', 'specs');
-const SKILLS_DIR = path.resolve(__dirname, '..', '..', 'skills');
+const PLUGIN_ROOT = path.resolve(__dirname, '..', '..');
+
+const { getRoutingTable } = require(path.join(PLUGIN_ROOT, 'lib', 'routing.cjs'));
+const routingTable = getRoutingTable();
 
 // Valid type values for behavioral specs
-const VALID_TYPES = ['write', 'read', 'admin', 'batch', 'varies', 'meta'];
+const VALID_TYPES = ['write', 'read', 'admin', 'batch', 'meta'];
 
 // Auto-discover all .md files in specs directory
 const specFiles = fs.readdirSync(SPECS_DIR)
@@ -43,18 +46,27 @@ for (const specFile of specFiles) {
 
 describe('Behavioral Specs', () => {
 
-  it('covers all 20 document-operation commands', () => {
+  it('covers all 21 document-operation commands', () => {
     assert.strictEqual(
       documentSpecs.length,
-      20,
-      `Expected 20 document-operation spec files, found ${documentSpecs.length}: ${documentSpecs.join(', ')}`
+      21,
+      `Expected 21 document-operation spec files, found ${documentSpecs.length}: ${documentSpecs.join(', ')}`
     );
   });
 
-  it('has meta-command specs', () => {
-    assert.ok(
-      metaSpecs.length > 0,
-      `Expected at least 1 meta-command spec file, found ${metaSpecs.length}`
+  it('has 2 meta-command specs', () => {
+    assert.strictEqual(
+      metaSpecs.length,
+      2,
+      `Expected 2 meta-command spec files, found ${metaSpecs.length}: ${metaSpecs.join(', ')}`
+    );
+  });
+
+  it('total spec count matches routing table (23)', () => {
+    assert.strictEqual(
+      specFiles.length,
+      Object.keys(routingTable).length,
+      `Expected ${Object.keys(routingTable).length} spec files matching routing table, found ${specFiles.length}`
     );
   });
 
@@ -64,52 +76,64 @@ describe('Behavioral Specs', () => {
     const specContent = fs.readFileSync(specPath, 'utf-8');
     const { frontmatter: specFm, body: specBody } = parseFrontmatter(specContent);
 
-    // Locate corresponding skill file
-    const skillPath = path.join(SKILLS_DIR, commandName, 'SKILL.md');
+    const route = routingTable[commandName];
 
     describe(`Command: ${commandName}`, () => {
 
-      it('has a corresponding skill file', () => {
+      it('has a corresponding command file', () => {
+        const commandPath = path.join(PLUGIN_ROOT, 'commands', 'fp-docs', `${commandName}.md`);
         assert.ok(
-          fs.existsSync(skillPath),
-          `Skill file not found at ${skillPath}`
+          fs.existsSync(commandPath),
+          `Command file not found at commands/fp-docs/${commandName}.md`
         );
       });
 
-      // Only run skill-dependent tests if the skill file exists
-      if (fs.existsSync(skillPath)) {
-        const skillContent = fs.readFileSync(skillPath, 'utf-8');
-        const { frontmatter: skillFm, body: skillBody } = parseFrontmatter(skillContent);
+      it('has a routing table entry', () => {
+        assert.ok(
+          route,
+          `No routing table entry for command "${commandName}"`
+        );
+      });
 
-        it('spec engine matches skill Engine field', () => {
-          const skillEngine = parseBodyField(skillBody, 'Engine');
-          assert.ok(skillEngine, 'Skill file missing Engine field in body');
-          assert.strictEqual(
-            specFm.engine,
-            skillEngine,
-            `Spec engine "${specFm.engine}" does not match skill Engine "${skillEngine}"`
-          );
-        });
-
-        it('spec agent matches skill agent frontmatter', () => {
+      // Only run routing-dependent tests if the route exists
+      if (route) {
+        it('spec agent matches routing table', () => {
+          const expectedAgent = route.agent || 'none';
           assert.strictEqual(
             specFm.agent,
-            skillFm.agent,
-            `Spec agent "${specFm.agent}" does not match skill agent "${skillFm.agent}"`
+            expectedAgent,
+            `Spec agent "${specFm.agent}" does not match routing table agent "${expectedAgent}"`
           );
         });
 
-        it('spec context matches skill context frontmatter', () => {
+        it('spec type matches routing table', () => {
           assert.strictEqual(
-            specFm.context,
-            skillFm.context,
-            `Spec context "${specFm.context}" does not match skill context "${skillFm.context}"`
+            specFm.type,
+            route.type,
+            `Spec type "${specFm.type}" does not match routing table type "${route.type}"`
+          );
+        });
+
+        it('spec workflow file exists', () => {
+          const workflowPath = path.join(PLUGIN_ROOT, specFm.workflow);
+          assert.ok(
+            fs.existsSync(workflowPath),
+            `Workflow file not found at ${specFm.workflow}`
+          );
+        });
+
+        it('spec workflow matches routing table', () => {
+          const expectedWorkflow = `workflows/${route.workflow}`;
+          assert.strictEqual(
+            specFm.workflow,
+            expectedWorkflow,
+            `Spec workflow "${specFm.workflow}" does not match routing table "workflows/${route.workflow}"`
           );
         });
       }
 
       it('has required frontmatter fields', () => {
-        const requiredFields = ['command', 'engine', 'agent', 'context', 'type'];
+        const requiredFields = ['command', 'engine', 'workflow', 'agent', 'type'];
         for (const field of requiredFields) {
           assert.ok(
             specFm[field],
@@ -118,7 +142,7 @@ describe('Behavioral Specs', () => {
         }
       });
 
-      it('type is one of: write, read, admin, batch, varies, meta', () => {
+      it('type is one of: write, read, admin, batch, meta', () => {
         assert.ok(
           VALID_TYPES.includes(specFm.type),
           `Spec "${commandName}" has invalid type "${specFm.type}". Must be one of: ${VALID_TYPES.join(', ')}`

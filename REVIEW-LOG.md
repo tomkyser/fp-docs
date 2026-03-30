@@ -320,8 +320,38 @@
 ---
 
 ## Phase 9: Tests
-**Reviewed**: pending
-**Verdict**: pending
+**Reviewed**: 2026-03-29
+**Verdict**: PASS
+
+### Files Reviewed
+**Mira -- 23 spec files updated:**
+- All 23 `tests/specs/*.md` files: replaced `instruction` with `workflow`, updated agent names, removed `context: fork`, updated routing path sections, corrected type classifications (update->admin, update-index->admin, update-claude->admin, citations/api-ref/locals->write)
+
+**Kai -- test infrastructure (7 files modified, 2 created):**
+- `tests/lib/lib-routing-tests.cjs` -- 5-field schema, 23 entries, 5 group headings
+- `tests/lib/cli-runner.cjs` -- help count >= 23, engine nullable for meta
+- `tests/lib/lib-engine-compliance-tests.cjs` -- system-config.md tests migrated to config.json
+- `tests/lib/lib-enforcement-tests.cjs` -- STAGE_AUTHORITY_MAP 8->15 entries, fp-docs-* tests
+- `tests/lib/spec-validator.cjs` -- rewired from skill SKILL.md parsing to routing table cross-reference, validates command/workflow files
+- `tests/run.cjs` -- registered init and model-profiles test modules
+- `tests/lib/lib-init-tests.cjs` (new) -- unit tests for lib/init.cjs
+- `tests/lib/lib-model-profiles-tests.cjs` (new) -- unit tests for lib/model-profiles.cjs
+
+### Verification
+- [x] Full test suite: 732 pass, 0 fail, 7 skipped (confirmed by running `node tests/run.cjs`)
+- [x] All 17 original Phase 8 failures resolved (routing schema, deleted config, STAGE_AUTHORITY_MAP count)
+- [x] 74 spec-validator failures resolved after spec-validator.cjs update
+- [x] New init tests pass (write-op, read-op, admin-op, parallel, remediate)
+- [x] New model-profiles tests pass (6/6: exports, resolveModel, listModels)
+- [x] Spec files align with routing table (agent names, types, workflows)
+- [x] No regressions in hook tests, behavioral specs, or core CJS module tests
+
+### Issues Found
+#### CRITICAL
+- None
+
+#### MINOR (Second Pass)
+- spec-validator.cjs was initially missed from Kai's Phase 9 deliverables; caught during review, fixed before commit
 
 ---
 

@@ -2,9 +2,8 @@
 command: add
 engine: modify
 operation: add
-instruction: framework/instructions/modify/add.md
-agent: orchestrate
-context: fork
+workflow: workflows/add.md
+agent: fp-docs-modifier
 type: write
 pipeline_stages: [1, 2, 3, 4, 5, 6, 7, 8]
 subcommands: none
@@ -16,11 +15,13 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:add "description of new code to document"`
-2. Skill SKILL.md passes `$ARGUMENTS` to orchestrate engine
-3. Orchestrate classifies as write operation (engine: modify)
-4. Orchestrate delegates Write Phase (operation + stages 1-3) to modify engine
-5. Orchestrate delegates Review Phase (stages 4-5) to validate engine
-6. Orchestrate handles Finalize Phase (stages 6-8) itself
+2. Command file loads workflow `workflows/add.md` via `@-reference`
+3. Workflow initializes via `fp-tools init write-op`
+4. Workflow spawns fp-docs-researcher for codebase analysis
+5. Workflow spawns fp-docs-planner for change planning
+6. Workflow spawns fp-docs-modifier for Write Phase (operation + stages 1-3)
+7. Workflow spawns fp-docs-validator for Review Phase (stages 4-5)
+8. Workflow handles Finalize Phase (stages 6-8) via pipeline callback loop
 
 ## Pipeline Stages
 

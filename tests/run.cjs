@@ -41,8 +41,10 @@ const filters = {
   update: args.includes('--update'),
   'engine-compliance': args.includes('--engine-compliance'),
   enforcement: args.includes('--enforcement'),
+  init: args.includes('--init'),
+  'model-profiles': args.includes('--model-profiles'),
 };
-const runAll = !filters.hooks && !filters['hooks-ab'] && !filters['locals-cli'] && !filters.commands && !filters.markers && !filters.cli && !filters.state && !filters.git && !filters.pipeline && !filters.plans && !filters.drift && !filters['source-map'] && !filters.update && !filters['engine-compliance'] && !filters.enforcement;
+const runAll = !filters.hooks && !filters['hooks-ab'] && !filters['locals-cli'] && !filters.commands && !filters.markers && !filters.cli && !filters.state && !filters.git && !filters.pipeline && !filters.plans && !filters.drift && !filters['source-map'] && !filters.update && !filters['engine-compliance'] && !filters.enforcement && !filters.init && !filters['model-profiles'];
 
 const testFiles = [];
 if (runAll || filters.hooks) testFiles.push(path.join(__dirname, 'lib', 'fixture-runner.cjs'));
@@ -60,6 +62,8 @@ if (runAll || filters['source-map']) testFiles.push(path.join(__dirname, 'lib', 
 if (runAll || filters.cli || filters.update) testFiles.push(path.join(__dirname, 'lib', 'lib-update-tests.cjs'));
 if (runAll || filters['engine-compliance']) testFiles.push(path.join(__dirname, 'lib', 'lib-engine-compliance-tests.cjs'));
 if (runAll || filters.enforcement) testFiles.push(path.join(__dirname, 'lib', 'lib-enforcement-tests.cjs'));
+if (runAll || filters.init) testFiles.push(path.join(__dirname, 'lib', 'lib-init-tests.cjs'));
+if (runAll || filters['model-profiles']) testFiles.push(path.join(__dirname, 'lib', 'lib-model-profiles-tests.cjs'));
 
 // Track failures for exit code (D-09)
 let hasFailed = false;

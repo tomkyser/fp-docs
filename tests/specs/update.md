@@ -2,10 +2,9 @@
 command: update
 engine: system
 operation: update
-instruction: framework/instructions/system/update.md
-agent: orchestrate
-context: fork
-type: meta
+workflow: workflows/update.md
+agent: fp-docs-system
+type: admin
 pipeline_stages: none
 subcommands: none
 flags: --check-only, --force
@@ -16,11 +15,10 @@ flags: --check-only, --force
 ## Routing Path
 
 1. User invokes `/fp-docs:update [--check-only | --force]`
-2. Skill SKILL.md passes `$ARGUMENTS` to orchestrate engine
-3. Orchestrate classifies as admin operation (engine: system)
-4. Orchestrate delegates directly to system engine
-5. System engine reads instruction file `framework/instructions/system/update.md`
-6. No pipeline triggered -- admin operation with direct execution
+2. Command file loads workflow `workflows/update.md` via `@-reference`
+3. Workflow initializes via `fp-tools init admin-op`
+4. Workflow spawns fp-docs-system for update execution
+5. No pipeline triggered -- admin operation with direct execution
 
 ## Pipeline Stages
 

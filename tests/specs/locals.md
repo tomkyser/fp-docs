@@ -2,10 +2,9 @@
 command: locals
 engine: locals
 operation: (subcommand)
-instruction: framework/instructions/locals/{subcommand}.md
-agent: orchestrate
-context: fork
-type: varies
+workflow: workflows/locals.md
+agent: fp-docs-locals
+type: write
 pipeline_stages: varies
 subcommands: annotate, contracts, cross-ref, validate, shapes, coverage
 flags: none
@@ -16,8 +15,8 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:locals "annotate|contracts|cross-ref|validate|shapes|coverage [scope]"`
-2. Skill SKILL.md parses first word as subcommand, passes to orchestrate engine
-3. Orchestrate classifies based on subcommand:
+2. Command file loads workflow `workflows/locals.md` via `@-reference`
+3. Workflow classifies based on subcommand:
    - `annotate` / `contracts` / `shapes`: write operation with pipeline stages 1, 2, 4-8
    - `cross-ref` / `validate` / `coverage`: read operation with no pipeline stages
 

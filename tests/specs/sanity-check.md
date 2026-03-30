@@ -2,9 +2,8 @@
 command: sanity-check
 engine: validate
 operation: sanity-check
-instruction: framework/instructions/validate/sanity-check.md
-agent: orchestrate
-context: fork
+workflow: workflows/sanity-check.md
+agent: fp-docs-validator
 type: read
 pipeline_stages: none
 subcommands: none
@@ -16,9 +15,9 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:sanity-check "scope like docs/06-helpers/posts.md"`
-2. Skill SKILL.md passes `$ARGUMENTS` to orchestrate engine
-3. Orchestrate classifies as read operation (engine: validate)
-4. Orchestrate delegates to validate engine (2-agent fast path)
+2. Command file loads workflow `workflows/sanity-check.md` via `@-reference`
+3. Workflow initializes via `fp-tools init read-op`
+4. Workflow spawns fp-docs-validator in standalone mode
 5. No pipeline stages triggered -- read operations skip full pipeline
 
 ## Pipeline Stages

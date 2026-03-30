@@ -2,9 +2,8 @@
 command: test
 engine: validate
 operation: test
-instruction: framework/instructions/validate/test.md
-agent: orchestrate
-context: fork
+workflow: workflows/test.md
+agent: fp-docs-validator
 type: read
 pipeline_stages: none
 subcommands: none
@@ -16,9 +15,9 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:test "test scope like rest-api|cli|templates"`
-2. Skill SKILL.md passes `$ARGUMENTS` to orchestrate engine
-3. Orchestrate classifies as read operation (engine: validate)
-4. Orchestrate delegates to validate engine (2-agent fast path)
+2. Command file loads workflow `workflows/test.md` via `@-reference`
+3. Workflow initializes via `fp-tools init read-op`
+4. Workflow spawns fp-docs-validator in standalone mode
 5. No pipeline stages triggered -- read operations skip full pipeline
 
 ## Pipeline Stages

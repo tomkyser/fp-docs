@@ -2,9 +2,8 @@
 command: sync
 engine: system
 operation: sync
-instruction: framework/instructions/system/sync.md
-agent: orchestrate
-context: fork
+workflow: workflows/sync.md
+agent: fp-docs-system
 type: admin
 pipeline_stages: none
 subcommands: merge
@@ -16,9 +15,9 @@ flags: --force
 ## Routing Path
 
 1. User invokes `/fp-docs:sync "[merge] [--force]"`
-2. Skill SKILL.md passes `$ARGUMENTS` to orchestrate engine (references git-sync-rules.md algorithm)
-3. Orchestrate classifies as admin operation (engine: system)
-4. Orchestrate delegates directly to system engine
+2. Command file loads workflow `workflows/sync.md` via `@-reference`
+3. Workflow initializes via `fp-tools init admin-op`
+4. Workflow spawns fp-docs-system for sync execution (references git-sync-rules.md)
 5. No pipeline triggered -- admin operation with direct execution
 
 ## Pipeline Stages

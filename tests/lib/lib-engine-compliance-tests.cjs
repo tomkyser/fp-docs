@@ -147,13 +147,13 @@ describe('Engine Compliance: Baseline', () => {
     assert.ok(content.includes('--no-research'), 'delegate.md should document --no-research flag');
   });
 
-  it('system-config has section 9 for agent model configuration', () => {
-    const content = readFile(path.join(CONFIG_DIR, 'system-config.md'));
-    assert.ok(content.includes('## 9'), 'system-config should have section 9');
-    assert.ok(content.includes('researcher.model'), 'system-config should have researcher.model');
-    assert.ok(content.includes('planner.model'), 'system-config should have planner.model');
-    assert.ok(content.includes('researcher.enabled'), 'system-config should have researcher.enabled');
-    assert.ok(content.includes('planner.enabled'), 'system-config should have planner.enabled');
+  it('config.json has model_profile section for agent model configuration', () => {
+    const configPath = path.join(PLUGIN_ROOT, 'config.json');
+    const content = readFile(configPath);
+    const config = JSON.parse(content);
+    assert.ok(config.model_profile, 'config.json should have model_profile section');
+    assert.ok(config.model_profile.agents, 'model_profile should have agents map');
+    assert.ok(config.system, 'config.json should have system section');
   });
 
   it('mod-orchestration reflects 5-phase pipeline grouping', () => {
@@ -348,11 +348,12 @@ describe('Engine Compliance: Migration', () => {
     );
   });
 
-  it('system-config.md does NOT contain scripts/locals-cli-setup.sh', () => {
-    const content = readFile(path.join(CONFIG_DIR, 'system-config.md'));
+  it('config.json does NOT contain scripts/locals-cli-setup.sh', () => {
+    const configPath = path.join(PLUGIN_ROOT, 'config.json');
+    const content = readFile(configPath);
     assert.ok(
       !content.includes('scripts/locals-cli-setup.sh'),
-      'system-config.md should not reference scripts/locals-cli-setup.sh'
+      'config.json should not reference scripts/locals-cli-setup.sh'
     );
   });
 
