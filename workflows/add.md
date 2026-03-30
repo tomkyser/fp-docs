@@ -6,7 +6,9 @@ enforcement, API reference enforcement, review, and finalization.
 </purpose>
 
 <required_reading>
-Read all files referenced by the invoking command's execution_context.
+DO NOT read reference files yourself. Each step below specifies which files
+its specialist agent will read via files_to_read. You are a dispatcher — pass
+arguments and results between steps, nothing more.
 </required_reading>
 
 <process>

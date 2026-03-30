@@ -31,7 +31,7 @@ None. Admin operations execute directly without the 8-stage pipeline.
 
 ## Files Typically Touched
 
-- commands/fp-docs/*.md files (regenerated from current definitions)
+- commands/*.md files (regenerated from current definitions)
 - Preserves customizations in existing command files
 
 ## Error Paths

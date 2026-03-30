@@ -84,7 +84,7 @@ describe('Behavioral Specs', () => {
         const commandPath = path.join(PLUGIN_ROOT, 'commands', 'fp-docs', `${commandName}.md`);
         assert.ok(
           fs.existsSync(commandPath),
-          `Command file not found at commands/fp-docs/${commandName}.md`
+          `Command file not found at commands/${commandName}.md`
         );
       });
 

@@ -546,7 +546,7 @@ Key architectural concepts:
 
 ### Adding a New Command
 
-1. Create the command file at `commands/fp-docs/{name}.md` with YAML frontmatter and XML body:
+1. Create the command file at `commands/{name}.md` with YAML frontmatter and XML body:
 
    ```yaml
    ---

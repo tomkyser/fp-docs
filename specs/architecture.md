@@ -38,7 +38,7 @@ fp-docs/                              # Git root (independent repo, submodule of
 │   ├── fp-docs-system.md
 │   ├── fp-docs-researcher.md
 │   └── fp-docs-planner.md
-├── commands/fp-docs/                 # 23 user-facing commands (YAML frontmatter + XML body)
+├── commands/                 # 23 user-facing commands (YAML frontmatter + XML body)
 │   ├── revise.md
 │   ├── add.md
 │   ├── auto-update.md
@@ -208,7 +208,7 @@ This is the core architectural pattern. All 23 user commands follow the GSD comm
 User types: /fp-docs:revise "fix the posts helper"
     │
     ▼
-Command file: commands/fp-docs/revise.md
+Command file: commands/revise.md
     │  - YAML frontmatter: name, description, argument-hint, allowed-tools
     │  - XML body: <objective>, <execution_context> (with @-references),
     │    <context>, <process>, <success_criteria>
@@ -242,7 +242,7 @@ Workflow aggregates results → Structured report returned to user
 
 ### Command Anatomy
 
-Commands are thin YAML+XML routing files in `commands/fp-docs/`. Every command loads its workflow and common references via `@-reference`:
+Commands are thin YAML+XML routing files in `commands/`. Every command loads its workflow and common references via `@-reference`:
 
 ```yaml
 ---
@@ -676,7 +676,7 @@ Complete trace of `/fp-docs:revise "fix the posts helper documentation"`:
 ### Phase 2: Command Routing
 
 3. User types `/fp-docs:revise "fix the posts helper documentation"`
-4. Claude Code finds `commands/fp-docs/revise.md`
+4. Claude Code finds `commands/revise.md`
 5. Command loads workflow `workflows/revise.md` + references via `@-reference`
 
 ### Phase 3: Workflow Orchestration

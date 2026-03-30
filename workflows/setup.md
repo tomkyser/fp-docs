@@ -6,7 +6,9 @@ Admin operation -- no pipeline.
 </purpose>
 
 <required_reading>
-Read all files referenced by the invoking command's execution_context.
+DO NOT read reference files yourself. Each step below specifies which files
+its specialist agent will read via files_to_read. You are a dispatcher — pass
+arguments and results between steps, nothing more.
 </required_reading>
 
 <process>
@@ -28,7 +30,7 @@ Parse JSON for: operation context, paths, system state.
 1. Verify all required directories exist: `agents/`, `commands/`, `workflows/`, `references/`, `templates/`, `hooks/`, `lib/`
 2. Validate `.claude-plugin/plugin.json` manifest has required fields (name, version, description)
 3. Verify all 10 agent files exist in `agents/`
-4. Verify all 23 command files exist in `commands/fp-docs/`
+4. Verify all 23 command files exist in `commands/`
 5. Run health check: `node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" health check`
 </step>
 

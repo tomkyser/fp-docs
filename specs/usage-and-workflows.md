@@ -436,7 +436,7 @@ Run /fp-docs:auto-revise to update affected docs, or /fp-docs:drift status for d
 
 ## 4. Complete Command Reference
 
-All 23 commands live in `commands/fp-docs/` as thin YAML+XML routing files. Each command declares its workflow via `@-reference`, which orchestrates agent spawning and pipeline execution.
+All 23 commands live in `commands/` as thin YAML+XML routing files. Each command declares its workflow via `@-reference`, which orchestrates agent spawning and pipeline execution.
 
 ### Meta-Commands (inline workflows, no agent spawning)
 

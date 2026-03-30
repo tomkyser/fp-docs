@@ -33,7 +33,7 @@ The plugin is distributed via the `fp-tools` marketplace and operates through th
 
 ## Complete Command Catalog (23 Commands)
 
-All 23 commands live in `commands/fp-docs/` as thin YAML+XML routing files. Each command declares its workflow via `@-reference`, which orchestrates agent spawning and pipeline execution. Write operations spawn specialized agents through the write workflow template (6 steps: initialize, research, plan, write phase, review phase, finalize phase). Read operations use the read workflow template (4 steps: initialize, research, plan, execute standalone). Meta commands (`/fp-docs:do` and `/fp-docs:help`) use inline workflows that execute directly without agent spawning.
+All 23 commands live in `commands/` as thin YAML+XML routing files. Each command declares its workflow via `@-reference`, which orchestrates agent spawning and pipeline execution. Write operations spawn specialized agents through the write workflow template (6 steps: initialize, research, plan, write phase, review phase, finalize phase). Read operations use the read workflow template (4 steps: initialize, research, plan, execute standalone). Meta commands (`/fp-docs:do` and `/fp-docs:help`) use inline workflows that execute directly without agent spawning.
 
 All 23 commands are managed by the ROUTING_TABLE in `lib/routing.cjs`. Write operations use 5 agents (orchestrator + researcher + planner + specialist + validator); read-only operations use a 4-agent path (orchestrator + researcher + planner + specialist) with actionable output including per-issue command recommendations.
 
@@ -480,7 +480,7 @@ Git operations (including docs-commit) are centralized in `lib/git.cjs` and invo
 ## Noteworthy Design Choices
 
 ### 1. Command-Workflow-Agent Chain
-Commands are thin YAML+XML routing files with no logic. They declare their workflow via `@-reference` and load shared knowledge (doc-standards.md, fp-project.md) into execution context. Workflows orchestrate agent spawning and pipeline phases. Agents do the domain work. This makes the system composable: new commands only need a command file in `commands/fp-docs/` and a workflow in `workflows/`.
+Commands are thin YAML+XML routing files with no logic. They declare their workflow via `@-reference` and load shared knowledge (doc-standards.md, fp-project.md) into execution context. Workflows orchestrate agent spawning and pipeline phases. Agents do the domain work. This makes the system composable: new commands only need a command file in `commands/` and a workflow in `workflows/`.
 
 ### 2. Read-Only Validation
 The fp-docs-validator and fp-docs-verbosity agents explicitly disallow Write and Edit tools via `disallowedTools`. This makes it impossible for validation operations to accidentally modify documentation. Audit/verify results are reports only.

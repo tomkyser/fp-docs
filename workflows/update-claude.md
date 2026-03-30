@@ -7,7 +7,9 @@ enforcement agents, review, and finalization.
 </purpose>
 
 <required_reading>
-Read all files referenced by the invoking command's execution_context.
+DO NOT read reference files yourself. Each step below specifies which files
+its specialist agent will read via files_to_read. You are a dispatcher — pass
+arguments and results between steps, nothing more.
 </required_reading>
 
 <process>
@@ -46,7 +48,7 @@ Agent(
     Primary operation steps:
     1. Read the current project CLAUDE.md (from codebase root, not plugin)
     2. Read the plugin manifest at ${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json
-    3. Read the current command inventory: glob ${CLAUDE_PLUGIN_ROOT}/commands/fp-docs/*.md
+    3. Read the current command inventory: glob ${CLAUDE_PLUGIN_ROOT}/commands/*.md
     4. Extract command names, descriptions, and argument hints from each command's frontmatter
     5. Regenerate the commands table from discovered inventory
     6. Update documentation links to match current doc structure
