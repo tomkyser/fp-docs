@@ -11,7 +11,7 @@
  * - modify / fp-docs-modifier -> handlePostModifyCheck
  * - orchestrate -> handlePostOrchestrateCheck
  * - locals / fp-docs-locals -> handleLocalsCLICleanup
- * - validate, citations, api-refs, researcher, planner -> handleSubagentEnforcementCheck
+ * - validate, citations, api-refs, researcher, planner, verbosity-enforcer -> handleSubagentEnforcementCheck
  *
  * Output: JSON with hookSpecificOutput to stdout.
  */
@@ -60,6 +60,7 @@ async function main() {
       case 'api-refs':
       case 'researcher':
       case 'planner':
+      case 'verbosity-enforcer':
         // Pass canonical name so enforcement check uses correct STAGE_AUTHORITY_MAP key
         result = handleSubagentEnforcementCheck({ ...input, agent_type: canonical });
         break;

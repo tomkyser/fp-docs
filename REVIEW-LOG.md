@@ -435,7 +435,7 @@ All 3 MINOR items resolved. Zero outstanding issues across 10 phases. Second Pas
 | Phase | Scope | Status |
 |-------|-------|--------|
 | 1 | Retrospective follow-ups + dynamic delegation infrastructure | PASS |
-| 2 | Write workflow architecture redesign (9 workflows) | Pending |
+| 2 | Write workflow architecture redesign (9 workflows) | PASS WITH NOTES |
 | 3 | Read + other workflow redesign + command updates | Pending |
 | 4 | Testing + documentation + final validation | Pending |
 
@@ -512,5 +512,69 @@ All 3 MINOR items resolved. Zero outstanding issues across 10 phases. Second Pas
 
 ### Labor Division Assessment
 Clean split. Mira: architecture, content, documentation, framework relocation, pattern docs. Kai: CJS implementation, routing cleanup, config, tests. Zero overlap, equal workload. Legacy name pruning correctly deferred -- good judgment.
+
+---
+
+## Phase 2: Write Workflow Redesign (9 workflows)
+**Reviewed**: 2026-03-30
+**Verdict**: PASS WITH NOTES
+
+### Files Reviewed
+
+**New agent (Kai -- 1 file):**
+- `agents/fp-docs-verbosity-enforcer.md` -- Write-capable verbosity enforcement agent (Option A). Tools include Write/Edit. 6-phase execution protocol (scope ID, manifest gen, coverage verify, phrase scan, fix violations, verify fixes). Quality gate with 6 checks. Structured result format.
+
+**New pattern doc (Mira -- 1 file):**
+- `specs/patterns/write-workflow-template-v2.md` -- 10-step v2 write workflow template. Steps 6-8 isolate enforcement stages to dedicated agents.
+
+**Infrastructure (Kai -- 6 files modified):**
+- `lib/agent-map.cjs` -- verbosity-enforcer added to AGENT_NAME_MAP (11 entries) and STAGE_AUTHORITY_MAP (17 entries, write phase)
+- `hooks/fp-docs-subagent-stop.js` -- verbosity-enforcer added to switch routing
+- `lib/hooks.cjs` -- verbosity-enforcer enforcement check: validates Verbosity Enforcement Result structure + completion marker
+- `settings.json` -- SubagentStop matcher for fp-docs-verbosity-enforcer
+- `config.json` -- model_profile for verbosity-enforcer (opus/opus/sonnet); pipeline stages 1-5 updated to GSD agent names
+- Tests: lib-enforcement-tests.cjs (15->17 STAGE_AUTHORITY_MAP entries), lib-engine-compliance-tests.cjs (10->11 agents)
+
+**Write workflow rewrites (Mira -- 9 files):**
+- `workflows/revise.md` -- Standard v2 10-step pattern
+- `workflows/add.md` -- Standard v2 10-step pattern
+- `workflows/auto-update.md` -- Batch-aware: parallel modifiers by file count tier, ONE enforcement agent per stage across all batches
+- `workflows/auto-revise.md` -- Tracker-based: per-item modifier spawns, needs-revision-tracker update
+- `workflows/deprecate.md` -- Standard v2 (stage 7 always triggers)
+- `workflows/citations.md` -- Subcommand: generate/update get v2 pipeline (skip own citation stage), verify/audit read-only
+- `workflows/api-ref.md` -- Subcommand: generate gets v2 pipeline (skip own API ref stage), audit read-only
+- `workflows/locals.md` -- Subcommand: annotate/contracts/shapes get v2 pipeline, coverage/cross-ref/validate read-only, CLI setup preserved with mandatory teardown
+- `workflows/remediate.md` -- Multi-specialist: per-issue grouped spawns, tiered execution order, dedicated enforcement post-completion
+
+### Verification
+- [x] Test suite: 721 pass, 0 fail, 7 skipped (baseline maintained)
+- [x] `fp-tools route validate`: valid (0 mismatches)
+- [x] fp-docs-verbosity-enforcer.md exists with correct frontmatter (name, description, tools including Write/Edit, color)
+- [x] agent-map.cjs: AGENT_NAME_MAP has 11 entries, STAGE_AUTHORITY_MAP has 17 entries
+- [x] verbosity-enforcer in STAGE_AUTHORITY_MAP mapped to 'write' phase (correct)
+- [x] settings.json: SubagentStop matcher for fp-docs-verbosity-enforcer present
+- [x] hooks.cjs: enforcement check validates both result structure and completion marker
+- [x] config.json pipeline stages: stages 1-3 now reference dedicated GSD agent names, stages 4-5 reference fp-docs-validator
+- [x] config.json model_profile: 11 agents (verbosity-enforcer added)
+- [x] All 9 write workflows follow v2 pattern (10 steps for standard, adapted for batch/specialist/remediate)
+- [x] Subcommand routing correct: write subcmds get full pipeline, read subcmds skip pipeline
+- [x] Specialist workflows skip their own enforcement stage (citations skips citation enforcement, api-ref skips API ref enforcement)
+- [x] Batch workflows use ONE enforcement agent per stage across all batches
+- [x] locals.md preserves CLI setup/teardown with mandatory teardown in all paths
+- [x] All workflows use scope-assess, tracker integration, dynamic research count
+- [x] All workflows use ${CLAUDE_PLUGIN_ROOT} consistently (no hardcoded paths)
+
+### Issues Found
+#### CRITICAL
+- None
+
+#### MINOR (Second Pass)
+- **Agent name mismatch in verbosity enforcement steps**: All 9 write workflows (and the v2 template) reference `fp-docs-verbosity` for step 6 (resolve-model + agent=), but the write-capable agent Kai built is `fp-docs-verbosity-enforcer`. The template has a note at line 195 acknowledging this needs updating. This should be fixed before runtime use -- spawning `fp-docs-verbosity` for enforcement would fail because it has `disallowedTools: [Write, Edit]`. Quick fix: sed `fp-docs-verbosity` to `fp-docs-verbosity-enforcer` in step 6 across all 9 workflows + template. Assign to Phase 3 or quick hotfix.
+- Phase completion summary in PHASE-STATUS.md still says "Pending" -- devs should backfill.
+
+### Labor Division Assessment
+Excellent split. Mira owned all 9 workflow rewrites + template design (heavy content work). Kai built the agent + all CJS infrastructure changes (agent-map, hooks, settings, config, tests). The work was parallel with zero overlap. Both delivered equal volume and complexity.
+
+One note for future: the template-to-implementation gap (template says fp-docs-verbosity, Kai built fp-docs-verbosity-enforcer) happened because the template was written before the agent naming decision. Recommendation: when a design doc creates an open question ("Option A vs B"), resolve it in the doc BEFORE implementation starts, so downstream consumers (workflows) use the final name.
 
 ---

@@ -49,10 +49,11 @@ describe('GSD Compliance: Baseline', () => {
   const AGENT_NAMES = [
     'fp-docs-modifier', 'fp-docs-validator', 'fp-docs-citations',
     'fp-docs-api-refs', 'fp-docs-locals', 'fp-docs-verbosity',
-    'fp-docs-indexer', 'fp-docs-system', 'fp-docs-researcher', 'fp-docs-planner',
+    'fp-docs-verbosity-enforcer', 'fp-docs-indexer', 'fp-docs-system',
+    'fp-docs-researcher', 'fp-docs-planner',
   ];
 
-  it('all 10 specialist agent .md files exist', () => {
+  it('all 11 specialist agent .md files exist', () => {
     for (const name of AGENT_NAMES) {
       const filePath = path.join(AGENTS_DIR, `${name}.md`);
       assert.ok(
@@ -114,10 +115,10 @@ describe('GSD Compliance: Baseline', () => {
     assert.ok(config.pipeline, 'config.json should have pipeline section');
   });
 
-  it('config.json model_profile has all 10 agents', () => {
+  it('config.json model_profile has all 11 agents', () => {
     const config = JSON.parse(readFile(path.join(PLUGIN_ROOT, 'config.json')));
     const agents = Object.keys(config.model_profile.agents);
-    assert.strictEqual(agents.length, 10, `Expected 10 agent profiles, found ${agents.length}`);
+    assert.strictEqual(agents.length, 11, `Expected 11 agent profiles, found ${agents.length}`);
     for (const name of AGENT_NAMES) {
       assert.ok(
         config.model_profile.agents[name],

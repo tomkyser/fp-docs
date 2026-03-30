@@ -2,7 +2,9 @@
 Manage code citations for documentation files. Handles four subcommands:
 generate (create new citations), update (refresh stale citations),
 verify (check citation accuracy without modifying), audit (deep semantic accuracy check).
-Write subcommands (generate, update) trigger the full pipeline.
+Write subcommands (generate, update) delegate to specialized agents for each phase:
+scope assessment, research, planning, primary citation work, verbosity enforcement,
+citation enforcement, API reference enforcement, review, and finalization.
 Read subcommands (verify, audit) produce reports only.
 </purpose>
 
@@ -20,55 +22,24 @@ INIT=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" init write-op citations "$ARGUM
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Parse JSON for: operation context, paths, feature flags, pipeline config.
+Parse JSON for: operation, agent, target_files, pipeline_config, feature_flags.
 
 Parse the first word of `$ARGUMENTS` as the subcommand:
-- `generate` — Create new citation blocks for documentable elements
-- `update` — Refresh existing citations against current source
-- `verify` — Check citation format and symbol existence (read-only)
-- `audit` — Deep semantic accuracy check (read-only)
+- `generate` -- Create new citation blocks for documentable elements (write)
+- `update` -- Refresh existing citations against current source (write)
+- `verify` -- Check citation format and symbol existence (read-only)
+- `audit` -- Deep semantic accuracy check (read-only)
 
 If no subcommand provided, error: "Usage: /fp-docs:citations <generate|update|verify|audit> [target]"
 
-Route to the appropriate procedure below.
-</step>
+Check for flags (write subcommands only):
+- `--no-research`: Skip scope-assess + research phases
+- `--plan-only`: Stop after plan phase
+- `--no-sanity-check`: Skip sanity-check in review phase
+- `--no-verbosity`: Skip dedicated verbosity enforcement
+- `--no-api-ref`: Skip dedicated API reference enforcement
 
-<step name="subcommand-generate">
-## 2a. Generate Subcommand (Write)
-
-1. Parse scope from remaining args: doc file path, `--section NN`, or `--all`.
-2. Read the target documentation file. Identify every documentable element (functions, hooks, meta fields, shortcodes, REST routes, CPT/taxonomy registrations).
-3. Find corresponding source files using the project source-to-doc mapping.
-4. Read source files. For each documentable element, locate the matching code.
-5. Determine citation tier per `references/citation-rules.md`:
-   - <=15 lines: Full tier (complete code excerpt)
-   - 16-100 lines: Signature tier (signature + summary)
-   - >100 lines: Reference tier (marker only)
-6. Generate citation blocks per the citation rules format.
-7. Insert citations at correct positions: after function heading + description, after/below tables, after hook sections.
-8. For unmatched elements: add `[NEEDS INVESTIGATION]` -- do NOT generate fake citations.
-9. Verify format of all inserted citations.
-
-After generation, proceed to the pipeline (step 3).
-</step>
-
-<step name="subcommand-update">
-## 2b. Update Subcommand (Write)
-
-1. Parse scope from remaining args.
-2. Read the documentation file. Parse all existing `> **Citation**` blocks. Extract file path, symbol name, line range, excerpt.
-3. Read current source files for each unique cited file path.
-4. Compare each citation against current source using staleness detection from `references/citation-algorithm.md`:
-   - Symbol lookup -> if not found: Broken
-   - Line range check -> if different: Stale
-   - Excerpt check -> if different: Drifted, if same: Fresh
-5. Update non-Fresh citations:
-   - Stale: update line range only
-   - Drifted: update line range AND regenerate excerpt
-   - Broken: add `[NEEDS INVESTIGATION]` marker
-6. Scan for missing citations (documentable elements without citation blocks). Generate new ones.
-
-After update, proceed to the pipeline (step 3).
+Route: write subcommands -> step 2. Read subcommands -> step 2c/2d directly.
 </step>
 
 <step name="subcommand-verify">
@@ -77,7 +48,7 @@ After update, proceed to the pipeline (step 3).
 1. Parse scope from remaining args.
 2. Read the documentation file. Parse all `> **Citation**` blocks.
 3. For each citation:
-   a. Verify marker format matches: `> **Citation** · \`{file}\` · \`{symbol}\` · L{start}–{end}`
+   a. Verify marker format matches: `> **Citation** · \`{file}\` · \`{symbol}\` · L{start}--{end}`
    b. Verify cited file path exists on disk (relative to theme root)
    c. Verify cited symbol exists in the cited file
    d. Classify: FORMAT (malformed), MISSING (should have citation), BROKEN (symbol not found), FRESH (all good)
@@ -107,30 +78,285 @@ After update, proceed to the pipeline (step 3).
 **No pipeline.** Output the audit report and stop.
 </step>
 
-<step name="pipeline" condition="write-subcommands-only">
-## 3. Pipeline Enforcement (generate/update only)
+<step name="scope-assess" condition="write-subcommands-only">
+## 2. Scope Assessment (generate/update only)
+Skip if `--no-research` flag is set.
 
+```bash
+SCOPE=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" scope-assess citations "$ARGUMENTS")
+if [[ "$SCOPE" == @file:* ]]; then SCOPE=$(cat "${SCOPE#@file:}"); fi
+```
+Parse JSON for: complexity, researcherCount, targets, trackerRequired, delegationPlan.
+
+If trackerRequired:
+```bash
+TRACKER_ID=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" tracker create --command citations --complexity ${complexity})
+```
+</step>
+
+<step name="research" condition="write-subcommands-only">
+## 3. Research Phase (Dynamic, generate/update only)
+Skip if `--no-research` flag is set or `researcher.enabled` is false.
+
+```bash
+RESEARCHER_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-researcher --raw)
+```
+
+For each researcher assignment in delegationPlan.researchers (1-N based on scope):
+```
+Agent(
+  prompt="Analyze source code for citations {subcommand} operation.
+    Targets: {researcher.targets}
+    Tracker: {TRACKER_ID or 'none'}
+    <files_to_read>
+    - ${CLAUDE_PLUGIN_ROOT}/references/codebase-analysis-guide.md
+    </files_to_read>
+    Use source-map for target-to-source mapping:
+    node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs source-map lookup {source-path}
+    Save analysis via: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs plans save-analysis --operation citations --content {analysis}
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step research --agent researcher --status done --detail {summary}",
+  agent="fp-docs-researcher",
+  model="${RESEARCHER_MODEL}"
+)
+```
+
+If researcherCount == 1: spawn synchronously.
+If researcherCount > 1: spawn all in parallel, collect all analyses.
+Extract analysis file path(s). If researcher fails, proceed without analysis.
+</step>
+
+<step name="plan" condition="write-subcommands-only">
+## 4. Plan Phase (generate/update only)
+```bash
+PLANNER_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-planner --raw)
+```
+Spawn planner agent:
+```
+Agent(
+  prompt="Design execution strategy for citations {subcommand} operation.
+    Targets: {targets}
+    Research: {analysis-file-paths or 'none'}
+    Scope: {complexity}
+    Flags: {flags}
+    Tracker: {TRACKER_ID or 'none'}
+    <files_to_read>
+    - ${CLAUDE_PLUGIN_ROOT}/references/pipeline-enforcement.md
+    </files_to_read>
+    Save plan via: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs plans save '{plan-json}'
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step plan --agent planner --status done --detail {summary}",
+  agent="fp-docs-planner",
+  model="${PLANNER_MODEL}"
+)
+```
+Extract plan_id and plan file path. Load plan: `node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs plans load {plan-id}`
+
+If `--plan-only`: display plan summary and STOP.
+</step>
+
+<step name="execute-primary" condition="write-subcommands-only">
+## 5. Write Phase (Primary Operation Only -- generate/update only)
+```bash
+CITATIONS_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-citations --raw)
+```
+Spawn citations agent:
+```
+Agent(
+  prompt="Execute citations {subcommand} operation -- PRIMARY OPERATION ONLY.
+    Targets: {targets}
+    Plan: {plan-file-path}
+    Flags: {flags}
+    Tracker: {TRACKER_ID or 'none'}
+
+    <files_to_read>
+    - ${CLAUDE_PLUGIN_ROOT}/references/citation-rules.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/citation-algorithm.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/doc-standards.md
+    </files_to_read>
+
+    For GENERATE subcommand:
+    1. Parse scope from args: doc file path, --section NN, or --all.
+    2. Read the target documentation file. Identify every documentable element
+       (functions, hooks, meta fields, shortcodes, REST routes, CPT/taxonomy registrations).
+    3. Find corresponding source files using source-map lookup.
+    4. Read source files. For each documentable element, locate the matching code.
+    5. Determine citation tier per citation-rules.md:
+       - <=15 lines: Full tier (complete code excerpt)
+       - 16-100 lines: Signature tier (signature + summary)
+       - >100 lines: Reference tier (marker only)
+    6. Generate citation blocks per the citation rules format.
+    7. Insert citations at correct positions.
+    8. For unmatched elements: add [NEEDS INVESTIGATION] -- do NOT generate fake citations.
+
+    For UPDATE subcommand:
+    1. Parse scope from args.
+    2. Read the documentation file. Parse all existing citation blocks.
+    3. Read current source files for each unique cited file path.
+    4. Compare each citation against current source using staleness detection:
+       - Symbol lookup -> if not found: Broken
+       - Line range check -> if different: Stale
+       - Excerpt check -> if different: Drifted, if same: Fresh
+    5. Update non-Fresh citations:
+       - Stale: update line range only
+       - Drifted: update line range AND regenerate excerpt
+       - Broken: add [NEEDS INVESTIGATION] marker
+    6. Scan for missing citations. Generate new ones.
+
+    IMPORTANT: Do NOT run pipeline enforcement stages (verbosity, API refs).
+    Those are handled by dedicated agents in subsequent steps.
+    Do NOT run stages 4-8.
+    Return a Primary Operation Result listing files modified and a brief summary.
+
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step write --agent fp-docs-citations --status done --detail {summary}",
+  agent="fp-docs-citations",
+  model="${CITATIONS_MODEL}"
+)
+```
+Extract: files modified, summary.
+</step>
+
+<step name="enforce-verbosity" condition="write-subcommands-only">
+## 6. Verbosity Enforcement (Stage 1 -- Dedicated, generate/update only)
+Skip if `--no-verbosity` flag is set or `verbosity.enabled` is false.
+
+```bash
+VERBOSITY_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-verbosity --raw)
+```
+Spawn dedicated verbosity enforcement agent:
+```
+Agent(
+  prompt="Enforce verbosity on files modified by citations {subcommand} operation.
+    Target files: {files from write phase}
+    Tracker: {TRACKER_ID or 'none'}
+
+    <files_to_read>
+    - ${CLAUDE_PLUGIN_ROOT}/references/verbosity-rules.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/verbosity-algorithm.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/doc-standards.md
+    </files_to_read>
+
+    For each target file:
+    1. Identify the corresponding source file(s) via source-map lookup
+    2. Build scope manifest: count every documentable item in source
+    3. Compare against documentation: verify 100% coverage
+    4. Scan for banned summarization phrases
+    5. If gaps found: fix them (add missing items, expand summaries)
+
+    Return a Verbosity Enforcement Result with per-file status (PASS/FIXED/FAIL).
+
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step verbosity --agent fp-docs-verbosity --status done --detail {summary}",
+  agent="fp-docs-verbosity",
+  model="${VERBOSITY_MODEL}"
+)
+```
+</step>
+
+<step name="enforce-api-refs" condition="write-subcommands-only">
+## 7. API Reference Enforcement (Stage 3 -- Dedicated, generate/update only)
+Skip if `--no-api-ref` flag is set or `api_ref.enabled` is false.
+Also skip if no target files require API Reference sections (per doc type).
+
+Note: Citation enforcement (stage 2) is skipped here since the primary agent IS the citations specialist.
+
+```bash
+APIREFS_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-api-refs --raw)
+```
+Spawn dedicated API refs agent:
+```
+Agent(
+  prompt="Enforce API references on files modified by citations {subcommand} operation.
+    Target files: {files from write phase}
+    Tracker: {TRACKER_ID or 'none'}
+
+    <files_to_read>
+    - ${CLAUDE_PLUGIN_ROOT}/references/api-ref-rules.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/api-ref-algorithm.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/doc-standards.md
+    </files_to_read>
+
+    For each target file that requires API Reference:
+    1. Verify API Reference section exists
+    2. Extract function signatures from source code
+    3. Compare against documented signatures
+    4. Update stale rows, add missing rows
+    5. Verify provenance column is populated
+
+    Return an API Reference Enforcement Result with per-file status.
+
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step api-refs --agent fp-docs-api-refs --status done --detail {summary}",
+  agent="fp-docs-api-refs",
+  model="${APIREFS_MODEL}"
+)
+```
+</step>
+
+<step name="execute-review-phase" condition="write-subcommands-only">
+## 8. Review Phase (Stages 4-5, generate/update only)
 ```bash
 VALIDATOR_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-validator --raw)
 ```
-
-### Review Phase (Stages 4-5)
-Spawn validator agent for sanity-check and 10-point verification.
-
-### Finalize Phase (Stages 6-8)
-```bash
-node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" pipeline run-stage 6  # changelog
-node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" pipeline run-stage 7  # index
-node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" pipeline run-stage 8  # docs commit
+Spawn validator agent:
 ```
+Agent(
+  prompt="Validate files modified by the citations {subcommand} operation.
+    Target files: {files from write phase}
+    Tracker: {TRACKER_ID or 'none'}
+
+    <files_to_read>
+    - ${CLAUDE_PLUGIN_ROOT}/references/validation-rules.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/validation-algorithm.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/doc-standards.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/fp-project.md
+    </files_to_read>
+
+    Run sanity-check (stage 4) on all target files.
+    Run 10-point verification (stage 5) on all target files.
+    Return a Pipeline Validation Report.
+
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step review --agent fp-docs-validator --status done --detail {summary}",
+  agent="fp-docs-validator",
+  model="${VALIDATOR_MODEL}"
+)
+```
+If sanity-check confidence is LOW: retry once. If still LOW, report without committing.
+</step>
+
+<step name="execute-finalize-phase" condition="write-subcommands-only">
+## 9. Finalize Phase (Stages 6-8, generate/update only)
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" pipeline init --operation citations --files {files} --changelog-summary "{summary}"
+```
+Loop:
+```bash
+NEXT=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" pipeline next)
+# action == "execute" -> fp-tools pipeline run-stage {id}
+#   Stage 6: Changelog update
+#   Stage 7: Index update
+#   Stage 8: Docs commit and push
+# action == "complete" -> done, extract completion marker
+# action == "blocked" -> HALLUCINATION detected, halt
+```
+
+If tracker exists:
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" tracker update ${TRACKER_ID} --step finalize --agent workflow --status done --detail '{commit-hash}'
+node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" tracker complete ${TRACKER_ID}
+```
+
+Include completion marker verbatim in final report.
 </step>
 
 </process>
 
 <success_criteria>
 - [ ] Subcommand correctly identified and executed
-- [ ] Write operations: all claims verified against source code
-- [ ] Write operations: pipeline stages completed (4-8)
-- [ ] Read operations: comprehensive report generated
+- [ ] Write operations: primary citation work completed by citations agent (step 5)
+- [ ] Write operations: verbosity enforcement completed by dedicated agent (step 6)
+- [ ] Write operations: API ref enforcement completed by dedicated agent (step 7)
+- [ ] Write operations: pipeline stages 4-5 completed by validator agent (step 8)
+- [ ] Write operations: pipeline stages 6-8 completed via CJS pipeline loop (step 9)
+- [ ] Write operations: tracker updated at each phase (if created)
+- [ ] Read operations: comprehensive report generated, no pipeline
 - [ ] No fabricated citations -- unmatched elements tagged [NEEDS INVESTIGATION]
+- [ ] Changelog entry added (write operations)
+- [ ] Docs committed and pushed (write operations)
 </success_criteria>

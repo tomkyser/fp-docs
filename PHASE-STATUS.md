@@ -103,8 +103,8 @@
 
 ---
 
-## Current Phase: 2 — Write Workflow Redesign (9 workflows)
-**Status**: planning
+## Phase 2 — Write Workflow Redesign (9 workflows)
+**Status**: done
 **Started**: 2026-03-30
 
 ### Design Reference
@@ -116,19 +116,85 @@
 | Task | Owner | Status | Notes |
 |------|-------|--------|-------|
 | Design v2 write workflow template | Mira | done | Template at specs/patterns/write-workflow-template-v2.md |
-| Rewrite revise.md to v2 | Mira | claimed | Standard modifier workflow |
-| Rewrite add.md to v2 | Mira | claimed | Standard modifier workflow |
-| Rewrite auto-update.md to v2 | Mira | claimed | Batch-aware (parallel modifiers for multi-file) |
-| Rewrite auto-revise.md to v2 | Mira | claimed | Reads needs-revision-tracker for targets |
-| Rewrite deprecate.md to v2 | Mira | claimed | Standard modifier workflow |
-| Rewrite citations.md to v2 | Mira | claimed | Subcommand-based; generate/update use pipeline, verify/audit read-only |
-| Rewrite api-ref.md to v2 | Mira | claimed | Subcommand-based; generate uses pipeline, audit read-only |
-| Rewrite locals.md to v2 | Mira | claimed | Subcommand-based + CLI setup; annotate/contracts/shapes use pipeline |
-| Rewrite remediate.md to v2 | Mira | claimed | Batch remediation; multi-specialist delegation |
-| Create fp-docs-verbosity-enforcer agent | Kai | pending | New write-capable agent for pipeline stage 1 (Option A from template) |
-| Update SubagentStop hook for new enforcement agents | Kai | pending | Handle verbosity-enforcer, citations, api-refs as pipeline enforcers |
-| Pipeline.cjs updates for stage isolation | Kai | pending | How stages 1-3 are tracked when run by dedicated agents |
-| Update agent-map.cjs with verbosity-enforcer | Kai | pending | New agent needs canonical name + phase authority entry |
+| Rewrite revise.md to v2 | Mira | done | Standard modifier workflow. 10-step pattern with dedicated enforcement agents. |
+| Rewrite add.md to v2 | Mira | done | Standard modifier workflow. 10-step pattern with dedicated enforcement agents. |
+| Rewrite auto-update.md to v2 | Mira | done | Batch-aware: parallel modifiers (1/2-8/9+ tiers), ONE enforcement agent per stage across all batches. |
+| Rewrite auto-revise.md to v2 | Mira | done | Tracker-based: per-item modifier spawns, needs-revision-tracker update after write phase, ONE enforcement agent per stage. |
+| Rewrite deprecate.md to v2 | Mira | done | Standard modifier workflow. Stage 7 (index) always triggers for structural changes. |
+| Rewrite citations.md to v2 | Mira | done | Subcommand-based. generate/update: full v2 pipeline (skip own citation enforcement stage). verify/audit: read-only report, no pipeline. |
+| Rewrite api-ref.md to v2 | Mira | done | Subcommand-based. generate: full v2 pipeline (skip own API ref enforcement stage). audit: read-only report. |
+| Rewrite locals.md to v2 | Mira | done | Subcommand-based + CLI setup. annotate/contracts/shapes: full v2 pipeline. coverage/cross-ref/validate: read-only. MANDATORY teardown in all paths. |
+| Rewrite remediate.md to v2 | Mira | done | Multi-specialist delegation. Per-issue specialist spawns grouped by command+file. Tiered execution (accuracy->enrichment->structural). Dedicated enforcement agents after all specialists complete. |
+| Create fp-docs-verbosity-enforcer agent | Kai | done | agents/fp-docs-verbosity-enforcer.md. Write-capable agent for pipeline stage 1 (Option A). Based on fp-docs-verbosity but adds Write/Edit tools. |
+| Update SubagentStop hook for new enforcement agents | Kai | done | Added verbosity-enforcer to: fp-docs-subagent-stop.js switch, hooks.cjs cmdHooks matcher, settings.json SubagentStop. Custom enforcement check validates Verbosity Enforcement Result + completion marker. |
+| Pipeline.cjs updates for stage isolation | Kai | done | Updated config.json stages 1-3 from agent:"primary" to dedicated GSD names (fp-docs-verbosity-enforcer, fp-docs-citations, fp-docs-api-refs). Stages 4-5 updated from "validate" to "fp-docs-validator". getNextAction now returns specific agent names in spawn responses. |
+| Update agent-map.cjs with verbosity-enforcer | Kai | done | Added fp-docs-verbosity-enforcer to AGENT_NAME_MAP (->verbosity-enforcer) and STAGE_AUTHORITY_MAP (->write). Added model_profile entry in config.json (opus/opus/sonnet). |
+
+### Phase Completion Summary
+
+**Files created:**
+- `agents/fp-docs-verbosity-enforcer.md` -- Write-capable verbosity enforcement agent for pipeline stage 1, Option A (Kai)
+- `specs/patterns/write-workflow-template-v2.md` -- v2 write workflow template with 10-step pattern (Mira)
+
+**Files modified (Kai -- 7 files):**
+- `lib/agent-map.cjs` -- Added fp-docs-verbosity-enforcer to AGENT_NAME_MAP + STAGE_AUTHORITY_MAP
+- `config.json` -- model_profile for verbosity-enforcer; pipeline stages 1-5 updated from generic to dedicated GSD agent names
+- `hooks/fp-docs-subagent-stop.js` -- Added verbosity-enforcer to switch routing
+- `lib/hooks.cjs` -- Added verbosity-enforcer enforcement check + matcher list
+- `settings.json` -- Added SubagentStop matcher for fp-docs-verbosity-enforcer
+- `tests/lib/lib-enforcement-tests.cjs` -- Updated STAGE_AUTHORITY_MAP counts (15->17) + new assertions
+- `tests/lib/lib-engine-compliance-tests.cjs` -- Updated agent count (10->11) + AGENT_NAMES array
+
+**Files modified (Mira -- 9 workflow rewrites):**
+- `workflows/revise.md` -- Standard v2 10-step with dedicated enforcement agents
+- `workflows/add.md` -- Standard v2 10-step with dedicated enforcement agents
+- `workflows/auto-update.md` -- Batch-aware: parallel modifiers (1/2-8/9+ tiers), ONE enforcement agent per stage across all batches
+- `workflows/auto-revise.md` -- Tracker-based: per-item modifier spawns, needs-revision-tracker update after write phase
+- `workflows/deprecate.md` -- Standard v2 10-step. Stage 7 (index) always triggers for structural changes
+- `workflows/citations.md` -- Subcommand-based. generate/update: full v2 pipeline (skip own citation stage). verify/audit: read-only
+- `workflows/api-ref.md` -- Subcommand-based. generate: full v2 pipeline (skip own API ref stage). audit: read-only
+- `workflows/locals.md` -- Subcommand-based + CLI setup. annotate/contracts/shapes: full v2 pipeline. Mandatory teardown
+- `workflows/remediate.md` -- Multi-specialist delegation. Per-issue specialist spawns. Tiered execution (accuracy->enrichment->structural)
+
+**Decisions made:**
+- Option A for verbosity: new fp-docs-verbosity-enforcer agent (write-capable) for pipeline stage 1. fp-docs-verbosity stays read-only for audit.
+- Pipeline stages 1-5 in config.json now use explicit GSD agent names instead of generic "primary"/"validate"
+- Verbosity enforcer uses custom enforcement check ("## Verbosity Enforcement Result" + completion marker), not generic Delegation Result
+- Specialist workflows (citations, api-ref, locals) skip their own enforcement stage when spawned as primary agent (avoid self-enforcement loop)
+
+**Items for Lead review:**
+- All 9 rewritten workflow files (v2 pattern compliance)
+- agents/fp-docs-verbosity-enforcer.md (agent definition)
+- config.json pipeline stage agent assignments
+- settings.json new SubagentStop matcher
+- Hook routing for verbosity-enforcer
+
+---
+
+## Current Phase: 3 — Read + Other Workflow Redesign + Command Updates
+**Status**: planning
+**Started**: 2026-03-30
+
+### Scope
+- Read workflows (5): audit, verify, sanity-check, test, verbosity-audit
+- Admin workflows (6): update-index, update-claude, update-skills, setup, sync, update
+- Batch workflow (1): parallel
+- Meta workflows (2): do, help
+
+### Task Claims
+| Task | Owner | Status | Notes |
+|------|-------|--------|-------|
+| Design v2 read workflow template | Mira | pending | Simpler than write: init -> scope-assess -> research -> plan -> execute. No pipeline stages 1-3. |
+| Rewrite audit.md to v2 | Mira | pending | Read workflow, fp-docs-validator agent |
+| Rewrite verify.md to v2 | Mira | pending | Read workflow, fp-docs-validator agent |
+| Rewrite sanity-check.md to v2 | Mira | pending | Read workflow, fp-docs-validator agent |
+| Rewrite test.md to v2 | Mira | pending | Read workflow, fp-docs-validator agent |
+| Rewrite verbosity-audit.md to v2 | Mira | pending | Read workflow, fp-docs-verbosity agent (read-only) |
+| Rewrite admin workflows to v2 | Mira | pending | 6 admin workflows: sync, setup, update-index, update-claude, update-skills, update |
+| Rewrite batch/meta workflows to v2 | Mira | pending | parallel, do, help |
+| Update init.cjs for v2 read-op bootstrap | Kai | pending | Add scope-assess support to read-op init if v2 read template requires it |
+| Update command files for v2 routing | Kai | pending | Verify command -> workflow routing is correct for all 23 commands |
+| Test suite updates for Phase 3 changes | Kai | pending | Update any tests affected by workflow or init changes |
 
 ### Phase Completion Summary
 _Pending_

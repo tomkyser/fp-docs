@@ -97,6 +97,15 @@
         ]
       },
       {
+        "matcher": "fp-docs-verbosity-enforcer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fp-docs-subagent-stop.js\""
+          }
+        ]
+      },
+      {
         "matcher": "fp-docs-researcher",
         "hooks": [
           {

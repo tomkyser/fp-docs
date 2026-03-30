@@ -1,7 +1,8 @@
 <purpose>
 Locate, update, and validate documentation that the user identifies as wrong or outdated.
-Handles research, planning, modification, pipeline enforcement (verbosity, citations, API refs,
-sanity-check, verification), changelog, index update, and git commit.
+Delegates immediately to specialized agents for each phase: scope assessment, research,
+planning, primary modification, verbosity enforcement, citation enforcement, API reference
+enforcement, review, and finalization.
 </purpose>
 
 <required_reading>
@@ -16,56 +17,84 @@ Read all files referenced by the invoking command's execution_context.
 INIT=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" init write-op revise "$ARGUMENTS")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
-Parse JSON for: operation, engine, target_files, pipeline_config, feature_flags.
+Parse JSON for: operation, agent, target_files, pipeline_config, feature_flags.
 
 Check for flags:
 - `--visual`: Enable visual verification after primary operation
-- `--no-research`: Skip research phase
+- `--no-research`: Skip scope-assess + research phases
 - `--plan-only`: Stop after plan phase
 - `--no-sanity-check`: Skip sanity-check in review phase
+- `--no-verbosity`: Skip dedicated verbosity enforcement
+- `--no-citations`: Skip dedicated citation enforcement
+- `--no-api-ref`: Skip dedicated API reference enforcement
+</step>
+
+<step name="scope-assess">
+## 2. Scope Assessment
+Skip if `--no-research` flag is set.
+
+```bash
+SCOPE=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" scope-assess revise "$ARGUMENTS")
+if [[ "$SCOPE" == @file:* ]]; then SCOPE=$(cat "${SCOPE#@file:}"); fi
+```
+Parse JSON for: complexity, researcherCount, targets, trackerRequired, delegationPlan.
+
+If trackerRequired:
+```bash
+TRACKER_ID=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" tracker create --command revise --complexity ${complexity})
+```
 </step>
 
 <step name="research">
-## 2. Research Phase
-Skip if `--no-research` flag is set or `researcher.enabled` is false in config.
+## 3. Research Phase (Dynamic)
+Skip if `--no-research` flag is set or `researcher.enabled` is false.
 
 ```bash
 RESEARCHER_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-researcher --raw)
 ```
-Spawn researcher agent:
+
+For each researcher assignment in delegationPlan.researchers (1-N based on scope):
 ```
 Agent(
   prompt="Analyze source code for revise operation.
-    Target: {target from init}
+    Targets: {researcher.targets}
+    Tracker: {TRACKER_ID or 'none'}
     <files_to_read>
     - ${CLAUDE_PLUGIN_ROOT}/references/codebase-analysis-guide.md
     </files_to_read>
     Use source-map for target-to-source mapping:
     node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs source-map lookup {source-path}
-    Save analysis via: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs plans save-analysis --operation revise --content {analysis}",
+    Save analysis via: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs plans save-analysis --operation revise --content {analysis}
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step research --agent researcher --status done --detail {summary}",
   agent="fp-docs-researcher",
   model="${RESEARCHER_MODEL}"
 )
 ```
-Extract analysis file path from result. If researcher fails, proceed without analysis.
+
+If researcherCount == 1: spawn synchronously.
+If researcherCount > 1: spawn all in parallel, collect all analyses.
+Extract analysis file path(s). If researcher fails, proceed without analysis.
 </step>
 
 <step name="plan">
-## 3. Plan Phase
+## 4. Plan Phase
 ```bash
 PLANNER_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-planner --raw)
 ```
-Spawn planner agent with research results:
+Spawn planner agent:
 ```
 Agent(
   prompt="Design execution strategy for revise operation.
-    Target: {target}
-    Research Analysis: {analysis-file-path or 'none'}
+    Targets: {targets}
+    Research: {analysis-file-paths or 'none'}
+    Scope: {complexity}
     Flags: {flags}
+    Tracker: {TRACKER_ID or 'none'}
     <files_to_read>
     - ${CLAUDE_PLUGIN_ROOT}/references/pipeline-enforcement.md
     </files_to_read>
-    Save plan via: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs plans save '{plan-json}'",
+    Save plan via: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs plans save '{plan-json}'
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step plan --agent planner --status done --detail {summary}",
   agent="fp-docs-planner",
   model="${PLANNER_MODEL}"
 )
@@ -75,25 +104,23 @@ Extract plan_id and plan file path. Load plan: `node ${CLAUDE_PLUGIN_ROOT}/fp-to
 If `--plan-only`: display plan summary and STOP.
 </step>
 
-<step name="execute-write-phase">
-## 4. Write Phase (Stages 1-3)
+<step name="execute-primary">
+## 5. Write Phase (Primary Operation Only)
 ```bash
 MODIFIER_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-modifier --raw)
 ```
 Spawn modifier agent:
 ```
 Agent(
-  prompt="Execute revise operation with pipeline stages 1-3.
+  prompt="Execute revise operation -- PRIMARY OPERATION ONLY.
     Target: {target}
     Plan: {plan-file-path}
     Flags: {flags}
+    Tracker: {TRACKER_ID or 'none'}
 
     <files_to_read>
     - ${CLAUDE_PLUGIN_ROOT}/references/doc-standards.md
     - ${CLAUDE_PLUGIN_ROOT}/references/fp-project.md
-    - ${CLAUDE_PLUGIN_ROOT}/references/verbosity-algorithm.md
-    - ${CLAUDE_PLUGIN_ROOT}/references/citation-algorithm.md
-    - ${CLAUDE_PLUGIN_ROOT}/references/api-ref-algorithm.md
     </files_to_read>
 
     Primary operation steps:
@@ -102,30 +129,137 @@ Agent(
     2. Read the current documentation file(s).
     3. Read the corresponding source code file(s).
     4. Compare and identify specific discrepancies between doc claims and source code.
-    5. Build a scope manifest per verbosity-algorithm. Count documentable items, establish binding targets.
-    6. Make targeted edits to correct discrepancies:
+    5. Make targeted edits to correct discrepancies:
        - Follow all formatting and content rules from doc-standards.
        - Preserve all content that is still accurate.
        - If revision touches hooks, shortcodes, REST routes, constants, ACF groups, or feature templates,
          check appendix cross-reference table and update the relevant appendix.
-    7. If doc type requires API Reference: verify API Reference section exists and is current.
-    8. If --visual flag present: perform visual verification against foreignpolicy.local.
+    6. If --visual flag present: perform visual verification against foreignpolicy.local.
 
-    Pipeline enforcement (stages 1-3):
-    - Stage 1 (Verbosity): Enforce verbosity against scope manifest
-    - Stage 2 (Citations): Update citations for changed sections
-    - Stage 3 (API Refs): Verify API reference is current
+    IMPORTANT: Do NOT run pipeline enforcement stages (verbosity, citations, API refs).
+    Those are handled by dedicated agents in subsequent steps.
+    Do NOT run stages 4-8.
+    Return a Primary Operation Result listing files modified and a brief summary.
 
-    Do NOT run stages 4-8. Return a Delegation Result.",
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step write --agent fp-docs-modifier --status done --detail {summary}",
   agent="fp-docs-modifier",
   model="${MODIFIER_MODEL}"
 )
 ```
-Extract summary: files modified, stage statuses, issue count.
+Extract: files modified, summary.
+</step>
+
+<step name="enforce-verbosity">
+## 6. Verbosity Enforcement (Stage 1 -- Dedicated)
+Skip if `--no-verbosity` flag is set or `verbosity.enabled` is false.
+
+```bash
+VERBOSITY_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-verbosity --raw)
+```
+Spawn dedicated verbosity enforcement agent:
+```
+Agent(
+  prompt="Enforce verbosity on files modified by revise operation.
+    Target files: {files from write phase}
+    Tracker: {TRACKER_ID or 'none'}
+
+    <files_to_read>
+    - ${CLAUDE_PLUGIN_ROOT}/references/verbosity-rules.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/verbosity-algorithm.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/doc-standards.md
+    </files_to_read>
+
+    For each target file:
+    1. Identify the corresponding source file(s) via source-map lookup
+    2. Build scope manifest: count every documentable item in source
+    3. Compare against documentation: verify 100% coverage
+    4. Scan for banned summarization phrases
+    5. If gaps found: fix them (add missing items, expand summaries)
+
+    Return a Verbosity Enforcement Result with per-file status (PASS/FIXED/FAIL).
+
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step verbosity --agent fp-docs-verbosity --status done --detail {summary}",
+  agent="fp-docs-verbosity",
+  model="${VERBOSITY_MODEL}"
+)
+```
+</step>
+
+<step name="enforce-citations">
+## 7. Citation Enforcement (Stage 2 -- Dedicated)
+Skip if `--no-citations` flag is set or `citations.enabled` is false.
+
+```bash
+CITATIONS_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-citations --raw)
+```
+Spawn dedicated citations agent:
+```
+Agent(
+  prompt="Enforce citations on files modified by revise operation.
+    Target files: {files from write phase}
+    Tracker: {TRACKER_ID or 'none'}
+
+    <files_to_read>
+    - ${CLAUDE_PLUGIN_ROOT}/references/citation-rules.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/citation-algorithm.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/doc-standards.md
+    </files_to_read>
+
+    For each target file:
+    1. Parse existing citation blocks
+    2. Check staleness against current source (Fresh/Stale/Drifted/Broken/Missing)
+    3. Update stale/drifted citations with current source
+    4. Generate missing citations for undocumented elements
+    5. Verify citation format compliance
+
+    Return a Citation Enforcement Result with per-file status.
+
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step citations --agent fp-docs-citations --status done --detail {summary}",
+  agent="fp-docs-citations",
+  model="${CITATIONS_MODEL}"
+)
+```
+</step>
+
+<step name="enforce-api-refs">
+## 8. API Reference Enforcement (Stage 3 -- Dedicated)
+Skip if `--no-api-ref` flag is set or `api_ref.enabled` is false.
+Also skip if no target files require API Reference sections (per doc type).
+
+```bash
+APIREFS_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-api-refs --raw)
+```
+Spawn dedicated API refs agent:
+```
+Agent(
+  prompt="Enforce API references on files modified by revise operation.
+    Target files: {files from write phase}
+    Tracker: {TRACKER_ID or 'none'}
+
+    <files_to_read>
+    - ${CLAUDE_PLUGIN_ROOT}/references/api-ref-rules.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/api-ref-algorithm.md
+    - ${CLAUDE_PLUGIN_ROOT}/references/doc-standards.md
+    </files_to_read>
+
+    For each target file that requires API Reference:
+    1. Verify API Reference section exists
+    2. Extract function signatures from source code
+    3. Compare against documented signatures
+    4. Update stale rows, add missing rows
+    5. Verify provenance column is populated
+
+    Return an API Reference Enforcement Result with per-file status.
+
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step api-refs --agent fp-docs-api-refs --status done --detail {summary}",
+  agent="fp-docs-api-refs",
+  model="${APIREFS_MODEL}"
+)
+```
 </step>
 
 <step name="execute-review-phase">
-## 5. Review Phase (Stages 4-5)
+## 9. Review Phase (Stages 4-5)
 ```bash
 VALIDATOR_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" resolve-model fp-docs-validator --raw)
 ```
@@ -134,6 +268,7 @@ Spawn validator agent:
 Agent(
   prompt="Validate files modified by the revise operation.
     Target files: {files from write phase}
+    Tracker: {TRACKER_ID or 'none'}
 
     <files_to_read>
     - ${CLAUDE_PLUGIN_ROOT}/references/validation-rules.md
@@ -144,7 +279,9 @@ Agent(
 
     Run sanity-check (stage 4) on all target files.
     Run 10-point verification (stage 5) on all target files.
-    Return a Pipeline Validation Report.",
+    Return a Pipeline Validation Report.
+
+    If tracker exists: node ${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs tracker update ${TRACKER_ID} --step review --agent fp-docs-validator --status done --detail {summary}",
   agent="fp-docs-validator",
   model="${VALIDATOR_MODEL}"
 )
@@ -153,7 +290,7 @@ If sanity-check confidence is LOW: retry once. If still LOW, report without comm
 </step>
 
 <step name="execute-finalize-phase">
-## 6. Finalize Phase (Stages 6-8)
+## 10. Finalize Phase (Stages 6-8)
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" pipeline init --operation revise --files {files} --changelog-summary "{summary}"
 ```
@@ -167,6 +304,13 @@ NEXT=$(node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" pipeline next)
 # action == "complete" -> done, extract completion marker
 # action == "blocked" -> HALLUCINATION detected, halt
 ```
+
+If tracker exists:
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" tracker update ${TRACKER_ID} --step finalize --agent workflow --status done --detail '{commit-hash}'
+node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" tracker complete ${TRACKER_ID}
+```
+
 Include completion marker verbatim in final report.
 </step>
 
@@ -175,9 +319,13 @@ Include completion marker verbatim in final report.
 <success_criteria>
 - [ ] Target documentation identified and updated
 - [ ] All source code claims verified against actual source
-- [ ] Pipeline stages 1-3 completed by modifier agent
-- [ ] Pipeline stages 4-5 completed by validator agent
-- [ ] Pipeline stages 6-8 completed via CJS pipeline loop
+- [ ] Primary operation completed by modifier agent (step 5)
+- [ ] Verbosity enforcement completed by dedicated agent (step 6)
+- [ ] Citation enforcement completed by dedicated agent (step 7)
+- [ ] API reference enforcement completed by dedicated agent (step 8)
+- [ ] Pipeline stages 4-5 completed by validator agent (step 9)
+- [ ] Pipeline stages 6-8 completed via CJS pipeline loop (step 10)
+- [ ] Tracker updated at each phase (if created)
 - [ ] Changelog entry added
 - [ ] Docs committed and pushed
 </success_criteria>

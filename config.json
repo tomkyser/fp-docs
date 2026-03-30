@@ -176,6 +176,7 @@
       "fp-docs-api-refs": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
       "fp-docs-locals": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
       "fp-docs-verbosity": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-verbosity-enforcer": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
       "fp-docs-indexer": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
       "fp-docs-system": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
       "fp-docs-researcher": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
@@ -184,11 +185,11 @@
   },
   "pipeline": {
     "stages": [
-      { "id": 1, "name": "verbosity", "phase": "write", "agent": "primary", "skippable": true },
-      { "id": 2, "name": "citations", "phase": "write", "agent": "primary", "skippable": true },
-      { "id": 3, "name": "api-refs", "phase": "write", "agent": "primary", "skippable": true },
-      { "id": 4, "name": "sanity-check", "phase": "review", "agent": "validate", "skippable": false },
-      { "id": 5, "name": "verification", "phase": "review", "agent": "validate", "skippable": false },
+      { "id": 1, "name": "verbosity", "phase": "write", "agent": "fp-docs-verbosity-enforcer", "skippable": true },
+      { "id": 2, "name": "citations", "phase": "write", "agent": "fp-docs-citations", "skippable": true },
+      { "id": 3, "name": "api-refs", "phase": "write", "agent": "fp-docs-api-refs", "skippable": true },
+      { "id": 4, "name": "sanity-check", "phase": "review", "agent": "fp-docs-validator", "skippable": false },
+      { "id": 5, "name": "verification", "phase": "review", "agent": "fp-docs-validator", "skippable": false },
       { "id": 6, "name": "changelog", "phase": "finalize", "agent": "orchestrator", "skippable": false },
       { "id": 7, "name": "index", "phase": "finalize", "agent": "orchestrator", "skippable": true },
       { "id": 8, "name": "docs-commit", "phase": "finalize", "agent": "orchestrator", "skippable": false }

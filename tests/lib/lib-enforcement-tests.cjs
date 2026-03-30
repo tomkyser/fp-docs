@@ -455,6 +455,7 @@ describe('STAGE_AUTHORITY_MAP', () => {
     assert.equal(map.citations, 'write');
     assert.equal(map['api-refs'], 'write');
     assert.equal(map.locals, 'write');
+    assert.equal(map['verbosity-enforcer'], 'write');
     assert.equal(map.validate, 'review');
     assert.equal(map.orchestrate, 'finalize');
   });
@@ -467,10 +468,11 @@ describe('STAGE_AUTHORITY_MAP', () => {
     assert.equal(map['fp-docs-citations'], 'write');
     assert.equal(map['fp-docs-api-refs'], 'write');
     assert.equal(map['fp-docs-locals'], 'write');
+    assert.equal(map['fp-docs-verbosity-enforcer'], 'write');
     assert.equal(map['fp-docs-validator'], 'review');
   });
 
-  it('has exactly 15 entries (7 new fp-docs-* + 8 legacy)', () => {
-    assert.equal(Object.keys(enforcement.STAGE_AUTHORITY_MAP).length, 15);
+  it('has exactly 17 entries (8 new fp-docs-* + 9 legacy)', () => {
+    assert.equal(Object.keys(enforcement.STAGE_AUTHORITY_MAP).length, 17);
   });
 });
