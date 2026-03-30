@@ -125,7 +125,7 @@ The WP-CLI command `wp fp-locals` is the authoritative source. It uses `token_ge
 
 ### CLI Tool Location and Lifecycle
 
-- **Source file**: `{plugin-root}/framework/tools/class-locals-cli.php`
+- **Source file**: `{plugin-root}/tools/class-locals-cli.php`
 - **Setup command**: `node {plugin-root}/fp-tools.cjs locals-cli setup` — copies CLI into theme, registers in `functions.php`, verifies
 - **Teardown command**: `node {plugin-root}/fp-tools.cjs locals-cli teardown` — unregisters, deletes, verifies
 - **Safety net**: SubagentStop hook (CJS `handleLocalsCLICleanup` in lib/hooks.cjs) auto-cleans orphaned artifacts

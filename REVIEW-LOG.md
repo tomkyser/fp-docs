@@ -420,3 +420,97 @@
 
 ### Conclusion
 All 3 MINOR items resolved. Zero outstanding issues across 10 phases. Second Pass complete.
+
+---
+---
+
+# Round 2 — GSD Architecture Conversion (Continued)
+
+> Reviewed by Reese (Principal Engineer).
+> Round 2 addresses retrospective follow-ups, workflow architecture redesign, and final validation.
+> Non-blocking review process: devs proceed to next phase without waiting for review.
+
+## Phases
+
+| Phase | Scope | Status |
+|-------|-------|--------|
+| 1 | Retrospective follow-ups + dynamic delegation infrastructure | PASS |
+| 2 | Write workflow architecture redesign (9 workflows) | Pending |
+| 3 | Read + other workflow redesign + command updates | Pending |
+| 4 | Testing + documentation + final validation | Pending |
+
+---
+
+## Phase 1: Retrospective Follow-ups + Infrastructure
+**Reviewed**: 2026-03-30
+**Verdict**: PASS
+
+### Files Reviewed
+
+**New CJS modules (Kai -- 3 files):**
+- `lib/agent-map.cjs` -- Canonical agent name registry: AGENT_NAME_MAP (10 GSD entries) + STAGE_AUTHORITY_MAP (7 GSD + 8 canonical entries), 5 lookup functions
+- `lib/scope-assess.cjs` -- Pre-delegation scope assessment: complexity estimation, researcher count, delegation strategy, file scope analysis, CLI handler
+- `lib/tracker.cjs` -- JSON tracker doc management: create, read, summary, update, close, addIssue, addNote, list, prune, CLI handler. Atomic write-tmp-rename pattern.
+
+**Consolidation (Kai -- 3 files modified):**
+- `hooks/fp-docs-subagent-stop.js` -- Inline AGENT_NAME_MAP removed, imports getCanonicalName() from agent-map.cjs
+- `lib/enforcement.cjs` -- Inline STAGE_AUTHORITY_MAP removed, imports from agent-map.cjs
+- `lib/init.cjs` -- 3 sites changed from route.engine to route.agent (write-op, read-op, admin-op)
+
+**Legacy field removal (Kai -- 1 file + 4 test files):**
+- `lib/routing.cjs` -- `engine` field removed from all 23 ROUTING_TABLE entries, cmdRoute output changed from engine to agent, cmdHelp table column Engine->Agent
+- `tests/lib/lib-routing-tests.cjs` -- 8 route assertions updated, schema test flipped to assert engine field absence
+- `tests/lib/cli-runner.cjs` -- 4 route/help tests updated for agent field
+
+**CLI wiring (Kai -- 1 file):**
+- `fp-tools.cjs` -- scope-assess and tracker routes added, lazy-require pattern, header comment updated
+
+**Config (Kai -- 1 file):**
+- `config.json` -- system.scope_assess and system.tracker sections added; locals.cli_source path updated
+
+**README trim (Mira -- 1 file):**
+- `README.md` -- Architecture section reduced from ~170 lines to 20-line overview with spec pointers. Stale framework/config refs fixed.
+
+**framework/ relocation and deletion (Mira -- 7+ files):**
+- `tools/class-locals-cli.php` -- Relocated from framework/tools/
+- `playwright-mcp-config.json` -- Relocated from framework/config/ to plugin root
+- `.mcp.json`, `lib/locals-cli.cjs`, `lib/pipeline.cjs`, `lib/drift.cjs` -- Paths updated
+- `references/pipeline-enforcement.md`, `references/locals-rules.md` -- Path refs updated
+- `workflows/update-claude.md` -- manifest.md and skills/ refs fixed
+
+**Spec updates (Mira -- 3 files):**
+- `specs/architecture.md`, `specs/features-and-capabilities.md`, `specs/usage-and-workflows.md` -- Repo layout, tool paths, config section rewritten
+
+**Pattern docs (Mira -- 3 new files):**
+- `specs/patterns/scope-assessment.md`, `specs/patterns/tracker-doc.md`, `specs/patterns/cjs-implementation-spec.md`
+
+### Verification
+- [x] All 3 new CJS modules load without errors
+- [x] `fp-tools route validate`: valid (0 mismatches)
+- [x] Test suite: 721 pass, 0 fail, 7 skipped (matches Round 1 baseline)
+- [x] agent-map.cjs: 10 GSD names + 15 authority entries
+- [x] enforcement.cjs: imports from agent-map.cjs, verifyStageAuthority functional
+- [x] fp-docs-subagent-stop.js: uses getCanonicalName(), handler routing unchanged
+- [x] routing.cjs: zero `engine` fields, cmdRoute/cmdHelp use agent
+- [x] init.cjs: all 3 init functions use route.agent directly
+- [x] framework/ directory completely removed
+- [x] Relocated files present at new locations (tools/, root)
+- [x] Grep for `framework/` in active code: zero hits
+- [x] Legacy name pruning correctly deferred (still load-bearing in hooks)
+- [x] config.json: scope_assess and tracker sections present
+- [x] fp-tools.cjs: scope-assess and tracker routes follow lazy-require pattern
+- [x] README trimmed to overview + spec pointers
+- [x] All 3 spec files updated consistently
+
+### Issues Found
+#### CRITICAL
+- None
+
+#### MINOR (Second Pass)
+- Root CLAUDE.md (cc-plugins/) has ~15 stale `framework/` references -- deferred to Phase 4. Acceptable.
+- Complexity tier naming: scope-assess.cjs uses low/medium/high, tracker design spec uses light/standard/heavy. Cosmetic.
+
+### Labor Division Assessment
+Clean split. Mira: architecture, content, documentation, framework relocation, pattern docs. Kai: CJS implementation, routing cleanup, config, tests. Zero overlap, equal workload. Legacy name pruning correctly deferred -- good judgment.
+
+---

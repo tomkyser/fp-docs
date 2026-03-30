@@ -521,200 +521,24 @@ The chunk delegation system auto-triggers when scope exceeds 8 docs or 50 functi
 
 ## Architecture
 
-### Repository Structure
+fp-docs uses a **command-workflow-agent** architecture. User commands are thin routing files that reference workflows. Workflows orchestrate multi-agent execution. Agents are domain-specialized workers (modifier, validator, citations, etc.).
 
 ```
-fp-docs/                              # Git root (independent repo, submodule of fp-tools)
-├── .claude-plugin/
-│   └── plugin.json                   # Plugin manifest (v1.0.0)
-├── settings.json                     # Default permissions + hook registrations
-├── config.json                       # Model profiles and plugin configuration
-├── agents/                           # 10 agent definitions (fp-docs-* prefix)
-├── commands/fp-docs/                 # 23 command files (thin YAML+XML routing)
-├── workflows/                        # Workflow orchestrators (write, read, meta patterns)
-├── references/                       # 16 shared knowledge files (10 rules + 6 algorithms)
-├── hooks/                            # Standalone JS hook files
-├── lib/                              # CJS modules (hooks, routing, pipeline, git, etc.)
-├── fp-tools.cjs                      # CLI entry point for all CJS modules
-├── framework/
-│   ├── config/                       # system-config.md, project-config.md
-│   └── tools/                        # Ephemeral WP-CLI tool source
-├── templates/                        # Shell integration templates
-├── specs/                            # Canonical specification documents
-├── tests/                            # Characterization and unit tests
-├── README.md
-└── CHANGELOG.md
+User invokes /fp-docs:revise → Command routes to workflow → Workflow spawns agents → Pipeline enforces quality
 ```
 
-### Command-Workflow-Agent Routing Pattern
+Key architectural concepts:
 
-Every user command follows the same routing flow:
+- **10 agents** with domain-specific knowledge (fp-docs-modifier, fp-docs-validator, fp-docs-citations, etc.)
+- **16 references** (10 rule files + 6 algorithm files) loaded via `@-reference` by commands and workflows
+- **8-stage post-modification pipeline** (verbosity, citations, API refs, sanity-check, verification, changelog, index, docs commit)
+- **Three independent git repos** (codebase, docs, plugin) with branch mirroring
+- **Hook system** (SessionStart, PreToolUse, SubagentStop, TeammateIdle, TaskCompleted) for lifecycle enforcement
 
-```
-User: /fp-docs:revise "fix the posts helper"
-  |
-  v
-Command (commands/fp-docs/revise.md)
-  - YAML frontmatter: name, description, allowed-tools
-  - XML body: @-references to workflow + shared knowledge (doc-standards, fp-project)
-  |
-  v
-Workflow (workflows/revise.md)
-  - Initializes via fp-tools.cjs init write-op
-  - Spawns fp-docs-researcher for source analysis
-  - Spawns fp-docs-planner for execution strategy
-  |
-  v
-Write Phase: Specialist Agent (fp-docs-modifier — DELEGATED)
-  - Executes primary operation + enforcement stages 1-3
-  - Returns Delegation Result
-  |
-  v
-Review Phase: Validator Agent (fp-docs-validator — PIPELINE-VALIDATION)
-  - Runs sanity-check (stage 4) + 10-point verification (stage 5)
-  - Returns Pipeline Validation Report
-  |
-  v
-Finalize Phase: Workflow
-  - Stage 6: Changelog update (via fp-tools.cjs)
-  - Stage 7: Index update (conditional)
-  - Stage 8: Docs commit & push (via fp-tools.cjs git)
-  |
-  v
-Operation Report (aggregated from all phases)
-```
-
-**Commands** are thin YAML+XML routing files. They load shared knowledge (doc-standards.md, fp-project.md) via `@-reference` in execution context and declare their workflow. All logic lives in the workflows and agents.
-
-**Workflows** orchestrate agent spawning and pipeline execution. Write workflows follow a 6-step pattern (initialize, research, plan, write phase, review phase, finalize). Read workflows use a 4-step pattern. Meta workflows execute inline.
-
-**Agents** are domain-specific workers. When invoked in Delegated Mode, they execute only their assigned phase. In Standalone Mode (for backward compatibility), they execute the full pipeline.
-
-**References** are shared knowledge files loaded via `@-reference`. Rule references (10) define WHAT; algorithm references (6) define HOW. Rule references are loaded at command startup; algorithm references are loaded on-demand during pipeline stages.
-
-### The 10 Agents
-
-| Agent | File | Role | Key References |
-|-------|------|------|---------------|
-| fp-docs-modifier | agents/fp-docs-modifier.md | Write (docs) | doc-standards, fp-project, pipeline-enforcement, changelog-rules, index-rules |
-| fp-docs-validator | agents/fp-docs-validator.md | Read-only | doc-standards, fp-project, validation-rules |
-| fp-docs-citations | agents/fp-docs-citations.md | Write (citations) | doc-standards, fp-project, citation-rules |
-| fp-docs-api-refs | agents/fp-docs-api-refs.md | Write (API refs) | doc-standards, fp-project, api-ref-rules |
-| fp-docs-locals | agents/fp-docs-locals.md | Write (locals) | doc-standards, fp-project, locals-rules |
-| fp-docs-verbosity | agents/fp-docs-verbosity.md | Read-only | doc-standards, fp-project, verbosity-rules |
-| fp-docs-indexer | agents/fp-docs-indexer.md | Write (index) | doc-standards, fp-project, index-rules |
-| fp-docs-system | agents/fp-docs-system.md | Admin | doc-standards, fp-project |
-| fp-docs-researcher | agents/fp-docs-researcher.md | Pre-pipeline analysis | doc-standards, fp-project, codebase-analysis-guide |
-| fp-docs-planner | agents/fp-docs-planner.md | Strategy design | doc-standards, fp-project, pipeline-enforcement |
-
-Read-only agents (fp-docs-validator, fp-docs-verbosity) enforce this with `disallowedTools: [Write, Edit]` in their frontmatter.
-
-### The 8-Stage Post-Modification Pipeline
-
-After every doc-modifying operation, the pipeline runs automatically:
-
-| Stage | Name | Description | Skippable? |
-|-------|------|-------------|------------|
-| 1 | Verbosity Enforcement | Count source items, verify 100% coverage, ban summarization | Yes (config flag) |
-| 2 | Citation Generation/Update | Generate new or refresh stale code citations | Yes (config flag) |
-| 3 | API Reference Sync | Verify/update API reference tables | Yes (config flag) |
-| 4 | Sanity Check | Cross-reference every claim against source code | Yes (`--no-sanity-check`) |
-| 5 | Verification | Run the 10-point checklist | Never |
-| 6 | Changelog Update | Append entry to `docs/changelog.md` | Never |
-| 7 | Index Update | Update PROJECT-INDEX.md | Auto (only on structural changes) |
-| 8 | Docs Repo Commit | `git -C {docs-root} add -A && commit` | Never (skips if no repo) |
-
-On completion, the pipeline outputs a marker:
-```
-Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: PASS] [changelog: updated] [docs-commit: committed]
-```
-
-The `handlePostModifyCheck` SubagentStop hook validates this marker.
-
-### Reference System
-
-The 16 references in `references/` are shared knowledge files loaded by agents and workflows via `@-reference`.
-
-**Rule References (10)** -- loaded at command startup:
-
-| Reference | Purpose |
-|-----------|---------|
-| doc-standards.md | Universal formatting, naming, structural, and depth rules |
-| fp-project.md | FP-specific paths, source-map.json CLI reference, environment config |
-| pipeline-enforcement.md | 8-stage pipeline definition, trigger matrix, skip conditions |
-| changelog-rules.md | Changelog entry format and update procedure |
-| index-rules.md | PROJECT-INDEX.md update rules and modes |
-| citation-rules.md | Citation format, tiers, staleness model, provenance |
-| api-ref-rules.md | API Reference table format, columns, scope rules |
-| locals-rules.md | `$locals` contract format, shapes, validation rules |
-| validation-rules.md | 10-point checklist, sanity-check algorithm, claim classification |
-| verbosity-rules.md | Anti-compression rules, banned phrases, scope manifests |
-
-**Algorithm References (6)** -- loaded on-demand during pipeline stages:
-
-| Reference | Loaded During | Purpose |
-|-----------|---------------|---------|
-| verbosity-algorithm.md | Pipeline stage 1 | Item counting and coverage verification |
-| citation-algorithm.md | Pipeline stage 2 | Citation generation and staleness detection |
-| api-ref-algorithm.md | Pipeline stage 3 | API reference table construction |
-| validation-algorithm.md | Pipeline stages 4-5 | Claim verification and 10-point checklist |
-| codebase-analysis-guide.md | Pre-pipeline | Guide for reading PHP/JS source files |
-| git-sync-rules.md | Sync operations | Branch mirroring and diff report rules |
-
-### Hook System
-
-Five event types registered in `settings.json`, with standalone JS files in `hooks/` that delegate to CJS handlers in `lib/hooks.cjs`:
-
-| Event | Handler | Purpose |
-|-------|---------|---------|
-| SessionStart | `handleInjectManifest` | Inject plugin root path and manifest into context |
-| SessionStart | `handleBranchSyncCheck` | Detect branch mismatch, warn if out of sync |
-| SessionStart | `handleDriftNudge` | Merge pending drift signals and format nudge |
-| SessionStart | `handleUpdateCheck` | Background update version check |
-| PreToolUse (Bash) | `handlePreToolUseBashGitCheck` | Block raw git-write commands in agents |
-| SubagentStop (modify) | `handlePostModifyCheck` | Validate pipeline completion |
-| SubagentStop (orchestrate) | `handlePostOrchestrateCheck` | Validate delegation cycle completion |
-| SubagentStop (locals) | `handleLocalsCLICleanup` | Clean orphaned ephemeral CLI artifacts |
-| SubagentStop (validate, citations, api-refs, researcher, planner) | `handleSubagentEnforcementCheck` | Validate specialist agent delegation results |
-| TeammateIdle | `handleTeammateIdleCheck` | Validate teammate phase completion |
-| TaskCompleted | `handleTaskCompletedCheck` | Validate task outputs |
-
-Git operations (including docs-commit) are centralized in `lib/git.cjs`.
-
-### Design Philosophy
-
-Several design choices are worth understanding as they inform how the system behaves:
-
-**Command-Workflow-Agent Chain**: Commands are thin routing files with no logic. Workflows orchestrate agent spawning. Agents do the domain work. This makes the system composable -- new commands only need a command file and a workflow.
-
-**Read-Only Validation**: The fp-docs-validator and fp-docs-verbosity agents explicitly disallow Write and Edit tools. Validation operations cannot accidentally modify documentation.
-
-**Anti-Compression Philosophy**: The verbosity system is philosophically opposed to LLM summarization tendencies. It maintains banned phrase lists and regex patterns, scope manifests that count every enumerable item, and zero-tolerance gap checking. "Length is not a concern. Completeness is the only concern."
-
-**Citation-as-Evidence**: Every documentable code claim requires a citation block linking to the exact source file, symbol, and line range. Citations have a freshness model (Fresh, Stale, Drifted, Broken, Missing) with staleness detection. Three tiers (Full, Signature, Reference) scale verbatim code inclusion by function length.
-
-**Pipeline-as-Quality-Gate**: The 8-stage pipeline is not optional. Verification and changelog stages never skip. The SubagentStop hook validates completion. Every doc modification goes through the full quality process.
-
-**On-Demand Algorithm Loading**: Algorithm reference files are loaded during pipeline stages via `@-reference` and then discarded, keeping agent context smaller until the algorithm is actually needed. This is distinct from rule references which are loaded at command startup.
-
-**`[NEEDS INVESTIGATION]` Over Guessing**: When agents cannot verify something from source code, they insert `[NEEDS INVESTIGATION]` markers instead of guessing. This makes gaps visible rather than hiding them behind plausible-sounding but potentially incorrect content.
-
-### Three-Repo Git Model
-
-fp-docs operates across three independent git repositories:
-
-| Repo | Git Root | Purpose |
-|------|----------|---------|
-| Codebase | `wp-content/` | FP WordPress source code. Gitignores `docs/`. |
-| Docs | `themes/foreign-policy-2017/docs/` | Nested inside codebase. Independently tracked. Branch-mirrors codebase. |
-| Plugin | This repo (standalone) | Distributed via fp-tools marketplace. |
-
-**Branch mirroring**: The docs repo's `master` branch is canonical for the codebase's `origin/master`. Feature branches in the docs repo match codebase feature branches by exact name.
-
-**Path resolution**:
-- Codebase root: `git rev-parse --show-toplevel` from working directory
-- Docs root: `{codebase-root}/themes/foreign-policy-2017/docs/`
-- Plugin root: `$CLAUDE_PLUGIN_ROOT` (injected by SessionStart hook)
+> For full architectural details, see the **specs/** directory:
+> - **[specs/architecture.md](specs/architecture.md)** -- Repository layout, routing, agents, references, pipeline internals, hook system, git model, configuration
+> - **[specs/features-and-capabilities.md](specs/features-and-capabilities.md)** -- All 23 commands, 10 agents, pipeline stages, design philosophy, reference system
+> - **[specs/usage-and-workflows.md](specs/usage-and-workflows.md)** -- Installation, workflows, configuration, troubleshooting, source-to-doc mapping
 
 ---
 
@@ -777,8 +601,8 @@ fp-docs operates across three independent git repositories:
 
 | File | Scope | What to Change |
 |------|-------|----------------|
-| `framework/config/system-config.md` | System-wide | Feature flags, thresholds, tier boundaries, banned phrases |
-| `framework/config/project-config.md` | FP-specific | Paths, repo URLs, feature enables (source-to-doc mapping extracted to `source-map.json`) |
+| `config.json` | Plugin-wide | Model profiles, feature flags, thresholds, pipeline settings |
+| `source-map.json` | FP-specific | Source-to-documentation path mappings |
 
 Use per-command flags (`--no-citations`, `--no-sanity-check`, etc.) for one-off overrides instead of changing config files.
 
@@ -786,7 +610,7 @@ Use per-command flags (`--no-citations`, `--no-sanity-check`, etc.) for one-off 
 
 ## Configuration Reference
 
-### Feature Flags (system-config.md)
+### Feature Flags (config.json)
 
 | Setting | Default | Description |
 |---------|---------|-------------|

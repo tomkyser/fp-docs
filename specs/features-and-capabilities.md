@@ -174,7 +174,7 @@ Each agent is defined in `agents/` with GSD-style YAML frontmatter (name, descri
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
 - **References**: doc-standards.md, fp-project.md, locals-rules.md
 - **Model**: opus, maxTurns: 75
-- **Key behavior**: WordPress-specific agent for documenting the data shapes passed between PHP template components. Classifies keys as Required (bare `$locals['key']` access) vs Optional (guarded with `isset`/`??`/`empty`). Supports both named keys and integer-indexed `$locals[0]` patterns. Uses an **ephemeral WP-CLI tool** (`wp fp-locals`) that leverages PHP's `token_get_all()` for 100% accurate variable extraction -- the CLI PHP source lives in the plugin (`framework/tools/class-locals-cli.php`), is ephemerally installed into the theme during operations via setup/teardown scripts, and auto-cleaned by a SubagentStop safety net hook. Falls back to manual Read/Grep extraction when ddev is unavailable.
+- **Key behavior**: WordPress-specific agent for documenting the data shapes passed between PHP template components. Classifies keys as Required (bare `$locals['key']` access) vs Optional (guarded with `isset`/`??`/`empty`). Supports both named keys and integer-indexed `$locals[0]` patterns. Uses an **ephemeral WP-CLI tool** (`wp fp-locals`) that leverages PHP's `token_get_all()` for 100% accurate variable extraction -- the CLI PHP source lives in the plugin (`tools/class-locals-cli.php`), is ephemerally installed into the theme during operations via setup/teardown scripts, and auto-cleaned by a SubagentStop safety net hook. Falls back to manual Read/Grep extraction when ddev is unavailable.
 
 ### 6. fp-docs-verbosity
 - **Domain**: Anti-brevity enforcement and verbosity gap detection

@@ -26,6 +26,8 @@
  *   update     - Version checking and self-update (check, status, run)
  *   plans      - Execution plan management (save, load, list, update, prune, save-analysis, load-analysis)
  *   init       - Workflow bootstrapping (write-op, read-op, admin-op, parallel, remediate)
+ *   scope-assess - Pre-delegation scope assessment (command [args...])
+ *   tracker    - Shared tracker doc management (create, read, update, list, complete, prune)
  *   resolve-model - Model resolution for agents (agent-name [--profile tier] | --list)
  *
  * Output protocol:
@@ -234,6 +236,18 @@ function main() {
     case 'init': {
       const init = require('./lib/init.cjs');
       init.cmdInit(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'scope-assess': {
+      const scopeAssess = require('./lib/scope-assess.cjs');
+      scopeAssess.cmdScopeAssess(args.slice(1), raw);
+      break;
+    }
+
+    case 'tracker': {
+      const tracker = require('./lib/tracker.cjs');
+      tracker.cmdTracker(args[1], args.slice(2), raw);
       break;
     }
 

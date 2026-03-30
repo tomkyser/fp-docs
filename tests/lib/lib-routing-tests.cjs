@@ -29,19 +29,19 @@ describe('lib/routing.cjs', () => {
     it('should return correct route for revise', () => {
       const { lookupRoute } = require(path.join(LIB_DIR, 'routing.cjs'));
       const route = lookupRoute('revise');
-      assert.deepStrictEqual(route, { agent: 'fp-docs-modifier', engine: 'modify', workflow: 'revise.md', operation: 'revise', type: 'write' });
+      assert.deepStrictEqual(route, { agent: 'fp-docs-modifier', workflow: 'revise.md', operation: 'revise', type: 'write' });
     });
 
     it('should return correct route for audit', () => {
       const { lookupRoute } = require(path.join(LIB_DIR, 'routing.cjs'));
       const route = lookupRoute('audit');
-      assert.deepStrictEqual(route, { agent: 'fp-docs-validator', engine: 'validate', workflow: 'audit.md', operation: 'audit', type: 'read' });
+      assert.deepStrictEqual(route, { agent: 'fp-docs-validator', workflow: 'audit.md', operation: 'audit', type: 'read' });
     });
 
     it('should return correct route for parallel', () => {
       const { lookupRoute } = require(path.join(LIB_DIR, 'routing.cjs'));
       const route = lookupRoute('parallel');
-      assert.deepStrictEqual(route, { agent: null, engine: 'orchestrate', workflow: 'parallel.md', operation: 'parallel', type: 'batch' });
+      assert.deepStrictEqual(route, { agent: null, workflow: 'parallel.md', operation: 'parallel', type: 'batch' });
     });
 
     it('should return null for nonexistent command', () => {
@@ -53,25 +53,25 @@ describe('lib/routing.cjs', () => {
     it('should return correct route for citations', () => {
       const { lookupRoute } = require(path.join(LIB_DIR, 'routing.cjs'));
       const route = lookupRoute('citations');
-      assert.deepStrictEqual(route, { agent: 'fp-docs-citations', engine: 'citations', workflow: 'citations.md', operation: null, type: 'write' });
+      assert.deepStrictEqual(route, { agent: 'fp-docs-citations', workflow: 'citations.md', operation: null, type: 'write' });
     });
 
     it('should return correct route for update-index', () => {
       const { lookupRoute } = require(path.join(LIB_DIR, 'routing.cjs'));
       const route = lookupRoute('update-index');
-      assert.deepStrictEqual(route, { agent: 'fp-docs-indexer', engine: 'index', workflow: 'update-index.md', operation: 'update-project-index', type: 'admin' });
+      assert.deepStrictEqual(route, { agent: 'fp-docs-indexer', workflow: 'update-index.md', operation: 'update-project-index', type: 'admin' });
     });
 
     it('should return correct route for remediate', () => {
       const { lookupRoute } = require(path.join(LIB_DIR, 'routing.cjs'));
       const route = lookupRoute('remediate');
-      assert.deepStrictEqual(route, { agent: null, engine: 'orchestrate', workflow: 'remediate.md', operation: 'remediate', type: 'write' });
+      assert.deepStrictEqual(route, { agent: null, workflow: 'remediate.md', operation: 'remediate', type: 'write' });
     });
 
     it('should return correct route for update', () => {
       const { lookupRoute } = require(path.join(LIB_DIR, 'routing.cjs'));
       const route = lookupRoute('update');
-      assert.deepStrictEqual(route, { agent: 'fp-docs-system', engine: 'system', workflow: 'update.md', operation: 'update', type: 'admin' });
+      assert.deepStrictEqual(route, { agent: 'fp-docs-system', workflow: 'update.md', operation: 'update', type: 'admin' });
     });
   });
 
@@ -100,15 +100,15 @@ describe('lib/routing.cjs', () => {
       }
     });
 
-    it('should have agent, engine, workflow, operation, and type for every entry', () => {
+    it('should have agent, workflow, operation, and type for every entry', () => {
       const { getRoutingTable } = require(path.join(LIB_DIR, 'routing.cjs'));
       const table = getRoutingTable();
       for (const [cmd, route] of Object.entries(table)) {
         assert.ok('agent' in route, `${cmd} missing agent`);
-        assert.ok('engine' in route, `${cmd} missing engine`);
         assert.ok('workflow' in route, `${cmd} missing workflow`);
         assert.ok('type' in route, `${cmd} missing type`);
         assert.ok('operation' in route, `${cmd} missing operation`);
+        assert.ok(!('engine' in route), `${cmd} has legacy engine field`);
       }
     });
   });

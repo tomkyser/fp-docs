@@ -595,19 +595,19 @@ The sync command maintains a watermark file (`.sync-watermark`) in the docs repo
 
 ## 6. Configuration Options
 
-### Project Configuration (`framework/config/project-config.md`)
+### Unified Configuration (`config.json`)
 
-This file contains FP-specific settings:
+All configuration is centralized in `config.json` at the plugin root. This file contains project identity, feature flags, thresholds, model profiles, and pipeline settings. Source-to-documentation path mappings are in `source-map.json` (accessed via `lib/source-map.cjs`).
 
+**Project settings** (in `config.json` under `project`):
 - **Project identity**: Theme root, docs root, WP-CLI prefix (`ddev wp`), local URL (`https://foreignpolicy.local/`)
-- **Source-to-Documentation Mapping**: **Extracted to `source-map.json`** (accessed via `lib/source-map.cjs`; project-config.md retains reference pointer only)
+- **Source-to-Documentation Mapping**: Managed by `source-map.json` (use `fp-tools source-map generate` to refresh)
 - **Appendix Cross-References**: 7 appendix mappings for hooks, shortcodes, REST routes, constants, etc.
-- **Feature Enables**: Citations, API References, Locals contracts, Verbosity enforcement, Sanity-check (all enabled by default)
 - **Repository Configuration**: Git roots, remotes, branch strategies, path resolution rules, diff report location
 
-### System Configuration (`framework/config/system-config.md`)
+**System settings** (in `config.json` under `system`):
 
-This file controls thresholds, defaults, and feature flags:
+Feature flags, thresholds, and defaults:
 
 #### Citations Configuration
 | Setting | Default | Description |
@@ -642,7 +642,7 @@ This file controls thresholds, defaults, and feature flags:
 | `chunk_delegation.max_functions_per_agent` | `50` | Max functions per single agent |
 | `chunk_delegation.delegation_trigger_docs` | `8` | Auto-delegate above this doc count |
 
-#### Orchestration Configuration (system-config.md §6)
+#### Orchestration Configuration
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `orchestration.enabled` | `true` | Master switch for multi-agent orchestration |
@@ -661,7 +661,7 @@ This file controls thresholds, defaults, and feature flags:
 | `visual.docs_screenshot_dir` | `media/screenshots` | Persistent doc screenshots |
 | `visual.local_url` | `https://foreignpolicy.local` | Local dev environment URL |
 
-#### Agent Model Configuration (system-config §9, Phase 16)
+#### Agent Model Configuration
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `researcher.model` | `opus` | Model for the researcher agent. Deep code analysis benefits from strongest reasoning (D-12). |
@@ -675,8 +675,8 @@ This file controls thresholds, defaults, and feature flags:
 ### How to Customize Behavior
 
 To customize fp-docs behavior:
-1. Modify `framework/config/system-config.md` to change thresholds and feature flags
-2. Modify `framework/config/project-config.md` to change paths or feature enables; use `fp-tools source-map generate` to refresh source-to-doc mappings in `source-map.json`
+1. Modify `config.json` to change thresholds, feature flags, model profiles, and project settings
+2. Use `fp-tools source-map generate` to refresh source-to-doc mappings in `source-map.json`
 3. Use per-command flags (`--no-citations`, `--no-sanity-check`, etc.) for one-off overrides
 
 ---
@@ -761,7 +761,7 @@ For WordPress template components, the `/fp-docs:locals` command provides specia
 
 ### Ephemeral WP-CLI Tool
 
-The fp-docs-locals agent uses an ephemeral WP-CLI command (`wp fp-locals`) for ground-truth extraction. The PHP source lives in the plugin at `framework/tools/class-locals-cli.php` and uses `token_get_all()` to achieve 100% accurate extraction of `$locals` keys, types, required/optional status, and default values from all 447 component files.
+The fp-docs-locals agent uses an ephemeral WP-CLI command (`wp fp-locals`) for ground-truth extraction. The PHP source lives in the plugin at `tools/class-locals-cli.php` and uses `token_get_all()` to achieve 100% accurate extraction of `$locals` keys, types, required/optional status, and default values from all 447 component files.
 
 **Lifecycle**: Before any CLI-dependent subcommand, the workflow runs the setup script which copies the PHP file to the theme and registers it in `functions.php`. After the operation completes (success or failure), the teardown script removes both the file and the registration. A SubagentStop safety-net hook auto-cleans orphaned artifacts if teardown was missed.
 

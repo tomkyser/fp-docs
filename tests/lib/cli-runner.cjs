@@ -96,12 +96,12 @@ describe('fp-tools CLI', () => {
       assert.ok(result.commands.length >= 23, `expected >= 23 commands, got ${result.commands.length}`);
     });
 
-    it('each command entry has command, description, type (engine nullable for meta)', () => {
+    it('each command entry has command, description, type, agent', () => {
       const result = runCliJson('help');
       for (const cmd of result.commands) {
         assert.ok(cmd.command, 'entry should have command');
         assert.ok(typeof cmd.description === 'string', 'entry should have description');
-        assert.ok('engine' in cmd, 'entry should have engine field');
+        assert.ok('agent' in cmd, 'entry should have agent field');
         assert.ok(cmd.type, 'entry should have type');
       }
     });
@@ -157,23 +157,23 @@ describe('fp-tools CLI', () => {
   });
 
   describe('route', () => {
-    it('lookup revise returns modify engine', () => {
+    it('lookup revise returns fp-docs-modifier agent', () => {
       const result = runCliJson('route', 'lookup', 'revise');
-      assert.equal(result.engine, 'modify');
+      assert.equal(result.agent, 'fp-docs-modifier');
       assert.equal(result.operation, 'revise');
       assert.equal(result.type, 'write');
     });
 
-    it('lookup audit returns validate engine', () => {
+    it('lookup audit returns fp-docs-validator agent', () => {
       const result = runCliJson('route', 'lookup', 'audit');
-      assert.equal(result.engine, 'validate');
+      assert.equal(result.agent, 'fp-docs-validator');
       assert.equal(result.operation, 'audit');
       assert.equal(result.type, 'read');
     });
 
-    it('lookup parallel returns orchestrate engine with batch type', () => {
+    it('lookup parallel returns null agent with batch type', () => {
       const result = runCliJson('route', 'lookup', 'parallel');
-      assert.equal(result.engine, 'orchestrate');
+      assert.equal(result.agent, null);
       assert.equal(result.type, 'batch');
     });
 

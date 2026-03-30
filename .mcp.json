@@ -9,7 +9,7 @@
         "--caps",
         "vision",
         "--config",
-        "${CLAUDE_PLUGIN_ROOT}/framework/config/playwright-mcp-config.json"
+        "${CLAUDE_PLUGIN_ROOT}/playwright-mcp-config.json"
       ]
     }
   }

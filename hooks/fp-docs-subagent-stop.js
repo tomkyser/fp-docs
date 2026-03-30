@@ -4,13 +4,14 @@
 /**
  * SubagentStop hook: validate specialist engine delegation results.
  *
- * Routes to the correct handler from lib/hooks.cjs based on agent_type:
+ * Routes to the correct handler from lib/hooks.cjs based on agent_type.
+ * Agent name normalization via lib/agent-map.cjs (canonical source of truth).
+ *
+ * Handler routing:
  * - modify / fp-docs-modifier -> handlePostModifyCheck
  * - orchestrate -> handlePostOrchestrateCheck
  * - locals / fp-docs-locals -> handleLocalsCLICleanup
- * - validate / fp-docs-validator, citations / fp-docs-citations,
- *   api-refs / fp-docs-api-refs, researcher / fp-docs-researcher,
- *   planner / fp-docs-planner -> handleSubagentEnforcementCheck
+ * - validate, citations, api-refs, researcher, planner -> handleSubagentEnforcementCheck
  *
  * Output: JSON with hookSpecificOutput to stdout.
  */
@@ -21,20 +22,7 @@ const {
   handleLocalsCLICleanup,
   handleSubagentEnforcementCheck,
 } = require('../lib/hooks.cjs');
-
-// Map new GSD agent names to their canonical handler names
-const AGENT_NAME_MAP = {
-  'fp-docs-modifier': 'modify',
-  'fp-docs-validator': 'validate',
-  'fp-docs-citations': 'citations',
-  'fp-docs-api-refs': 'api-refs',
-  'fp-docs-locals': 'locals',
-  'fp-docs-researcher': 'researcher',
-  'fp-docs-planner': 'planner',
-  'fp-docs-verbosity': 'verbosity',
-  'fp-docs-indexer': 'index',
-  'fp-docs-system': 'system',
-};
+const { getCanonicalName } = require('../lib/agent-map.cjs');
 
 async function main() {
   let input = {};
@@ -52,8 +40,8 @@ async function main() {
   }
 
   const agentType = input.agent_type || '';
-  // Normalize to canonical name for routing
-  const canonical = AGENT_NAME_MAP[agentType] || agentType;
+  // Normalize to canonical name for routing (via shared agent-map.cjs)
+  const canonical = getCanonicalName(agentType) || agentType;
 
   let result;
   try {

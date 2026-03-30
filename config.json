@@ -111,8 +111,22 @@
     "locals": {
       "cli_enabled": true,
       "cli_auto_teardown": true,
-      "cli_source": "framework/tools/class-locals-cli.php",
+      "cli_source": "tools/class-locals-cli.php",
       "cli_target": "inc/cli/class-locals-cli.php"
+    },
+    "scope_assess": {
+      "enabled": true,
+      "heavy_threshold_files": 5,
+      "heavy_threshold_sections": 3,
+      "standard_threshold_files": 2,
+      "standard_threshold_sources": 3,
+      "max_researchers": 3
+    },
+    "tracker": {
+      "enabled": true,
+      "auto_create_threshold": "standard",
+      "retention_days": 30,
+      "max_trackers": 200
     }
   },
   "project": {

@@ -8,7 +8,7 @@ After completing the core operation steps, execute these stages in order:
 
 ### Stage 1: Verbosity Enforcement
 
-Read `framework/algorithms/verbosity-algorithm.md` for the execution algorithm.
+Read `references/verbosity-algorithm.md` for the execution algorithm.
 Apply rules from your preloaded mod-verbosity module.
 - Build scope manifest: count every enumerable item in source
 - Check output coverage: verify every item appears in generated doc
@@ -17,7 +17,7 @@ Apply rules from your preloaded mod-verbosity module.
 
 ### Stage 2: Citation Generation/Update
 
-Read `framework/algorithms/citation-algorithm.md` for the execution algorithm.
+Read `references/citation-algorithm.md` for the execution algorithm.
 Apply rules from your preloaded mod-citations module.
 - For new docs: generate all citations
 - For revised docs: update stale citations, generate missing ones
@@ -25,7 +25,7 @@ Apply rules from your preloaded mod-citations module.
 
 ### Stage 3: API Reference Sync
 
-Read `framework/algorithms/api-ref-algorithm.md` for the execution algorithm.
+Read `references/api-ref-algorithm.md` for the execution algorithm.
 Apply rules from your preloaded mod-api-refs module.
 - If doc type requires API Reference (per system-config): verify section exists
 - Update table rows for any functions that changed
@@ -33,7 +33,7 @@ Apply rules from your preloaded mod-api-refs module.
 
 ### Stage 4: Sanity Check
 
-Read `framework/algorithms/validation-algorithm.md` for the execution algorithm.
+Read `references/validation-algorithm.md` for the execution algorithm.
 Apply rules from your preloaded mod-validation module.
 - Cross-reference every factual claim against source code
 - Classify claims as VERIFIED, MISMATCH, HALLUCINATION, or UNVERIFIED
@@ -41,7 +41,7 @@ Apply rules from your preloaded mod-validation module.
 
 ### Stage 5: Verify
 
-Read `framework/algorithms/validation-algorithm.md` for the verification algorithm.
+Read `references/validation-algorithm.md` for the verification algorithm.
 Apply check definitions from your preloaded mod-validation module.
 - File existence, orphan check, index completeness, appendix spot-check
 - Link validation, changelog check, citation format, API ref provenance

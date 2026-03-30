@@ -24,9 +24,9 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ## 2. Gather Current State
 
 1. Read the current project CLAUDE.md (from codebase root, not plugin)
-2. Read the current plugin manifest at `${CLAUDE_PLUGIN_ROOT}/framework/manifest.md`
-3. Read the current skill inventory: glob `${CLAUDE_PLUGIN_ROOT}/skills/*/SKILL.md`
-4. Extract command names, descriptions, and argument hints from each skill's frontmatter
+2. Read the plugin manifest at `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`
+3. Read the current command inventory: glob `${CLAUDE_PLUGIN_ROOT}/commands/fp-docs/*.md`
+4. Extract command names, descriptions, and argument hints from each command's frontmatter
 </step>
 
 <step name="regenerate">
