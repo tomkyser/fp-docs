@@ -2,7 +2,7 @@
 
 Documentation management system for the Foreign Policy WordPress codebase. fp-docs is a Claude Code plugin that automates the creation, revision, validation, and maintenance of technical documentation by reading your source code directly and keeping docs in sync with every change.
 
-fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships 23 commands, 9 specialized engines (including a universal orchestration engine that coordinates multi-agent execution), and an automated 8-stage post-modification pipeline that runs after every documentation change.
+fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships 23 commands, 10 specialized agents (fp-docs-* prefix), workflows that orchestrate multi-agent execution, and an automated 8-stage post-modification pipeline that runs after every documentation change.
 
 ### What Problems It Solves
 
@@ -143,33 +143,33 @@ See [Plugin Not Updating to Latest Version](#plugin-not-updating-to-latest-versi
 
 ### Summary Table
 
-| Command | Specialist Engine | Description |
-|---------|------------------|-------------|
-| `/fp-docs:revise` | modify | Fix specific documentation you know is wrong |
-| `/fp-docs:add` | modify | Create docs for new code |
-| `/fp-docs:auto-update` | modify | Auto-detect code changes and update affected docs |
-| `/fp-docs:auto-revise` | modify | Batch-process the needs-revision tracker |
-| `/fp-docs:deprecate` | modify | Mark docs as deprecated or removed |
-| `/fp-docs:audit` | validate | Compare docs against source code |
-| `/fp-docs:verify` | validate | Run 10-point verification checklist |
-| `/fp-docs:sanity-check` | validate | Zero-tolerance claim validation |
-| `/fp-docs:test` | validate | Runtime tests against local dev environment |
-| `/fp-docs:citations` | citations | Manage code citations (generate/update/verify/audit) |
-| `/fp-docs:api-ref` | api-refs | Generate or audit API Reference sections |
-| `/fp-docs:locals` | locals | Manage locals contract documentation |
-| `/fp-docs:verbosity-audit` | verbosity | Scan for verbosity gaps and summarization |
-| `/fp-docs:update-index` | index | Refresh PROJECT-INDEX.md |
-| `/fp-docs:update-claude` | index | Regenerate CLAUDE.md template |
-| `/fp-docs:update-skills` | system | Regenerate skill files from definitions |
-| `/fp-docs:setup` | system | Initialize or verify installation |
-| `/fp-docs:sync` | system | Synchronize docs branch with codebase branch |
-| `/fp-docs:parallel` | orchestrate | Run operations in parallel across files |
-| `/fp-docs:remediate` | orchestrate | Resolve audit findings via batch remediation |
-| `/fp-docs:do` | orchestrate | Smart router: natural language to command |
-| `/fp-docs:help` | orchestrate | Grouped command reference |
-| `/fp-docs:update` | system | Check for and install plugin updates |
+| Command | Agent | Description |
+|---------|-------|-------------|
+| `/fp-docs:revise` | fp-docs-modifier | Fix specific documentation you know is wrong |
+| `/fp-docs:add` | fp-docs-modifier | Create docs for new code |
+| `/fp-docs:auto-update` | fp-docs-modifier | Auto-detect code changes and update affected docs |
+| `/fp-docs:auto-revise` | fp-docs-modifier | Batch-process the needs-revision tracker |
+| `/fp-docs:deprecate` | fp-docs-modifier | Mark docs as deprecated or removed |
+| `/fp-docs:audit` | fp-docs-validator | Compare docs against source code |
+| `/fp-docs:verify` | fp-docs-validator | Run 10-point verification checklist |
+| `/fp-docs:sanity-check` | fp-docs-validator | Zero-tolerance claim validation |
+| `/fp-docs:test` | fp-docs-validator | Runtime tests against local dev environment |
+| `/fp-docs:citations` | fp-docs-citations | Manage code citations (generate/update/verify/audit) |
+| `/fp-docs:api-ref` | fp-docs-api-refs | Generate or audit API Reference sections |
+| `/fp-docs:locals` | fp-docs-locals | Manage locals contract documentation |
+| `/fp-docs:verbosity-audit` | fp-docs-verbosity | Scan for verbosity gaps and summarization |
+| `/fp-docs:update-index` | fp-docs-indexer | Refresh PROJECT-INDEX.md |
+| `/fp-docs:update-claude` | fp-docs-indexer | Regenerate CLAUDE.md template |
+| `/fp-docs:update-skills` | fp-docs-system | Regenerate command files from definitions |
+| `/fp-docs:setup` | fp-docs-system | Initialize or verify installation |
+| `/fp-docs:sync` | fp-docs-system | Synchronize docs branch with codebase branch |
+| `/fp-docs:parallel` | fp-docs-system | Run operations in parallel across files |
+| `/fp-docs:remediate` | (varies) | Resolve audit findings via batch remediation |
+| `/fp-docs:do` | (none) | Smart router: natural language to command |
+| `/fp-docs:help` | (none) | Grouped command reference |
+| `/fp-docs:update` | fp-docs-system | Check for and install plugin updates |
 
-All commands route through the **orchestrate** engine, which delegates to the specialist engine listed above. Write operations use 3+ agents (orchestrator + specialist + validator). Read-only operations use 2 agents (orchestrator + specialist).
+All commands route through workflows that orchestrate agent spawning and pipeline execution. Write operations use 5 agents (workflow + researcher + planner + specialist + validator). Read-only operations use 4 agents (workflow + researcher + planner + specialist).
 
 ### Documentation Lifecycle Commands
 
@@ -349,15 +349,15 @@ Refresh the PROJECT-INDEX.md codebase reference. Modes: `update` (incremental) o
 
 #### `/fp-docs:update-claude`
 
-Regenerate the CLAUDE.md template with the current skill inventory.
+Regenerate the CLAUDE.md template with the current command inventory.
 
 #### `/fp-docs:update-skills`
 
-Regenerate all plugin skill files from their prompt definitions.
+Regenerate all plugin command files from their prompt definitions.
 
 #### `/fp-docs:setup`
 
-Initialize or verify the plugin installation. Runs a 4-phase check: plugin structure, docs repo, codebase gitignore, and branch sync.
+Initialize or verify the plugin installation. Runs a 7-phase check: plugin structure, docs repo, codebase gitignore, branch sync, git hooks, shell integration, and update notification.
 
 #### `/fp-docs:sync`
 
@@ -435,7 +435,7 @@ You wrote new code and need documentation from scratch.
    /fp-docs:add "new podcast post type at inc/post-types/podcast.php"
    ```
 
-3. The engine finds a sibling doc in the same section for format guidance, reads your source code, generates complete documentation, and runs the full pipeline.
+3. The agent finds a sibling doc in the same section for format guidance, reads your source code, generates complete documentation, and runs the full pipeline.
 4. Review the output. If anything is marked `[NEEDS INVESTIGATION]`, resolve it with:
 
    ```
@@ -527,27 +527,26 @@ The chunk delegation system auto-triggers when scope exceeds 8 docs or 50 functi
 fp-docs/                              # Git root (independent repo, submodule of fp-tools)
 ├── .claude-plugin/
 │   └── plugin.json                   # Plugin manifest (v1.0.0)
-├── settings.json                     # Default permissions (Read, Grep, Glob)
-├── agents/                           # 9 engine agent definitions
-├── modules/                          # 11 shared modules (preloaded by engines)
-├── skills/                           # 23 user-facing commands
-├── hooks/
-│   └── hooks.json                    # 4 hook event definitions (CJS-backed)
-├── lib/                              # CJS modules (hooks, locals-cli, core, paths, git, etc.)
+├── settings.json                     # Default permissions + hook registrations
+├── config.json                       # Model profiles and plugin configuration
+├── agents/                           # 10 agent definitions (fp-docs-* prefix)
+├── commands/fp-docs/                 # 23 command files (thin YAML+XML routing)
+├── workflows/                        # Workflow orchestrators (write, read, meta patterns)
+├── references/                       # 16 shared knowledge files (10 rules + 6 algorithms)
+├── hooks/                            # Standalone JS hook files
+├── lib/                              # CJS modules (hooks, routing, pipeline, git, etc.)
 ├── fp-tools.cjs                      # CLI entry point for all CJS modules
 ├── framework/
-│   ├── manifest.md                   # System manifest
 │   ├── config/                       # system-config.md, project-config.md
-│   ├── algorithms/                   # 6 on-demand algorithm files
-│   ├── templates/                    # Shell integration templates
-│   └── instructions/                 # Per-engine instruction files
+│   └── tools/                        # Ephemeral WP-CLI tool source
+├── templates/                        # Shell integration templates
 ├── specs/                            # Canonical specification documents
 ├── tests/                            # Characterization and unit tests
 ├── README.md
 └── CHANGELOG.md
 ```
 
-### Engine-Skill Routing Pattern
+### Command-Workflow-Agent Routing Pattern
 
 Every user command follows the same routing flow:
 
@@ -555,59 +554,60 @@ Every user command follows the same routing flow:
 User: /fp-docs:revise "fix the posts helper"
   |
   v
-Skill (skills/revise/SKILL.md)
-  - Declares: agent: orchestrate, context: fork
-  - Body: Engine: modify, Operation: revise, Instruction: ..., User request: $ARGUMENTS
+Command (commands/fp-docs/revise.md)
+  - YAML frontmatter: name, description, allowed-tools
+  - XML body: @-references to workflow + shared knowledge (doc-standards, fp-project)
   |
   v
-Orchestrator (agents/orchestrate.md)
-  - Parses routing metadata (Engine, Operation, Instruction)
-  - Classifies command type (write/read-only/admin/batch)
-  - Analyzes scope for delegation strategy
+Workflow (workflows/revise.md)
+  - Initializes via fp-tools.cjs init write-op
+  - Spawns fp-docs-researcher for source analysis
+  - Spawns fp-docs-planner for execution strategy
   |
   v
-Write Phase: Specialist Engine (agents/modify.md — Mode: DELEGATED)
+Write Phase: Specialist Agent (fp-docs-modifier — DELEGATED)
   - Executes primary operation + enforcement stages 1-3
   - Returns Delegation Result
   |
   v
-Review Phase: Validate Engine (agents/validate.md — Mode: PIPELINE-VALIDATION)
+Review Phase: Validator Agent (fp-docs-validator — PIPELINE-VALIDATION)
   - Runs sanity-check (stage 4) + 10-point verification (stage 5)
   - Returns Pipeline Validation Report
   |
   v
-Finalize Phase: Orchestrator
-  - Stage 6: Changelog update
+Finalize Phase: Workflow
+  - Stage 6: Changelog update (via fp-tools.cjs)
   - Stage 7: Index update (conditional)
-  - Stage 8: Docs commit & push
+  - Stage 8: Docs commit & push (via fp-tools.cjs git)
   |
   v
-Orchestration Report (aggregated from all phases)
+Operation Report (aggregated from all phases)
 ```
 
-**Skills** are thin routing files. They declare `agent: orchestrate` and `context: fork`, providing routing metadata (Engine, Operation, Instruction path) and the user's input (`$ARGUMENTS`). All logic lives in the engines and instruction files.
+**Commands** are thin YAML+XML routing files. They load shared knowledge (doc-standards.md, fp-project.md) via `@-reference` in execution context and declare their workflow. All logic lives in the workflows and agents.
 
-**The Orchestrator** is the universal entry point. It parses routing metadata, classifies the command, delegates to specialist engines, coordinates pipeline phases, and handles finalization. Multi-agent execution is the default.
+**Workflows** orchestrate agent spawning and pipeline execution. Write workflows follow a 6-step pattern (initialize, research, plan, write phase, review phase, finalize). Read workflows use a 4-step pattern. Meta workflows execute inline.
 
-**Specialist Engines** are domain-specific subagent definitions. When invoked in Delegated Mode, they execute only their primary operation and enforcement stages (1-3), returning a structured Delegation Result. In Standalone Mode (for backward compatibility), they execute the full pipeline.
+**Agents** are domain-specific workers. When invoked in Delegated Mode, they execute only their assigned phase. In Standalone Mode (for backward compatibility), they execute the full pipeline.
 
-**Instruction files** are the source of truth for operation behavior. They contain the step-by-step procedure for each specific operation.
+**References** are shared knowledge files loaded via `@-reference`. Rule references (10) define WHAT; algorithm references (6) define HOW. Rule references are loaded at command startup; algorithm references are loaded on-demand during pipeline stages.
 
-### The 9 Engines
+### The 10 Agents
 
-| Engine | Agent File | Role | Modules Preloaded |
-|--------|-----------|------|-------------------|
-| orchestrate | agents/orchestrate.md | Universal routing & delegation | mod-standards, mod-project, mod-pipeline, mod-changelog, mod-orchestration |
-| modify | agents/modify.md | Write (docs) | mod-standards, mod-project, mod-pipeline, mod-changelog, mod-index |
-| validate | agents/validate.md | Read-only | mod-standards, mod-project, mod-validation |
-| citations | agents/citations.md | Write (citations) | mod-standards, mod-project, mod-citations |
-| api-refs | agents/api-refs.md | Write (API refs) | mod-standards, mod-project, mod-api-refs |
-| locals | agents/locals.md | Write (locals) | mod-standards, mod-project, mod-locals |
-| verbosity | agents/verbosity.md | Read-only | mod-standards, mod-project, mod-verbosity |
-| index | agents/index.md | Write (index) | mod-standards, mod-project, mod-index |
-| system | agents/system.md | Admin | mod-standards, mod-project |
+| Agent | File | Role | Key References |
+|-------|------|------|---------------|
+| fp-docs-modifier | agents/fp-docs-modifier.md | Write (docs) | doc-standards, fp-project, pipeline-enforcement, changelog-rules, index-rules |
+| fp-docs-validator | agents/fp-docs-validator.md | Read-only | doc-standards, fp-project, validation-rules |
+| fp-docs-citations | agents/fp-docs-citations.md | Write (citations) | doc-standards, fp-project, citation-rules |
+| fp-docs-api-refs | agents/fp-docs-api-refs.md | Write (API refs) | doc-standards, fp-project, api-ref-rules |
+| fp-docs-locals | agents/fp-docs-locals.md | Write (locals) | doc-standards, fp-project, locals-rules |
+| fp-docs-verbosity | agents/fp-docs-verbosity.md | Read-only | doc-standards, fp-project, verbosity-rules |
+| fp-docs-indexer | agents/fp-docs-indexer.md | Write (index) | doc-standards, fp-project, index-rules |
+| fp-docs-system | agents/fp-docs-system.md | Admin | doc-standards, fp-project |
+| fp-docs-researcher | agents/fp-docs-researcher.md | Pre-pipeline analysis | doc-standards, fp-project, codebase-analysis-guide |
+| fp-docs-planner | agents/fp-docs-planner.md | Strategy design | doc-standards, fp-project, pipeline-enforcement |
 
-Read-only engines (`validate`, `verbosity`) enforce this with `disallowedTools: [Write, Edit]` in their frontmatter. All 8 specialist engines support Delegation Mode (invoked by the orchestrator) and Standalone Mode (backward-compatible direct invocation).
+Read-only agents (fp-docs-validator, fp-docs-verbosity) enforce this with `disallowedTools: [Write, Edit]` in their frontmatter.
 
 ### The 8-Stage Post-Modification Pipeline
 
@@ -624,57 +624,60 @@ After every doc-modifying operation, the pipeline runs automatically:
 | 7 | Index Update | Update PROJECT-INDEX.md | Auto (only on structural changes) |
 | 8 | Docs Repo Commit | `git -C {docs-root} add -A && commit` | Never (skips if no repo) |
 
-On completion, the engine outputs a pipeline marker:
+On completion, the pipeline outputs a marker:
 ```
 Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: PASS] [changelog: updated] [docs-commit: committed]
 ```
 
-The `handlePostModifyCheck` SubagentStop hook (in `lib/hooks.cjs`) validates this marker.
+The `handlePostModifyCheck` SubagentStop hook validates this marker.
 
-### Module System
+### Reference System
 
-The 11 modules in `modules/` are shared rule files preloaded into engines via the engine's `skills:` frontmatter. They are NOT user-invocable commands.
+The 16 references in `references/` are shared knowledge files loaded by agents and workflows via `@-reference`.
 
-| Module | Purpose |
-|--------|---------|
-| mod-standards | Universal formatting, naming, structural, and depth rules |
-| mod-project | FP-specific paths, source-map.json CLI reference, environment config |
-| mod-pipeline | 8-stage pipeline definition, trigger matrix, skip conditions, delegation protocol |
-| mod-changelog | Changelog entry format and update procedure |
-| mod-index | PROJECT-INDEX.md update rules and modes |
-| mod-citations | Citation format, tiers, staleness model, provenance |
-| mod-api-refs | API Reference table format, columns, scope rules |
-| mod-locals | `$locals` contract format, shapes, validation rules |
-| mod-validation | 10-point checklist, sanity-check algorithm, claim classification |
-| mod-verbosity | Anti-compression rules, banned phrases, scope manifests |
-| mod-orchestration | Delegation thresholds, batching strategy, report formats, team protocol |
+**Rule References (10)** -- loaded at command startup:
 
-**Key distinction**: Modules define WHAT (rules, formats, classification systems). On-demand algorithm files in `framework/algorithms/` define HOW (step-by-step procedures). Modules are always in the engine's context. Algorithm files are loaded only when needed during pipeline execution, then discarded.
+| Reference | Purpose |
+|-----------|---------|
+| doc-standards.md | Universal formatting, naming, structural, and depth rules |
+| fp-project.md | FP-specific paths, source-map.json CLI reference, environment config |
+| pipeline-enforcement.md | 8-stage pipeline definition, trigger matrix, skip conditions |
+| changelog-rules.md | Changelog entry format and update procedure |
+| index-rules.md | PROJECT-INDEX.md update rules and modes |
+| citation-rules.md | Citation format, tiers, staleness model, provenance |
+| api-ref-rules.md | API Reference table format, columns, scope rules |
+| locals-rules.md | `$locals` contract format, shapes, validation rules |
+| validation-rules.md | 10-point checklist, sanity-check algorithm, claim classification |
+| verbosity-rules.md | Anti-compression rules, banned phrases, scope manifests |
 
-### On-Demand Algorithm Files
+**Algorithm References (6)** -- loaded on-demand during pipeline stages:
 
-| Algorithm File | Loaded During | Purpose |
-|----------------|---------------|---------|
+| Reference | Loaded During | Purpose |
+|-----------|---------------|---------|
 | verbosity-algorithm.md | Pipeline stage 1 | Item counting and coverage verification |
 | citation-algorithm.md | Pipeline stage 2 | Citation generation and staleness detection |
 | api-ref-algorithm.md | Pipeline stage 3 | API reference table construction |
 | validation-algorithm.md | Pipeline stages 4-5 | Claim verification and 10-point checklist |
-| codebase-analysis-guide.md | Source scanning | Guide for reading PHP/JS source files |
+| codebase-analysis-guide.md | Pre-pipeline | Guide for reading PHP/JS source files |
 | git-sync-rules.md | Sync operations | Branch mirroring and diff report rules |
 
 ### Hook System
 
-Four event types with seven CJS hook handlers in `lib/hooks.cjs`, invoked via `fp-tools.cjs hooks run`:
+Five event types registered in `settings.json`, with standalone JS files in `hooks/` that delegate to CJS handlers in `lib/hooks.cjs`:
 
 | Event | Handler | Purpose |
 |-------|---------|---------|
 | SessionStart | `handleInjectManifest` | Inject plugin root path and manifest into context |
 | SessionStart | `handleBranchSyncCheck` | Detect branch mismatch, warn if out of sync |
-| SubagentStop (modify) | `handlePostModifyCheck` | Validate pipeline completion (checks changelog) |
-| SubagentStop (orchestrate) | `handlePostOrchestrateCheck` | Validate orchestration completion and delegation |
+| SessionStart | `handleDriftNudge` | Merge pending drift signals and format nudge |
+| SessionStart | `handleUpdateCheck` | Background update version check |
+| PreToolUse (Bash) | `handlePreToolUseBashGitCheck` | Block raw git-write commands in agents |
+| SubagentStop (modify) | `handlePostModifyCheck` | Validate pipeline completion |
+| SubagentStop (orchestrate) | `handlePostOrchestrateCheck` | Validate delegation cycle completion |
 | SubagentStop (locals) | `handleLocalsCLICleanup` | Clean orphaned ephemeral CLI artifacts |
-| TeammateIdle | `handleTeammateIdleCheck` | Validate teammate delegation results and enforcement stages |
-| TaskCompleted | `handleTaskCompletedCheck` | Validate task outputs and check for HALLUCINATION markers |
+| SubagentStop (validate, citations, api-refs, researcher, planner) | `handleSubagentEnforcementCheck` | Validate specialist agent delegation results |
+| TeammateIdle | `handleTeammateIdleCheck` | Validate teammate phase completion |
+| TaskCompleted | `handleTaskCompletedCheck` | Validate task outputs |
 
 Git operations (including docs-commit) are centralized in `lib/git.cjs`.
 
@@ -682,9 +685,9 @@ Git operations (including docs-commit) are centralized in `lib/git.cjs`.
 
 Several design choices are worth understanding as they inform how the system behaves:
 
-**Engine-Skill Separation**: Skills are thin routers with no logic. All behavior lives in engine agents and instruction files. This makes the system composable — new commands only need a SKILL.md file and an instruction file.
+**Command-Workflow-Agent Chain**: Commands are thin routing files with no logic. Workflows orchestrate agent spawning. Agents do the domain work. This makes the system composable -- new commands only need a command file and a workflow.
 
-**Read-Only Validation**: The validate and verbosity engines explicitly disallow Write and Edit tools. Validation operations cannot accidentally modify documentation.
+**Read-Only Validation**: The fp-docs-validator and fp-docs-verbosity agents explicitly disallow Write and Edit tools. Validation operations cannot accidentally modify documentation.
 
 **Anti-Compression Philosophy**: The verbosity system is philosophically opposed to LLM summarization tendencies. It maintains banned phrase lists and regex patterns, scope manifests that count every enumerable item, and zero-tolerance gap checking. "Length is not a concern. Completeness is the only concern."
 
@@ -692,9 +695,9 @@ Several design choices are worth understanding as they inform how the system beh
 
 **Pipeline-as-Quality-Gate**: The 8-stage pipeline is not optional. Verification and changelog stages never skip. The SubagentStop hook validates completion. Every doc modification goes through the full quality process.
 
-**On-Demand Algorithm Loading**: Algorithm files are loaded during pipeline stages and then discarded, keeping engine context smaller until the algorithm is actually needed. This is distinct from modules which are always preloaded.
+**On-Demand Algorithm Loading**: Algorithm reference files are loaded during pipeline stages via `@-reference` and then discarded, keeping agent context smaller until the algorithm is actually needed. This is distinct from rule references which are loaded at command startup.
 
-**`[NEEDS INVESTIGATION]` Over Guessing**: When engines cannot verify something from source code, they insert `[NEEDS INVESTIGATION]` markers instead of guessing. This makes gaps visible rather than hiding them behind plausible-sounding but potentially incorrect content.
+**`[NEEDS INVESTIGATION]` Over Guessing**: When agents cannot verify something from source code, they insert `[NEEDS INVESTIGATION]` markers instead of guessing. This makes gaps visible rather than hiding them behind plausible-sounding but potentially incorrect content.
 
 ### Three-Repo Git Model
 
@@ -719,82 +722,56 @@ fp-docs operates across three independent git repositories:
 
 ### Adding a New Command
 
-1. Create the skill file at `skills/{name}/SKILL.md`:
+1. Create the command file at `commands/fp-docs/{name}.md` with YAML frontmatter and XML body:
 
    ```yaml
    ---
-   name: fp-docs:{name}
+   name: "fp-docs:{name}"
    description: "What the command does"
    argument-hint: "expected arguments"
-   context: fork
-   agent: {engine-name}
+   allowed-tools:
+     - Read
+     - Grep
+     - Glob
+     - Bash
    ---
-
-   Operation: {operation-name}
-
-   Read the instruction file at `framework/instructions/{engine}/{operation}.md`
-   and follow it exactly.
-
-   User request: $ARGUMENTS
    ```
 
-2. Create the instruction file at `framework/instructions/{engine}/{operation}.md` with step-by-step procedures.
+   The XML body includes `<objective>`, `<execution_context>` (with `@-reference` to workflow, doc-standards.md, fp-project.md), `<context>`, `<process>`, and `<success_criteria>`.
 
-3. If the command needs a new engine, see "Adding a New Engine" below. Otherwise, use an existing engine that matches the command's domain.
+2. Create a workflow at `workflows/{name}.md` with the orchestration steps (or use an existing workflow if the command fits a known pattern).
 
-### Adding a New Module
+3. Add the command to the ROUTING_TABLE in `lib/routing.cjs`.
 
-1. Create the module file at `modules/mod-{name}/SKILL.md`:
+### Adding a New Reference
+
+1. Create the reference file at `references/{name}.md` with the rule or algorithm content.
+
+2. Add it as an `@-reference` in the execution context of any command or workflow that needs it.
+
+3. Follow the deduplication rules: each rule lives in exactly one reference; FP-specific values go in `fp-project.md`; domain rules go in domain-specific references; universal rules go in `doc-standards.md`.
+
+### Adding a New Agent
+
+1. Create the agent file at `agents/fp-docs-{name}.md` with GSD-style YAML frontmatter and XML system prompt:
 
    ```yaml
    ---
-   name: mod-{name}
-   description: "Shared module providing {what it provides}"
-   user-invocable: false
-   disable-model-invocation: true
-   ---
-
-   # {Module Name} Module
-
-   [Rule content here]
-   ```
-
-2. Add the module name to the `skills:` list in any engine agent frontmatter that needs it.
-
-3. Follow the deduplication rules: each rule lives in exactly one module; FP-specific values go in `mod-project`; domain rules go in domain-specific modules; universal rules go in `mod-standards`.
-
-### Adding a New Engine
-
-1. Create the engine agent file at `agents/{name}.md`:
-
-   ```yaml
-   ---
-   name: {name}
-   description: |
-     Description of what this engine does.
+   name: "fp-docs-{name}"
+   description: "What this agent does"
    tools:
      - Read
      - Grep
      - Glob
      - Bash
-     # Add Write, Edit only if the engine modifies files
-   skills:
-     - mod-standards
-     - mod-project
-     # Add domain-specific modules as needed
    model: opus
-   color: green
    maxTurns: 75
    ---
-
-   # {Engine Name} Engine
-
-   [System prompt: identity, parsing, instruction loading, execution, reporting]
    ```
 
-2. For read-only engines, add `disallowedTools: [Write, Edit]` to the frontmatter.
+2. For read-only agents, add `disallowedTools: [Write, Edit]` to the frontmatter.
 
-3. Create instruction files at `framework/instructions/{engine}/` for each operation the engine supports.
+3. Update workflows that need to spawn this agent.
 
 ### Configuration Files
 
@@ -893,11 +870,11 @@ Approve these permissions when prompted. They apply to the current session only.
 
 ### Pipeline Changelog Warning
 
-If you see a warning from the `handlePostModifyCheck` hook about a missing changelog update, it means the modify engine did not complete its pipeline. This can happen if the engine ran out of turns or encountered an error. Re-run the command.
+If you see a warning from the `handlePostModifyCheck` hook about a missing changelog update, it means the fp-docs-modifier agent did not complete its pipeline. This can happen if the agent ran out of turns or encountered an error. Re-run the command.
 
 ### `[NEEDS INVESTIGATION]` Markers
 
-Engines use `[NEEDS INVESTIGATION]` for anything they cannot verify from source code. This is intentional -- it is better than guessing. Search for these markers in generated docs and resolve them with:
+Agents use `[NEEDS INVESTIGATION]` for anything they cannot verify from source code. This is intentional -- it is better than guessing. Search for these markers in generated docs and resolve them with:
 
 ```
 /fp-docs:revise "clarify the [NEEDS INVESTIGATION] item in posts.md"
@@ -905,7 +882,7 @@ Engines use `[NEEDS INVESTIGATION]` for anything they cannot verify from source 
 
 ### Verbosity Failures
 
-The verbosity engine has zero tolerance by default. If a source file has 12 functions, the docs must document all 12. Summarization language like "and more", "etc.", "various", or "several" is actively banned. If verbosity enforcement fails, the pipeline blocks until all items are documented.
+The fp-docs-verbosity agent has zero tolerance by default. If a source file has 12 functions, the docs must document all 12. Summarization language like "and more", "etc.", "various", or "several" is actively banned. If verbosity enforcement fails, the pipeline blocks until all items are documented.
 
 ### Parallel Operations Not Working
 
@@ -949,7 +926,7 @@ This is a known Claude Code issue — the marketplace clone is a local git repos
 
 ### Docs Repo Not Found
 
-If engines report they cannot find the docs repo, run:
+If agents report they cannot find the docs repo, run:
 
 ```
 /fp-docs:setup

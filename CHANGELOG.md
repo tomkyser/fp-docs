@@ -2,6 +2,36 @@
 
 All notable changes to the fp-docs plugin will be documented in this file.
 
+## [Unreleased] - GSD Architecture Conversion
+
+### Changed
+- **Architecture converted from skill-engine to GSD command-workflow-agent model** -- 10-phase migration preserving all domain logic while adopting GSD's structural patterns
+- Commands: 23 skill files (`skills/*/SKILL.md`) replaced with GSD-style command files (`commands/fp-docs/*.md`) using YAML frontmatter + XML body (`<objective>`, `<execution_context>`, `<process>`, `<success_criteria>`)
+- Workflows: 23 instruction files (`framework/instructions/`) replaced with workflow orchestrators (`workflows/*.md`) using XML-structured multi-agent orchestration
+- Agents: 11 engine agents (`agents/*.md`) replaced with 10 specialist agents (`agents/fp-docs-*.md`) with XML-structured system prompts and model profile support
+- References: 11 modules (`modules/mod-*/SKILL.md`) + 6 algorithms (`framework/algorithms/`) consolidated into shared reference files (`references/*.md`) loaded via `@-reference`
+- Hooks: `hooks.json` event registry replaced with 6 standalone JS hook files (`hooks/fp-docs-*.js`) registered in `settings.json`
+- Configuration: `framework/config/system-config.md` + `project-config.md` merged into unified `config.json` with system, project, model_profile, and pipeline sections
+- Routing: Implicit skill-body routing metadata replaced with canonical routing table in `lib/routing.cjs` (23 entries, 5-field schema: agent, engine, workflow, operation, type)
+
+### Added
+- `lib/init.cjs` -- Command initialization module (initWriteOp, initReadOp, initAdminOp, initParallel, initRemediate)
+- `lib/model-profiles.cjs` -- Agent model resolution from config.json model_profile section
+- `lib/health.cjs` -- Plugin health check (GSD directories, fp-docs-* agents, standalone hooks, routing table validation)
+- `commands/fp-docs/do.md` -- Smart router: natural language to command matching
+- `commands/fp-docs/help.md` -- Grouped command reference display
+- `tests/lib/lib-init-tests.cjs` -- Unit tests for init.cjs
+- `tests/lib/lib-model-profiles-tests.cjs` -- Unit tests for model-profiles.cjs
+- 10 agent model profiles in config.json (quality/balanced/budget tiers)
+- STAGE_AUTHORITY_MAP expanded to 15 entries (7 new fp-docs-* + 8 legacy agent names)
+
+### Removed
+- `hooks/hooks.json` -- replaced by standalone JS hook files in settings.json
+- `framework/manifest.md` -- content rolled into README.md
+- `framework/config/system-config.md` -- merged into config.json
+- `framework/config/project-config.md` -- merged into config.json
+- Old engine agent files (orchestrate.md, modify.md, validate.md, etc.) -- replaced by fp-docs-* agents
+
 ## [1.0.0] - 2026-03-26
 
 ### Changed

@@ -356,8 +356,52 @@
 ---
 
 ## Phase 10: Cleanup
-**Reviewed**: pending
-**Verdict**: pending
+**Reviewed**: 2026-03-29
+**Verdict**: PASS
+
+### Files Reviewed
+**Mira -- deletions (88 files):**
+- 23 skill SKILL.md files (skills/*/)
+- 11 module SKILL.md files (modules/mod-*/)
+- 11 old agent files (agents/*.md without fp-docs- prefix)
+- 31 instruction files (framework/instructions/*/)
+- 6 algorithm files (framework/algorithms/)
+- 4 template files (framework/templates/)
+- 1 hooks.json
+- 1 framework/manifest.md
+
+**Mira -- documentation updates:**
+- `specs/architecture.md` -- full rewrite for GSD architecture
+- `specs/features-and-capabilities.md` -- engine->agent, module->reference, skill->command terminology
+- `specs/usage-and-workflows.md` -- engine->agent, all workflow sections, gotchas
+- `README.md` -- architecture rewrite, manifest content absorbed per user decision
+
+**Kai -- infrastructure updates:**
+- `CHANGELOG.md` -- [Unreleased] section documenting full conversion
+- `lib/hooks.cjs` -- handleInjectManifest reads plugin.json instead of deleted manifest.md
+- `tests/fixtures/hooks/inject-manifest/expected.json` -- fixture updated
+- `tests/lib/lib-engine-compliance-tests.cjs` -- full rewrite for GSD compliance
+- Root `CLAUDE.md` (cc-plugins/) -- repository layout, architecture, conventions updated
+
+### Verification
+- [x] 88 files deleted (23 skills + 11 modules + 11 old agents + 31 instructions + 6 algorithms + 4 templates + 1 hooks.json + 1 manifest)
+- [x] skills/ and modules/ directories now empty (removed by git)
+- [x] framework/ retains only tools/class-locals-cli.php and config/playwright-mcp-config.json (correct)
+- [x] No old agent files remain -- only 10 fp-docs-* agents exist
+- [x] `fp-tools health check`: overall healthy (all 10 checks pass)
+- [x] `fp-tools route validate`: valid (0 mismatches)
+- [x] Full test suite: 721 pass, 0 fail, 7 skipped
+- [x] Test count drop 732->721 accounted for by engine-compliance rewrite (old tests removed, new GSD tests added)
+- [x] manifest.md content absorbed into README.md per user decision
+- [x] Root CLAUDE.md updated (47 insertions, 46 deletions)
+- [x] CHANGELOG.md documents full conversion scope
+
+### Issues Found
+#### CRITICAL
+- None
+
+#### MINOR (Second Pass)
+- Root CLAUDE.md (cc-plugins/) is in the parent repo -- will need separate commit there
 
 ---
 
