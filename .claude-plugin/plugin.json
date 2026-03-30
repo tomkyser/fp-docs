@@ -1,7 +1,7 @@
 {
   "name": "fp-docs",
   "version": "1.0.0",
-  "description": "Documentation management system for the Foreign Policy WordPress codebase. Three-repo architecture with branch mirroring, 9 engine agents, 23 user commands.",
+  "description": "Documentation management system for the Foreign Policy WordPress codebase. Command-workflow-agent architecture with pipeline enforcement, 23 commands, 10 specialist agents.",
   "author": {
     "name": "Tom Kyser"
   },
