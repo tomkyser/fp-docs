@@ -172,31 +172,60 @@
 ---
 
 ## Current Phase: 3 — Read + Other Workflow Redesign + Command Updates
-**Status**: planning
+**Status**: in-progress
 **Started**: 2026-03-30
 
 ### Scope
 - Read workflows (5): audit, verify, sanity-check, test, verbosity-audit
-- Admin workflows (6): update-index, update-claude, update-skills, setup, sync, update
+- Admin write workflows (2): update-index, update-claude (have pipeline enforcement)
+- Admin no-pipeline workflows (4): setup, sync, update, update-skills
 - Batch workflow (1): parallel
 - Meta workflows (2): do, help
 
 ### Task Claims
 | Task | Owner | Status | Notes |
 |------|-------|--------|-------|
-| Design v2 read workflow template | Mira | pending | Simpler than write: init -> scope-assess -> research -> plan -> execute. No pipeline stages 1-3. |
-| Rewrite audit.md to v2 | Mira | pending | Read workflow, fp-docs-validator agent |
-| Rewrite verify.md to v2 | Mira | pending | Read workflow, fp-docs-validator agent |
-| Rewrite sanity-check.md to v2 | Mira | pending | Read workflow, fp-docs-validator agent |
-| Rewrite test.md to v2 | Mira | pending | Read workflow, fp-docs-validator agent |
-| Rewrite verbosity-audit.md to v2 | Mira | pending | Read workflow, fp-docs-verbosity agent (read-only) |
-| Rewrite admin workflows to v2 | Mira | pending | 6 admin workflows: sync, setup, update-index, update-claude, update-skills, update |
-| Rewrite batch/meta workflows to v2 | Mira | pending | parallel, do, help |
-| Update init.cjs for v2 read-op bootstrap | Kai | pending | Add scope-assess support to read-op init if v2 read template requires it |
-| Update command files for v2 routing | Kai | pending | Verify command -> workflow routing is correct for all 23 commands |
-| Test suite updates for Phase 3 changes | Kai | pending | Update any tests affected by workflow or init changes |
+| Rewrite 5 read workflows to v2 | Mira | done | audit, verify, sanity-check, test, verbosity-audit. Added scope-assess, dynamic research (1-N), tracker. No enforcement agents (read-only). |
+| Rewrite 2 admin write workflows to v2 | Mira | done | update-index (index agent primary), update-claude (system agent primary). Both get dedicated verbosity + citation enforcement agents. |
+| Review/update 6 admin/meta/batch workflows | Mira | done | setup, sync, update, update-skills, do, help: no changes needed (clean). parallel.md: rewrote to v2 (teammates primary-only, dedicated enforcement agents, pipeline next loop). |
+| Update init.cjs for v2 read-op bootstrap | Kai | done | Added featureFlags + scopeAssess to read-op and admin-op init payloads. Fixed stale engine:null fallback in buildCommonContext. |
+| Verify command -> workflow routing | Kai | done | All 23 commands validated: workflow files exist, agent files exist, command files exist. Zero issues. |
+| Test suite updates for Phase 3 changes | Kai | done | Added featureFlags/scopeAssess assertions to initReadOp and initAdminOp tests. 721 pass / 0 fail / 7 skipped. Note: init test architecture needs output mock (Phase 4). |
 
 ### Phase Completion Summary
-_Pending_
+
+**Files modified (Mira -- 8 workflow rewrites):**
+- `workflows/audit.md` -- v2 read pattern: scope-assess, dynamic research (1-N), tracker, validator agent
+- `workflows/verify.md` -- v2 read pattern: scope-assess, dynamic research (1-N), tracker, validator agent
+- `workflows/sanity-check.md` -- v2 read pattern: scope-assess, dynamic research (1-N), tracker, validator agent
+- `workflows/test.md` -- v2 read pattern: scope-assess, dynamic research (1-N), tracker, validator agent
+- `workflows/verbosity-audit.md` -- v2 read pattern: scope-assess, dynamic research (1-N), tracker, verbosity agent (read-only)
+- `workflows/update-index.md` -- v2 admin write: index agent primary, dedicated verbosity + citation enforcement agents, pipeline next loop
+- `workflows/update-claude.md` -- v2 admin write: system agent primary, dedicated verbosity + citation enforcement agents, pipeline next loop
+- `workflows/parallel.md` -- v2 batch: teammates primary-only, dedicated enforcement agents (verbosity/citations/api-refs) after all teammates complete, pipeline next loop
+
+**Files unchanged (reviewed, no issues):**
+- `workflows/setup.md` -- Admin, no pipeline, clean structure
+- `workflows/sync.md` -- Admin, no pipeline, clean structure
+- `workflows/update.md` -- Admin, no pipeline, clean structure
+- `workflows/update-skills.md` -- Admin, no pipeline, clean structure
+- `workflows/do.md` -- Meta router, clean structure
+- `workflows/help.md` -- Meta help display, clean structure
+
+**Files modified (Kai -- 3 CJS updates):**
+- `lib/init.cjs` -- Added featureFlags + scopeAssess to read-op and admin-op init payloads, fixed stale engine:null fallback
+- Tests -- Added featureFlags/scopeAssess assertions to initReadOp and initAdminOp tests (721 pass / 0 fail / 7 skipped)
+
+**Decisions made:**
+- Read workflows follow a 5-step pattern (init, scope-assess, research, plan, execute) -- no enforcement agents since read-only
+- Admin write workflows (update-index, update-claude) get dedicated enforcement agents but skip scope-assess/research (simpler operations)
+- parallel.md now aligns with v2: teammates do primary-only, enforcement runs centrally after all teammates complete
+- 6 admin/meta workflows (setup, sync, update, update-skills, do, help) need no changes -- already clean
+- Command -> workflow routing verified: all 23 commands valid (Kai)
+
+**Items for Lead review:**
+- All 8 rewritten workflow files
+- init.cjs changes (featureFlags, scopeAssess in read-op/admin-op)
+- parallel.md v2 team execution model
 
 ---

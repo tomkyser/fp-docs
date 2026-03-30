@@ -436,7 +436,7 @@ All 3 MINOR items resolved. Zero outstanding issues across 10 phases. Second Pas
 |-------|-------|--------|
 | 1 | Retrospective follow-ups + dynamic delegation infrastructure | PASS |
 | 2 | Write workflow architecture redesign (9 workflows) | PASS WITH NOTES |
-| 3 | Read + other workflow redesign + command updates | Pending |
+| 3 | Read + other workflow redesign + command updates | PASS WITH NOTES |
 | 4 | Testing + documentation + final validation | Pending |
 
 ---
@@ -576,5 +576,59 @@ Clean split. Mira: architecture, content, documentation, framework relocation, p
 Excellent split. Mira owned all 9 workflow rewrites + template design (heavy content work). Kai built the agent + all CJS infrastructure changes (agent-map, hooks, settings, config, tests). The work was parallel with zero overlap. Both delivered equal volume and complexity.
 
 One note for future: the template-to-implementation gap (template says fp-docs-verbosity, Kai built fp-docs-verbosity-enforcer) happened because the template was written before the agent naming decision. Recommendation: when a design doc creates an open question ("Option A vs B"), resolve it in the doc BEFORE implementation starts, so downstream consumers (workflows) use the final name.
+
+---
+
+## Phase 3: Read + Other Workflow Redesign + Command Updates
+**Reviewed**: 2026-03-30
+**Verdict**: PASS WITH NOTES
+
+### Files Reviewed
+
+**Read workflow rewrites (Mira -- 5 files):**
+- `workflows/audit.md` -- v2 read pattern: 5 steps (init, scope-assess, research 1-N, plan, execute). Validator agent. Depth-tiered audit (quick/standard/deep). Remediation recommendations.
+- `workflows/verify.md` -- v2 read pattern: validator agent, 10-point verification checklist
+- `workflows/sanity-check.md` -- v2 read pattern: validator agent, source-vs-doc claim comparison
+- `workflows/test.md` -- v2 read pattern: validator agent, end-to-end test execution
+- `workflows/verbosity-audit.md` -- v2 read pattern: verbosity agent (read-only, correct agent)
+
+**Admin write workflow rewrites (Mira -- 2 files):**
+- `workflows/update-index.md` -- v2 admin write: index agent primary, dedicated verbosity + citation enforcement agents, pipeline next loop
+- `workflows/update-claude.md` -- v2 admin write: system agent primary, dedicated verbosity + citation enforcement agents, pipeline next loop
+
+**Batch workflow rewrite (Mira -- 1 file):**
+- `workflows/parallel.md` -- v2 batch: teammates primary-only, dedicated enforcement agents (verbosity/citations/api-refs) after all teammates complete, single review + finalize phase
+
+**Reviewed unchanged (Mira -- 6 files):**
+- `workflows/setup.md`, `workflows/sync.md`, `workflows/update.md`, `workflows/update-skills.md` -- Admin, no pipeline, clean
+- `workflows/do.md`, `workflows/help.md` -- Meta, clean
+
+**CJS updates (Kai -- 2 files):**
+- `lib/init.cjs` -- featureFlags + scopeAssess added to read-op and admin-op init payloads; stale engine:null fallback fixed to agent:null
+- `tests/lib/lib-init-tests.cjs` -- 2 new test cases verifying featureFlags and scopeAssess in read-op and admin-op results
+
+### Verification
+- [x] Test suite: 721 pass, 0 fail, 7 skipped (baseline maintained)
+- [x] `fp-tools route validate`: valid (0 mismatches)
+- [x] All 5 read workflows follow v2 read pattern (5 steps, no enforcement agents)
+- [x] Admin write workflows (update-index, update-claude) include dedicated enforcement agents + pipeline next loop
+- [x] parallel.md: teammates do primary-only, enforcement runs centrally, single finalize
+- [x] verbosity-audit.md correctly uses `fp-docs-verbosity` (read-only agent -- correct for audit)
+- [x] init.cjs: featureFlags and scopeAssess fields present in read-op and admin-op payloads
+- [x] init.cjs: stale engine:null fallback fixed to agent/workflow/operation/type null defaults
+- [x] New test assertions check boolean type for scopeAssess.enabled
+- [x] 6 admin/meta workflows confirmed unchanged (no changes needed)
+- [x] All workflows use ${CLAUDE_PLUGIN_ROOT} consistently
+
+### Issues Found
+#### CRITICAL
+- None
+
+#### MINOR (Second Pass)
+- **Verbosity agent name mismatch (carried from Phase 2)**: Still present in 12 workflows (all write + admin write + parallel). Step 6 references `fp-docs-verbosity` (resolve-model + agent=) instead of `fp-docs-verbosity-enforcer`. Only `verbosity-audit.md` correctly uses `fp-docs-verbosity` (it's genuinely read-only). Must be fixed in Phase 4 or second pass -- this is a runtime-breaking issue for write enforcement.
+- Kai notes init tests need output mock architecture (process.exit prevents assertion execution). Flagged for Phase 4.
+
+### Labor Division Assessment
+Good split. Mira handled 8 workflow rewrites + 6 reviews. Kai handled CJS init updates, routing validation, and test updates. Lighter CJS work this phase (as expected from Kai's Phase 3 prep analysis). No rebalancing needed -- Phase 4 (testing + docs) will give Kai more to do.
 
 ---

@@ -53,6 +53,14 @@ describe('lib/init.cjs', () => {
       assert.equal(result.route.command, 'audit');
       assert.equal(result.route.type, 'read');
     });
+
+    it('should include featureFlags and scopeAssess for v2 workflows', () => {
+      const { initReadOp } = require(path.join(LIB_DIR, 'init.cjs'));
+      const result = initReadOp('audit', [], false);
+      assert.ok(result.featureFlags, 'should have featureFlags');
+      assert.ok(result.scopeAssess, 'should have scopeAssess');
+      assert.equal(typeof result.scopeAssess.enabled, 'boolean', 'scopeAssess.enabled should be boolean');
+    });
   });
 
   describe('initAdminOp', () => {
@@ -63,6 +71,14 @@ describe('lib/init.cjs', () => {
       assert.ok(result.paths, 'should have paths');
       assert.equal(result.route.command, 'setup');
       assert.equal(result.route.type, 'admin');
+    });
+
+    it('should include featureFlags and scopeAssess for v2 workflows', () => {
+      const { initAdminOp } = require(path.join(LIB_DIR, 'init.cjs'));
+      const result = initAdminOp('sync', [], false);
+      assert.ok(result.featureFlags, 'should have featureFlags');
+      assert.ok(result.scopeAssess, 'should have scopeAssess');
+      assert.equal(typeof result.scopeAssess.enabled, 'boolean', 'scopeAssess.enabled should be boolean');
     });
   });
 
