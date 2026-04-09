@@ -27,7 +27,7 @@ Core function. Returns the scope assessment JSON defined in `scope-assessment.md
 
 1. Call `buildCommonContext(command)` from `init.cjs` (reuse, don't duplicate)
 2. Call `getFeatureFlags()` from `init.cjs`
-3. If `scope_assess.enabled` is false or command type is read/admin/meta: return default light payload
+3. If `scope_assess.enabled` is false or command type is read/admin/meta: return default low payload
 4. Parse `arguments` for explicit file paths (regex: paths ending in `.md`, `.php`, `/`)
 5. For each explicit path: call `source-map.cjs` `lookup()` or `reverseLookup()` to resolve targets
 6. For `auto-update`: run `git diff --name-only` against docs root, filter through source-map
@@ -47,7 +47,7 @@ CLI handler. Parses `[command, ...arguments]` from args, calls `assess()`, outpu
 
 ### Error handling
 
-- All errors return a default light payload. Never throw. Never block.
+- All errors return a default low payload. Never throw. Never block.
 - Log warnings via `core.error()` for diagnostic visibility.
 
 ---
@@ -143,15 +143,15 @@ Add to the `system` section:
   "system": {
     "scope_assess": {
       "enabled": true,
-      "heavy_threshold_files": 5,
-      "heavy_threshold_sections": 3,
-      "standard_threshold_files": 2,
-      "standard_threshold_sources": 3,
+      "high_threshold_files": 5,
+      "high_threshold_sections": 3,
+      "medium_threshold_files": 2,
+      "medium_threshold_sources": 3,
       "max_researchers": 3
     },
     "tracker": {
       "enabled": true,
-      "auto_create_threshold": "standard",
+      "auto_create_threshold": "medium",
       "retention_days": 30,
       "max_trackers": 200
     }
@@ -165,12 +165,12 @@ Add to the `system` section:
 
 ### scope-assess.cjs tests
 
-1. **Light assessment**: Single file target returns complexity=light, researcherCount=1, trackerRequired=false
-2. **Standard assessment**: 3 file targets returns complexity=standard, researcherCount=1, trackerRequired=true
-3. **Heavy assessment**: 6+ file targets returns complexity=heavy, researcherCount>1
+1. **Low assessment**: Single file target returns complexity=low, researcherCount=1, trackerRequired=false
+2. **Medium assessment**: 3 file targets returns complexity=medium, researcherCount=1, trackerRequired=true
+3. **High assessment**: 6+ file targets returns complexity=high, researcherCount>1
 4. **Auto-update path**: Mocked git diff output correctly maps through source-map
-5. **Skip conditions**: read-op command returns default light; disabled config returns default light
-6. **Error resilience**: Bad source-map lookup returns default light (no throw)
+5. **Skip conditions**: read-op command returns default low; disabled config returns default low
+6. **Error resilience**: Bad source-map lookup returns default low (no throw)
 7. **Researcher partitioning**: 6 targets across 2 researchers -> 3 targets each
 
 ### tracker.cjs tests

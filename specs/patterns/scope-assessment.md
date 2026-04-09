@@ -11,7 +11,7 @@
 Scope assessment is a new workflow step that runs **before research**. It quickly evaluates the task scale to determine:
 
 1. How many researcher agents to spawn (1-N)
-2. Estimated complexity tier (light / standard / heavy)
+2. Estimated complexity tier (low / medium / high)
 3. Whether a tracker doc should be created
 4. Initial file targets and source-map lookups
 
@@ -49,7 +49,7 @@ The scope-assess module receives:
 
 ```json
 {
-  "complexity": "light | standard | heavy",
+  "complexity": "low | medium | high",
   "researcherCount": 1,
   "targets": [
     {
@@ -82,9 +82,9 @@ The scope-assess module receives:
 
 | Tier | Criteria | Researcher Count | Tracker |
 |------|----------|-----------------|---------|
-| **light** | 1 doc, 1-2 source files, single section | 1 | No |
-| **standard** | 2-4 docs, or 1 doc with 3+ source files, or cross-section | 1 | Yes |
-| **heavy** | 5+ docs, batch operation, or scope covers 3+ sections | 2-N (capped at `orchestration.max_concurrent_subagents`) | Yes |
+| **low** | 1 doc, 1-2 source files, single section | 1 | No |
+| **medium** | 2-4 docs, or 1 doc with 3+ source files, or cross-section | 1 | Yes |
+| **high** | 5+ docs, batch operation, or scope covers 3+ sections | 2-N (capped at `orchestration.max_concurrent_subagents`) | Yes |
 
 ### Assessment Algorithm
 
@@ -93,10 +93,10 @@ The scope-assess module receives:
 3. If targets are descriptive (natural language): estimate by keyword matching against source-map entries
 4. For `auto-update`: count git-changed files via `git diff --name-only` filtered through source-map
 5. For `auto-revise`: count items in needs-revision-tracker.md
-6. For `parallel`: always heavy (batch mode flag)
+6. For `parallel`: always high (batch mode flag)
 7. Apply tier thresholds to determine complexity and researcher count
 8. If `researcherCount > 1`: partition targets across researchers (each gets a disjoint subset)
-9. If `complexity >= standard`: set `trackerRequired: true`
+9. If `complexity >= medium`: set `trackerRequired: true`
 
 ### Configuration (in config.json under `system.scope_assess`)
 
@@ -104,10 +104,10 @@ The scope-assess module receives:
 {
   "scope_assess": {
     "enabled": true,
-    "heavy_threshold_files": 5,
-    "heavy_threshold_sections": 3,
-    "standard_threshold_files": 2,
-    "standard_threshold_sources": 3,
+    "high_threshold_files": 5,
+    "high_threshold_sections": 3,
+    "medium_threshold_files": 2,
+    "medium_threshold_sources": 3,
     "max_researchers": 3
   }
 }
@@ -115,7 +115,7 @@ The scope-assess module receives:
 
 ### Skip Conditions
 
-Scope assessment is skipped (returns a default light payload) when:
+Scope assessment is skipped (returns a default low payload) when:
 - `--no-research` flag is set (no researchers will be spawned anyway)
 - `scope_assess.enabled` is false in config
 - Command type is `read`, `admin`, or `meta` (these don't need dynamic delegation)
@@ -180,8 +180,8 @@ When N > 1 researchers run in parallel, their analyses are stored as separate an
 ## Error Handling
 
 - If source-map lookup fails for a target: include it in targets with `sourcePaths: []` and let the researcher agent discover the mapping
-- If scope-assess CLI fails entirely: fall back to default light payload (1 researcher, no tracker) -- never block the workflow
-- If git diff fails for auto-update: fall back to standard complexity with no specific targets
+- If scope-assess CLI fails entirely: fall back to default low payload (1 researcher, no tracker) -- never block the workflow
+- If git diff fails for auto-update: fall back to medium complexity with no specific targets
 
 ---
 

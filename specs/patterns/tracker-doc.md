@@ -14,7 +14,7 @@ A tracker doc is a JSON file that follows an operation from scope assessment thr
 2. **Progress ledger** -- the workflow can check the tracker to know which phases completed, which targets were processed, and what issues were found
 3. **Post-operation artifact** -- after completion, the tracker is the authoritative record of what happened during the operation
 
-Tracker docs are created by scope assessment (for standard/heavy complexity) and updated by every subsequent agent in the workflow.
+Tracker docs are created by scope assessment (for medium/high complexity) and updated by every subsequent agent in the workflow.
 
 ---
 
@@ -51,7 +51,7 @@ fp-tools tracker prune   [--days <N>]
 {
   "id": "tracker-a1b2c3d4",
   "operation": "revise",
-  "complexity": "standard",
+  "complexity": "medium",
   "status": "active",
   "created": "2026-03-30T14:00:00.000Z",
   "updated": "2026-03-30T14:05:00.000Z",
@@ -69,7 +69,7 @@ fp-tools tracker prune   [--days <N>]
       "agent": "cli",
       "timestamp": "2026-03-30T14:00:00.000Z",
       "result": {
-        "complexity": "standard",
+        "complexity": "medium",
         "researcherCount": 1,
         "estimatedFiles": 2
       }
@@ -140,7 +140,7 @@ Creates a new tracker. Called by scope-assess step in the workflow.
 ```js
 create({
   operation: 'revise',
-  complexity: 'standard',
+  complexity: 'medium',
   targets: [{ docPath: '...', sourcePaths: ['...'] }]
 })
 ```
@@ -172,7 +172,7 @@ Returns a condensed view: operation, complexity, phase statuses, issue count, ta
 {
   "id": "tracker-a1b2c3d4",
   "operation": "revise",
-  "complexity": "standard",
+  "complexity": "medium",
   "phaseStatuses": {
     "scope-assess": "completed",
     "research": "completed",
@@ -269,14 +269,14 @@ If the workflow is interrupted (agent crash, user abort), the tracker stays in `
 {
   "tracker": {
     "enabled": true,
-    "auto_create_threshold": "standard",
+    "auto_create_threshold": "medium",
     "retention_days": 30,
     "max_trackers": 200
   }
 }
 ```
 
-- `auto_create_threshold`: Minimum complexity tier that triggers tracker creation. `light` = always, `standard` = standard+heavy, `heavy` = heavy only.
+- `auto_create_threshold`: Minimum complexity tier that triggers tracker creation. `low` = always, `medium` = medium+high, `high` = high only.
 - When `enabled` is false, all tracker CLI calls are no-ops (return empty/success).
 
 ---

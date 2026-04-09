@@ -116,15 +116,15 @@
     },
     "scope_assess": {
       "enabled": true,
-      "heavy_threshold_files": 5,
-      "heavy_threshold_sections": 3,
-      "standard_threshold_files": 2,
-      "standard_threshold_sources": 3,
+      "high_threshold_files": 5,
+      "high_threshold_sections": 3,
+      "medium_threshold_files": 2,
+      "medium_threshold_sources": 3,
       "max_researchers": 3
     },
     "tracker": {
       "enabled": true,
-      "auto_create_threshold": "standard",
+      "auto_create_threshold": "medium",
       "retention_days": 30,
       "max_trackers": 200
     }
