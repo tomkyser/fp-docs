@@ -257,6 +257,18 @@ function main() {
       break;
     }
 
+    case 'merge-intel': {
+      const mergeIntel = require('./lib/merge-intel.cjs');
+      mergeIntel.cmdMergeIntel(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'migrate': {
+      const migrate = require('./lib/migrate.cjs');
+      migrate.cmdMigrate(args[1], args.slice(2), raw);
+      break;
+    }
+
     default:
       error(`Unknown command: ${command}. Run fp-tools help for available commands`);
   }
