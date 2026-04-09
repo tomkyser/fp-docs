@@ -13,7 +13,7 @@
  * Output: JSON with hookSpecificOutput to stdout.
  */
 
-const { handleInjectManifest, handleBranchSyncCheck, handleDriftNudge } = require('../lib/hooks.cjs');
+const { handleInjectManifest, handleBranchSyncCheck, handleDriftNudge, handleMigrationNudge } = require('../lib/hooks.cjs');
 
 async function main() {
   let input = {};
@@ -61,6 +61,16 @@ async function main() {
     const drift = handleDriftNudge(input);
     if (drift.additionalContext) {
       parts.push(drift.additionalContext);
+    }
+  } catch {
+    // Silent failure -- non-critical
+  }
+
+  try {
+    // 4. Migration nudge (check for old data layout)
+    const migration = handleMigrationNudge(input);
+    if (migration.additionalContext) {
+      parts.push(migration.additionalContext);
     }
   } catch {
     // Silent failure -- non-critical
