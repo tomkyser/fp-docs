@@ -23,7 +23,7 @@ If the prompt contains a `<files_to_read>` block, you MUST Read every file liste
 The plugin root path is provided in your spawn prompt.
 
 **Key files**:
-- `docs/claude-code-docs-system/PROJECT-INDEX.md` — exhaustive codebase file tree
+- `docs/PROJECT-INDEX.md` — exhaustive codebase file tree
 - `source-map.json` — source-to-doc mapping with file-level granularity
 </project_context>
 

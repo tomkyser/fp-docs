@@ -4,7 +4,7 @@ Defines PROJECT-INDEX.md update procedure and link format rules.
 
 ## File Path
 
-`docs/claude-code-docs-system/PROJECT-INDEX.md`
+`docs/PROJECT-INDEX.md`
 
 ## When to Update
 

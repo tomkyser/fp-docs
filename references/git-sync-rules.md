@@ -107,7 +107,7 @@ Phase 3 is the critical addition. Without it, the sync command short-circuits wh
 
 The watermark tracks the codebase commit hash that the docs were last synced against. It solves the fundamental problem: branch-name parity (both repos on `master`) does not mean content parity (docs reflect current code). Without the watermark, there is no baseline to detect that new code was merged to the codebase since the last time docs were checked.
 
-**File location**: `{docs-root}/.sync-watermark`
+**File location**: `{docs-root}/.fp-docs-branch/.sync-watermark`
 
 **Format** (shell-parseable, one key=value per line):
 ```
@@ -136,7 +136,7 @@ sync_timestamp=2026-03-04T10:30:00Z
 
 **Algorithm**:
 
-1. **Read watermark**: Parse `{docs-root}/.sync-watermark` if it exists. Extract `codebase_commit` value.
+1. **Read watermark**: Parse `{docs-root}/.fp-docs-branch/.sync-watermark` if it exists. Extract `codebase_commit` value.
 
 2. **Get current codebase state**:
    ```bash
@@ -179,9 +179,9 @@ sync_timestamp=2026-03-04T10:30:00Z
    - **POSSIBLY STALE**: A source file in the same mapped directory was modified (sibling file change)
    - **STRUCTURAL**: A source file was added or deleted, affecting doc structure (needs new doc, or existing doc may need deprecation)
 
-8. **Write diff report** to `docs/diffs/{YYYY-MM-DD}_{codebase-branch}_diff_report.md`
+8. **Write diff report** to `.fp-docs-branch/diffs/{YYYY-MM-DD}_{codebase-branch}_diff_report.md`
 
-9. **Update watermark**: Write the current codebase HEAD, branch, and timestamp to `{docs-root}/.sync-watermark` (see Codebase Change Watermark for format). This happens regardless of whether a diff report was generated — the watermark always advances to record that a sync check was performed.
+9. **Update watermark**: Write the current codebase HEAD, branch, and timestamp to `{docs-root}/.fp-docs-branch/.sync-watermark` (see Codebase Change Watermark for format). This happens regardless of whether a diff report was generated — the watermark always advances to record that a sync check was performed.
 
 ### Diff Report Format
 

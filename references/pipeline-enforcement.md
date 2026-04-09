@@ -51,7 +51,7 @@ Apply check definitions from your preloaded mod-validation module.
 ### Stage 6: Changelog Update
 
 Follow the changelog rules from your preloaded mod-changelog module:
-- Append entry to `docs/changelog.md`
+- Append entry to `.fp-docs-branch/changelog.md`
 - List every file created, modified, or removed
 - Include summary of why the change was made
 
@@ -175,6 +175,6 @@ The SubagentStop hook validates pipeline completion using these rules:
 
 For any doc-modify operation, these files MUST have been modified:
 - At least one file in `docs/` (the target documentation)
-- `docs/changelog.md` (the changelog entry)
+- `.fp-docs-branch/changelog.md` (the changelog entry)
 
 If neither changed, the operation may have failed silently.

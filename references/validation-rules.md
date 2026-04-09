@@ -7,10 +7,10 @@ Defines the verification checklist and sanity-check algorithm used to validate d
 Run ALL 10 checks. Report results for each individually, then give an overall PASS or FAIL.
 
 ### Check 1: File Existence
-Read `docs/About.md`. Extract every relative markdown link. Verify each linked file exists on disk.
+Read `docs/README.md`. Extract every relative markdown link. Verify each linked file exists on disk.
 
 ### Check 2: Orphan Check
-List all `.md` files in `docs/` recursively. Confirm each is linked from either `docs/About.md` or its parent `_index.md`. Exceptions: `docs-management.md`, `changelog.md`, `needs-revision-tracker.md`, everything inside `docs/claude-code-docs-system/` and `docs/claude-code-config/`.
+List all `.md` files in `docs/` recursively. Confirm each is linked from either `docs/README.md` or its parent `_index.md`. Exceptions: `docs-management.md`, `changelog.md`, `needs-revision-tracker.md`, `PROJECT-INDEX.md`, everything inside `docs/claude-code-config/`.
 
 ### Check 3: Index Completeness
 Find every `_index.md`. For each, list all `.md` siblings and confirm each is linked from the `_index.md`.
@@ -22,7 +22,7 @@ If operation touched code registering hooks/shortcodes/REST/constants/deps/ACF/f
 Validate all relative markdown links in modified docs resolve to real files.
 
 ### Check 6: Changelog Check
-Confirm `docs/changelog.md` has an entry for today's date. Skip if standalone verify.
+Confirm `.fp-docs-branch/changelog.md` has an entry for today's date. Skip if standalone verify.
 
 ### Check 7: Citation Format Validation
 Parse all `> **Citation**` blocks. Verify marker format matches: `> **Citation** · \`{file}\` · \`{symbol}\` · L{start}–{end}`. Verify cited file paths exist. Verify cited symbols exist in cited files.

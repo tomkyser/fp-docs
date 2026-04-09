@@ -51,12 +51,12 @@ Source-to-doc mappings are managed by `source-map.json` at the plugin root, acce
 | Resource | Path (relative to theme root) |
 |----------|------------------------------|
 | Documentation root | `docs/` |
-| Documentation hub | `docs/About.md` |
-| Changelog | `docs/changelog.md` |
+| Documentation hub | `docs/README.md` |
+| Changelog | `.fp-docs-branch/changelog.md` |
 | Needs revision tracker | `docs/needs-revision-tracker.md` |
-| Codebase index | `docs/claude-code-docs-system/PROJECT-INDEX.md` |
+| Codebase index | `docs/PROJECT-INDEX.md` |
 | Shared locals shapes | `docs/05-components/_locals-shapes.md` |
-| Flagged concerns registry | `docs/FLAGGED CONCERNS/` |
+| Flagged concerns registry | `.fp-docs-branch/flagged-concerns/` |
 
 ## Feature Enables
 

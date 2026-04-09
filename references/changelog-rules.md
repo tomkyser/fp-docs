@@ -6,7 +6,7 @@ Defines the changelog entry format and update procedure.
 
 ### 1. Read Changelog
 
-Read `docs/changelog.md`.
+Read `.fp-docs-branch/changelog.md`.
 
 ### 2. Determine Month Header
 

@@ -15,7 +15,7 @@ This module is the single source of truth for all formatting, naming, structural
 
 - Every `docs/NN-section/` directory MUST have a `_index.md`.
 - Every doc file in any section MUST be linked from its parent `_index.md`.
-- Every section MUST be linked from `About.md`.
+- Every section MUST be linked from `README.md`.
 - New appendix entries use the next available letter prefix (currently through `G-`).
 
 ## 3. Document Format Templates
@@ -148,7 +148,7 @@ When creating or modifying docs that contain any of the following, the correspon
 9. ALWAYS include citations — every documentable code claim requires a citation block.
 10. NEVER fabricate citations — citation excerpts are copied verbatim from source code.
 11. API Reference provenance is mandatory — every row MUST include a `Src` value.
-12. Flag genuine code defects in `docs/FLAGGED CONCERNS/`.
+12. Flag genuine code defects in `.fp-docs-branch/flagged-concerns/`.
 13. NEVER summarize enumerables — list every item explicitly.
 14. NEVER truncate for context savings — delegate or checkpoint instead.
 15. Scope manifests are contracts — binding targets that block progression if not met.

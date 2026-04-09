@@ -46,7 +46,8 @@ describe('lib/git.cjs', () => {
 
     it('should parse valid watermark file into structured object', () => {
       const git = require(path.join(LIB_DIR, 'git.cjs'));
-      const watermarkPath = path.join(tmpDir, '.sync-watermark');
+      fs.mkdirSync(path.join(tmpDir, '.fp-docs-branch'), { recursive: true });
+      const watermarkPath = path.join(tmpDir, '.fp-docs-branch', '.sync-watermark');
       fs.writeFileSync(watermarkPath, [
         '# fp-docs sync watermark -- do not edit manually',
         '# Records the codebase state that docs were last synced against.',
@@ -71,7 +72,8 @@ describe('lib/git.cjs', () => {
     it('should return null for malformed file (missing codebase_commit)', () => {
       const git = require(path.join(LIB_DIR, 'git.cjs'));
       const malformedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'git-test-malformed-'));
-      const watermarkPath = path.join(malformedDir, '.sync-watermark');
+      fs.mkdirSync(path.join(malformedDir, '.fp-docs-branch'), { recursive: true });
+      const watermarkPath = path.join(malformedDir, '.fp-docs-branch', '.sync-watermark');
       fs.writeFileSync(watermarkPath, [
         '# fp-docs sync watermark',
         'codebase_branch=master',
@@ -86,7 +88,8 @@ describe('lib/git.cjs', () => {
     it('should ignore comment lines starting with #', () => {
       const git = require(path.join(LIB_DIR, 'git.cjs'));
       const commentDir = fs.mkdtempSync(path.join(os.tmpdir(), 'git-test-comment-'));
-      const watermarkPath = path.join(commentDir, '.sync-watermark');
+      fs.mkdirSync(path.join(commentDir, '.fp-docs-branch'), { recursive: true });
+      const watermarkPath = path.join(commentDir, '.fp-docs-branch', '.sync-watermark');
       fs.writeFileSync(watermarkPath, [
         '# This is a comment',
         '# Another comment',
@@ -117,7 +120,7 @@ describe('lib/git.cjs', () => {
     it('should create file with shell-parseable key=value format (not JSON)', () => {
       const git = require(path.join(LIB_DIR, 'git.cjs'));
       git.writeWatermark(tmpDir, 'master', 'abc1234def5678');
-      const content = fs.readFileSync(path.join(tmpDir, '.sync-watermark'), 'utf-8');
+      const content = fs.readFileSync(path.join(tmpDir, '.fp-docs-branch', '.sync-watermark'), 'utf-8');
       // Must NOT be JSON
       assert.ok(!content.startsWith('{'), 'should not be JSON');
       assert.ok(!content.startsWith('['), 'should not be JSON');
@@ -130,7 +133,7 @@ describe('lib/git.cjs', () => {
     it('should contain codebase_branch=, codebase_commit=, sync_timestamp=', () => {
       const git = require(path.join(LIB_DIR, 'git.cjs'));
       git.writeWatermark(tmpDir, 'feature/test', 'feedface99887766');
-      const content = fs.readFileSync(path.join(tmpDir, '.sync-watermark'), 'utf-8');
+      const content = fs.readFileSync(path.join(tmpDir, '.fp-docs-branch', '.sync-watermark'), 'utf-8');
       assert.ok(content.includes('codebase_branch=feature/test'));
       assert.ok(content.includes('codebase_commit=feedface99887766'));
       assert.match(content, /sync_timestamp=\d{4}-\d{2}-\d{2}T/);
@@ -139,7 +142,7 @@ describe('lib/git.cjs', () => {
     it('should start with "# fp-docs sync watermark"', () => {
       const git = require(path.join(LIB_DIR, 'git.cjs'));
       git.writeWatermark(tmpDir, 'master', 'abc123');
-      const content = fs.readFileSync(path.join(tmpDir, '.sync-watermark'), 'utf-8');
+      const content = fs.readFileSync(path.join(tmpDir, '.fp-docs-branch', '.sync-watermark'), 'utf-8');
       assert.ok(content.startsWith('# fp-docs sync watermark'), 'should start with header comment');
     });
   });

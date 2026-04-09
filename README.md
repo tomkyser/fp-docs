@@ -762,11 +762,11 @@ Setup will detect whether the docs repo exists at `{codebase-root}/themes/foreig
 
 | File | Purpose |
 |------|---------|
-| `docs/changelog.md` | Written to by every modification operation |
+| `.fp-docs-branch/changelog.md` | Written to by every modification operation |
 | `docs/needs-revision-tracker.md` | Queue consumed by `/fp-docs:auto-revise` |
-| `docs/About.md` | Documentation hub and table of contents |
-| `docs/claude-code-docs-system/PROJECT-INDEX.md` | Master codebase reference index |
-| `docs/diffs/` | Accumulated branch diff reports (do not clean up) |
+| `docs/README.md` | Documentation hub and table of contents |
+| `docs/PROJECT-INDEX.md` | Master codebase reference index |
+| `.fp-docs-branch/diffs/` | Accumulated branch diff reports (do not clean up) |
 
 ---
 

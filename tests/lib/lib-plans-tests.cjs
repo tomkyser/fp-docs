@@ -36,7 +36,7 @@ function cleanTempDir(dir) {
  * Write a plan JSON file at the expected path within a temp dir.
  */
 function writePlanFile(tmpDir, plan) {
-  const plansDir = path.join(tmpDir, '.fp-docs', 'plans');
+  const plansDir = path.join(tmpDir, 'plans');
   fs.mkdirSync(plansDir, { recursive: true });
   const planPath = path.join(plansDir, `${plan.plan_id}.json`);
   fs.writeFileSync(planPath, JSON.stringify(plan, null, 2), 'utf-8');
@@ -76,11 +76,11 @@ describe('Plans Module: Plan CRUD', () => {
     cleanTempDir(tmpDir);
   });
 
-  it('Test 1: savePlan creates file in .fp-docs/plans/ with correct filename', () => {
+  it('Test 1: savePlan creates file in plans/ with correct filename', () => {
     const plans = require(path.join(LIB_DIR, 'plans.cjs'));
     const plan = { plan_id: 'plan-test0001', operation: 'revise', target: 'docs/posts.md' };
     const planPath = plans.savePlan(plan, tmpDir);
-    const expectedPath = path.join(tmpDir, '.fp-docs', 'plans', 'plan-test0001.json');
+    const expectedPath = path.join(tmpDir, 'plans', 'plan-test0001.json');
     assert.equal(planPath, expectedPath);
     assert.ok(fs.existsSync(planPath), 'Plan file should exist');
   });
@@ -194,12 +194,12 @@ describe('Plans Module: Analysis Files', () => {
     cleanTempDir(tmpDir);
   });
 
-  it('Test 12: saveAnalysis writes markdown to .fp-docs/analyses/ with operation-timestamp filename', () => {
+  it('Test 12: saveAnalysis writes markdown to analyses/ with operation-timestamp filename', () => {
     const plans = require(path.join(LIB_DIR, 'plans.cjs'));
     const content = '# Analysis\n\nSome findings here.';
     const analysisPath = plans.saveAnalysis(content, 'revise', tmpDir);
     assert.ok(analysisPath, 'Should return a path');
-    assert.ok(analysisPath.includes('.fp-docs'), 'Path should include .fp-docs');
+    assert.ok(analysisPath.includes('analyses'), 'Path should include analyses');
     assert.ok(analysisPath.includes('analyses'), 'Path should include analyses');
     assert.ok(analysisPath.endsWith('.md'), 'File should have .md extension');
     assert.ok(path.basename(analysisPath).startsWith('revise-'), 'Filename should start with operation name');
@@ -236,7 +236,7 @@ describe('Plans Module: Pruning', () => {
     const plans = require(path.join(LIB_DIR, 'plans.cjs'));
     // Create a completed plan with old date (60 days ago)
     const oldDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
-    const plansDir = path.join(tmpDir, '.fp-docs', 'plans');
+    const plansDir = path.join(tmpDir, 'plans');
     fs.mkdirSync(plansDir, { recursive: true });
     fs.writeFileSync(path.join(plansDir, 'plan-old00001.json'), JSON.stringify({
       plan_id: 'plan-old00001', status: 'complete', created_at: oldDate, version: 1, operation: 'revise', target: 'docs/old.md',
@@ -255,7 +255,7 @@ describe('Plans Module: Pruning', () => {
 
   it('Test 16: prunePlans enforces MAX_PLANS cap (oldest completed first)', () => {
     const plans = require(path.join(LIB_DIR, 'plans.cjs'));
-    const plansDir = path.join(tmpDir, '.fp-docs', 'plans');
+    const plansDir = path.join(tmpDir, 'plans');
     fs.mkdirSync(plansDir, { recursive: true });
     // Create 202 recent completed plans to exceed MAX_PLANS (200)
     for (let i = 0; i < 202; i++) {
@@ -273,7 +273,7 @@ describe('Plans Module: Pruning', () => {
   it('Test 17: prunePlans does not remove pending or in-progress plans regardless of age', () => {
     const plans = require(path.join(LIB_DIR, 'plans.cjs'));
     const oldDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
-    const plansDir = path.join(tmpDir, '.fp-docs', 'plans');
+    const plansDir = path.join(tmpDir, 'plans');
     fs.mkdirSync(plansDir, { recursive: true });
     // Old pending plan
     fs.writeFileSync(path.join(plansDir, 'plan-pend0001.json'), JSON.stringify({
@@ -292,7 +292,7 @@ describe('Plans Module: Pruning', () => {
 
   it('Test 18: pruneAnalyses removes analysis files older than retention threshold', () => {
     const plans = require(path.join(LIB_DIR, 'plans.cjs'));
-    const analysesDir = path.join(tmpDir, '.fp-docs', 'analyses');
+    const analysesDir = path.join(tmpDir, 'analyses');
     fs.mkdirSync(analysesDir, { recursive: true });
     // Create an analysis file
     const filePath = path.join(analysesDir, 'revise-20260101-100000.md');
