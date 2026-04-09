@@ -43,11 +43,29 @@ Parse JSON for: operation context, paths, system state.
 4. If found: verify remote URL and branch state
 </step>
 
-<step name="gitignore">
-## 4. Codebase Gitignore Check
+<step name="git-exclusions">
+## 4. Git Exclusion Setup
 
-1. Check if `themes/foreign-policy-2017/docs/` is in the codebase repo's `.gitignore`
-2. If NOT present: warn user and offer to add it
+Configure the codebase repo to exclude fp-docs-related paths.
+Uses `.git/info/exclude` (per-clone, branch-safe) as the primary method.
+
+1. Read `{codebase-root}/.git/info/exclude`
+2. For each required exclusion path, check if already present:
+   a. `themes/foreign-policy-2017/docs/` — the docs repo (separate git repo)
+   b. `.claude/` — Claude Code working directory
+   c. `.fp-docs/` — fp-docs global state directory
+3. For each missing entry, append with comment:
+   ```
+   # fp-docs: exclude documentation repo (separate git repo)
+   themes/foreign-policy-2017/docs/
+   # fp-docs: exclude Claude Code working directory
+   .claude/
+   # fp-docs: exclude fp-docs global state
+   .fp-docs/
+   ```
+4. Also check `.gitignore` as a fallback — if any path is already in `.gitignore`, accept it as valid (don't require both methods).
+5. If `.git/info/exclude` is not writable, warn user and suggest manual `.gitignore` addition.
+6. Report which paths were already excluded and which were added.
 </step>
 
 <step name="branch-sync">

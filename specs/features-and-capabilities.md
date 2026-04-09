@@ -305,7 +305,7 @@ Under the v2 workflow architecture, write operations proceed through a **7-phase
 | 3 | API Reference Sync | Verifies API Ref section exists (for applicable doc types), updates table rows, ensures provenance column populated | `api_ref.enabled = false` |
 | 4 | Sanity Check | Cross-references every factual claim against source. Classifies as VERIFIED, MISMATCH, HALLUCINATION, or UNVERIFIED. LOW confidence blocks progression | `--no-sanity-check` flag |
 | 5 | Verification | 10-point checklist: file existence, orphan check, index completeness, appendix spot-check, link validation, changelog check, citation format, API ref provenance, locals contracts, verbosity compliance | Never skipped |
-| 6 | Changelog Update | Appends entry to `docs/changelog.md` listing every file changed and why | Never skipped |
+| 6 | Changelog Update | Appends entry to `.fp-docs-branch/changelog.md` listing every file changed and why | Never skipped |
 | 7 | Index Update | Updates PROJECT-INDEX.md when structural changes occurred (new sections, major reorganization) | Skipped for content-only changes |
 | 8 | Docs Repo Commit | `git -C {docs-root} add -A && git -C {docs-root} commit -m "fp-docs: {operation} -- {summary}"` | Never skipped (attempts if docs repo exists) |
 
@@ -440,7 +440,7 @@ Key rules:
 - Always use `git -C {docs-root}` for docs operations, never the codebase git
 - Branch mirroring: when codebase is on branch `feature/xyz`, docs should mirror to the same branch name
 - `/fp-docs:sync` detects mismatches and handles branch creation/switching
-- Diff reports accumulate at `docs/diffs/` with date/branch naming
+- Diff reports accumulate at `.fp-docs-branch/diffs/` with date/branch naming
 
 ---
 
@@ -530,6 +530,15 @@ Dedicated `.mcp.json` file at plugin root for MCP server declarations, separate 
 ### 16. Fatal Runtime Enforcement (Phase 17)
 Reverses Phase 8 D-05 (non-blocking compliance) and Phase 12 D-05 (documentation-only enforcement). All enforcement checks are now fatal: if a check triggers, the operation stops. This trades operational flexibility for architectural guarantee -- delegation rules cannot be silently violated. Three enforcement layers: PreToolUse hooks block raw git-write commands at the tool-call level, SubagentStop hooks produce structured violation diagnostics with `ENFORCEMENT VIOLATION` prefix that the orchestrator must act on, and pipeline gating validates LLM stage outputs before progression. Enforcement logic is centralized in `lib/enforcement.cjs` (6 exports: `isGitWriteCommand`, `isCjsMediatedGit`, `parseDelegationResult`, `verifyStageAuthority`, `validateStageOutput`, `STAGE_AUTHORITY_MAP`).
 
+### 17. Docs Branch Merge Intelligence (Wave 1)
+When `/fp-docs:sync` runs on codebase master, it detects recently merged branches that have matching fp-docs documentation branches. For each candidate: if docs are current (last docs commit >= last codebase commit before merge), auto-merge into docs master. If docs are stale (code changed after docs were last updated), defer to user with staleness details. Implemented in `lib/merge-intel.cjs` with CLI surface `fp-tools merge-intel <scan|status|history|clear>`. Merge decisions are recorded in `{project-root}/.fp-docs/merge-intel/history.json` for audit trail. Handles standard merges, GitHub PR merges, and squash merges via multiple subject-line pattern matching.
+
+### 18. Three-Tier Data Layout and Migration (Wave 1)
+Operational state is organized into three tiers: (1) `{project-root}/.fp-docs/` for global persistent state (operation log, trackers, staleness, plans, merge intelligence) that survives branch switches, (2) `{docs-root}/.fp-docs-branch/` for branch-scoped data (changelog, diffs, flagged concerns, sync watermark, plugin version) that travels with the branch, (3) `.claude/.fp-docs-project/` for plugin cache only. Migration from old layout (all state in `{docs-root}/.fp-docs/`) is handled by `lib/migrate.cjs` with CLI `fp-tools migrate <check|run|status>`. Migration is user-triggered (SessionStart nudges but does not auto-migrate), uses copy-verify-delete pattern for safety.
+
+### 19. Git Exclusion via System Exclude (Wave 1)
+`/fp-docs:setup` configures `.git/info/exclude` (not `.gitignore`) to exclude `themes/foreign-policy-2017/docs/`, `.claude/`, and `.fp-docs/` from the codebase git repo. System exclude protects all branches unconditionally (including branches that predate fp-docs), requires no codebase commits, and is per-clone (appropriate for user-specific tooling). Setup checks both `.gitignore` and system exclude and accepts either as valid exclusion.
+
 ---
 
 ## Configuration System
@@ -577,8 +586,8 @@ fp-docs defines 10 document type templates in `references/doc-standards.md`:
 
 ## The 10-Point Verification Checklist
 
-1. **File Existence** -- Every link in About.md resolves to an actual file
-2. **Orphan Check** -- Every .md file in docs/ is linked from About.md or its parent _index.md
+1. **File Existence** -- Every link in README.md resolves to an actual file
+2. **Orphan Check** -- Every .md file in docs/ is linked from README.md or its parent _index.md
 3. **Index Completeness** -- Every _index.md links all its sibling .md files
 4. **Appendix Spot-Check** -- Operations touching hooks/shortcodes/REST/constants trigger appendix verification
 5. **Link Validation** -- All relative markdown links in modified docs resolve to real files

@@ -129,7 +129,7 @@ Agent(
 
     For quick depth:
     a. Read PROJECT-INDEX.md for source file inventory.
-    b. Read docs/About.md. Verify every linked doc file exists on disk.
+    b. Read docs/README.md. Verify every linked doc file exists on disk.
     c. Cross-reference source-to-doc mapping via source-map lookup.
        Identify MISSING (source exists, no doc) and ORPHAN (doc exists, no source).
     d. Validate all relative markdown links.

@@ -217,7 +217,7 @@ If the intent is ambiguous, the router presents 2-3 candidate commands and asks 
 4. Reads the new source code files
 5. Creates complete documentation following the sibling's format
 6. Uses `[NEEDS INVESTIGATION]` for anything unclear rather than guessing
-7. Updates parent `_index.md` and `About.md` links
+7. Updates parent `_index.md` and `README.md` links
 8. Runs the full 8-stage pipeline
 9. Commits to docs repo
 
@@ -294,11 +294,11 @@ Cross-references every factual claim against source code:
 For deprecated code (still in codebase):
 - Adds `[LEGACY]` to doc title
 - Adds deprecation notice with date and replacement info
-- Updates parent `_index.md` and `About.md` entries
+- Updates parent `_index.md` and `README.md` entries
 
 For removed code (deleted from codebase):
 - Adds REMOVED notice at top of doc
-- Removes entries from `_index.md` and `About.md`
+- Removes entries from `_index.md` and `README.md`
 - Updates cross-references across other docs
 - Updates relevant appendices
 
@@ -547,7 +547,7 @@ The `handleBranchSyncCheck` hook runs on every session start:
 2. Checks if docs repo exists at `{codebase-root}/themes/foreign-policy-2017/docs/.git`
 3. If docs repo not found: injects context saying "Run /fp-docs:setup"
 4. If found: compares codebase branch to docs branch
-5. Reads the sync watermark file (`.sync-watermark`) to check if codebase has new commits since last docs sync
+5. Reads the sync watermark file (`.fp-docs-branch/.sync-watermark`) to check if codebase has new commits since last docs sync
 6. If branches match AND watermark is current: injects "Repos synced" context
 7. If branches match BUT watermark is stale: injects context noting N new codebase commits since last sync (suggests running `/fp-docs:sync`)
 8. If branches mismatch: emits a `stopMessage` warning the user to run `/fp-docs:sync`
@@ -560,11 +560,18 @@ The `handleBranchSyncCheck` hook runs on every session start:
 3. If no matching docs branch exists: creates it from docs `master`
 4. If matching branch exists but docs is on wrong branch: switches to it
 5. Reads the sync watermark to determine codebase changes since last sync (Phase 3 — Change detection)
-6. If changes detected: generates a diff report at `docs/diffs/{YYYY-MM-DD}_{branch}_diff_report.md`
+6. If changes detected: generates a diff report at `.fp-docs-branch/diffs/{YYYY-MM-DD}_{branch}_diff_report.md`
 7. Updates the watermark file with the current codebase HEAD
 8. Commits watermark and diff report to the docs repo
 
 Phase 3 always runs, even when branches already matched. This ensures that codebase changes pulled to the current branch (e.g., new commits merged to master) are detected.
+
+**Merge intelligence** (automatic, when codebase is on master):
+Between branch alignment and change detection, sync runs merge intelligence (`fp-tools merge-intel scan`). This detects recently merged codebase branches that have matching docs branches:
+- **Current docs** (last docs commit >= last code commit before merge): auto-merged into docs master
+- **Stale docs** (code changed after docs were last updated): presented to user with staleness details for review
+- **Conflicted**: merge aborted, deferred to user
+- Decisions recorded in `{project-root}/.fp-docs/merge-intel/history.json`
 
 **Merge sync**: `/fp-docs:sync merge`
 1. Switches docs repo to master
@@ -585,11 +592,11 @@ Generated during sync when codebase changes are detected, diff reports contain:
 - **STRUCTURAL CHANGES**: new/deleted source files affecting doc structure
 - Recommended actions checklist
 
-Reports accumulate in `docs/diffs/` as historical records.
+Reports accumulate in `.fp-docs-branch/diffs/` as historical records.
 
 ### Sync Watermark
 
-The sync command maintains a watermark file (`.sync-watermark`) in the docs repo that records the codebase commit hash from the last successful sync. This enables cross-repo change detection — without it, the system cannot tell whether the codebase has changed when both repos are on the same branch (e.g., both on `master`). The watermark is committed to the docs repo and persists across machines and sessions.
+The sync command maintains a watermark file (`.fp-docs-branch/.sync-watermark`) in the docs repo that records the codebase commit hash from the last successful sync. This enables cross-repo change detection — without it, the system cannot tell whether the codebase has changed when both repos are on the same branch (e.g., both on `master`). The watermark is committed to the docs repo and persists across machines and sessions.
 
 ---
 
@@ -694,7 +701,7 @@ Key v2 change: enforcement stages 1-3 are each handled by a **dedicated** agent 
 | 3 | API Reference Sync | Verify/update API reference tables | Yes (`api_ref.enabled = false`) |
 | 4 | Sanity Check | Cross-reference every claim against source code | Yes (`--no-sanity-check` flag) |
 | 5 | Verification | Run 10-point checklist | Never |
-| 6 | Changelog Update | Append entry to `docs/changelog.md` | Never |
+| 6 | Changelog Update | Append entry to `.fp-docs-branch/changelog.md` | Never |
 | 7 | Index Update | Update PROJECT-INDEX.md (only on structural changes) | Auto (only when needed) |
 | 8 | Docs Repo Commit | `git -C {docs-root} add -A && commit` | Never (skips if no docs repo) |
 
@@ -857,7 +864,7 @@ The biggest pitfall is confusing the three git repos. The docs directory is a SE
 ### Branch Sync
 - Always check branch sync status at the start of a session
 - If you switch codebase branches, run `/fp-docs:sync` to create/switch the matching docs branch
-- Diff reports accumulate in `docs/diffs/` and are committed to the docs repo — do not clean them up
+- Diff reports accumulate in `.fp-docs-branch/diffs/` and are committed to the docs repo — do not clean them up
 
 ### Pipeline Always Runs
 - Every doc-modifying command runs the full 8-stage pipeline
@@ -986,10 +993,10 @@ node {plugin-root}/fp-tools.cjs source-map dump
 
 | File | Purpose |
 |------|---------|
-| `docs/changelog.md` | Documentation changelog (written to by every modification) |
+| `.fp-docs-branch/changelog.md` | Documentation changelog (written to by every modification) |
 | `docs/needs-revision-tracker.md` | Queue of items needing revision (consumed by auto-revise) |
-| `docs/About.md` | Documentation hub / table of contents |
-| `docs/claude-code-docs-system/PROJECT-INDEX.md` | Master codebase reference index |
-| `docs/diffs/{date}_{branch}_diff_report.md` | Branch diff reports (accumulated history) |
-| `docs/.fp-docs/staleness.json` | Persistent staleness tracker (drift signals from git hooks, audits, manual sources) |
-| `docs/.fp-docs/drift-pending.json` | Temporary drift signals from git hooks (merged into staleness.json on session start, then deleted) |
+| `docs/README.md` | Documentation hub / table of contents |
+| `docs/PROJECT-INDEX.md` | Master codebase reference index |
+| `.fp-docs-branch/diffs/{date}_{branch}_diff_report.md` | Branch diff reports (accumulated history) |
+| `{project-root}/.fp-docs/staleness.json` | Persistent staleness tracker (drift signals from git hooks, audits, manual sources) |
+| `{project-root}/.fp-docs/drift-pending.json` | Temporary drift signals from git hooks (merged into staleness.json on session start, then deleted) |

@@ -43,7 +43,7 @@ flags: --plan-only, --batch-mode
 ## Files Typically Touched
 
 - Documentation files from audit scope (varies by plan)
-- docs/changelog.md (stage 6)
+- .fp-docs-branch/changelog.md (stage 6)
 - Possibly docs/PROJECT-INDEX.md (stage 7, if structural changes)
 - .fp-docs/remediation-plans/{plan-id}.json (plan tracking)
 

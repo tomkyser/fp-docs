@@ -43,7 +43,7 @@ flags: none
 ## Files Typically Touched
 
 - Multiple documentation files from needs-revision tracker
-- docs/changelog.md (stage 6, batch entry)
+- .fp-docs-branch/changelog.md (stage 6, batch entry)
 - docs/needs-revision-tracker.md (items marked complete)
 - Possibly docs/PROJECT-INDEX.md (stage 7)
 

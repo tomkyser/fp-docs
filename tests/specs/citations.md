@@ -51,7 +51,7 @@ flags: none
 
 ### Write subcommands
 - Target documentation file(s) with citation sections
-- docs/changelog.md (stage 6)
+- .fp-docs-branch/changelog.md (stage 6)
 
 ### Read subcommands
 - No files modified (read-only)

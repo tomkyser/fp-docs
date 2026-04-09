@@ -43,7 +43,7 @@ flags: none
 ## Files Typically Touched
 
 - One or more existing documentation files in docs/ (updated based on git diff)
-- docs/changelog.md (stage 6)
+- .fp-docs-branch/changelog.md (stage 6)
 - Possibly docs/PROJECT-INDEX.md (stage 7, if structural changes detected)
 
 ## Error Paths

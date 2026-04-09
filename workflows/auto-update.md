@@ -143,7 +143,7 @@ Agent(
     </files_to_read>
 
     Primary operation steps:
-    1. Read docs/changelog.md. Find the most recent entry date as baseline.
+    1. Read .fp-docs-branch/changelog.md. Find the most recent entry date as baseline.
     2. Review the changed files list. Filter to documentation-relevant source files
        (remove docs/, node_modules/, vendor/, public/, .git/).
     3. Map each changed source file to its doc target using source-map lookup.

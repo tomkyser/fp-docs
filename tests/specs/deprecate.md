@@ -43,7 +43,7 @@ flags: none
 ## Files Typically Touched
 
 - Target documentation file (deprecation notice added)
-- docs/changelog.md (stage 6, deprecation entry)
+- .fp-docs-branch/changelog.md (stage 6, deprecation entry)
 - docs/needs-revision-tracker.md (if tracking deprecation)
 - Possibly docs/PROJECT-INDEX.md (stage 7, structural change)
 

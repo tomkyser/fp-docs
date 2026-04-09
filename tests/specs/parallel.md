@@ -38,7 +38,7 @@ Varies based on the wrapped operation:
 ## Files Typically Touched
 
 - Multiple documentation files (one per team member)
-- docs/changelog.md (aggregated from team results, for write operations)
+- .fp-docs-branch/changelog.md (aggregated from team results, for write operations)
 
 ## Error Paths
 

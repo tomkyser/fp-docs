@@ -51,7 +51,7 @@ flags: none
 
 ### Write subcommand
 - Target documentation file(s) with API reference sections
-- docs/changelog.md (stage 6)
+- .fp-docs-branch/changelog.md (stage 6)
 
 ### Read subcommand
 - No files modified (read-only)

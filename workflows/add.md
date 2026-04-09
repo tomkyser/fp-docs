@@ -131,7 +131,7 @@ Agent(
        - Follow the format template from sibling doc and doc-standards.
        - Meet all depth requirements.
        - Use [NEEDS INVESTIGATION] for anything unclear -- never fabricate.
-    6. Update links: add new doc to parent _index.md and About.md if new section.
+    6. Update links: add new doc to parent _index.md and README.md if new section.
     7. If --visual flag: perform visual verification against foreignpolicy.local.
 
     IMPORTANT: Do NOT run pipeline enforcement stages (verbosity, citations, API refs).
@@ -321,7 +321,7 @@ node "${CLAUDE_PLUGIN_ROOT}/fp-tools.cjs" tracker complete ${TRACKER_ID}
 - [ ] API reference enforcement completed by dedicated agent (step 8)
 - [ ] Pipeline stages 4-5 completed by validator agent (step 9)
 - [ ] Pipeline stages 6-8 completed via CJS pipeline loop (step 10)
-- [ ] Parent index and About.md updated
+- [ ] Parent index and README.md updated
 - [ ] Tracker updated at each phase (if created)
 - [ ] Changelog entry added
 - [ ] Docs committed and pushed

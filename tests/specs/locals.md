@@ -51,7 +51,7 @@ flags: none
 
 ### Write subcommands
 - Target documentation file(s) with locals contract sections
-- docs/changelog.md (stage 6)
+- .fp-docs-branch/changelog.md (stage 6)
 - Ephemeral: functions.php (locals-cli-setup and teardown for WP-CLI extraction)
 
 ### Read subcommands

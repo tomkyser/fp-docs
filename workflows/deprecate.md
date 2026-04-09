@@ -136,12 +136,12 @@ Agent(
        b. Add [LEGACY] to the document title.
        c. Add deprecation notice after the title: > **Deprecated**: [YYYY-MM-DD]. [Replacement info]
        d. Update parent _index.md entry to include [LEGACY].
-       e. Update About.md entry to include [LEGACY].
+       e. Update README.md entry to include [LEGACY].
     3. For removed code (deleted from codebase):
        a. Read the current documentation file.
        b. Add REMOVED notice at top: > **REMOVED**: This file was deleted on [YYYY-MM-DD].
        c. Remove the entry from parent _index.md.
-       d. Remove the entry from About.md.
+       d. Remove the entry from README.md.
     4. Update cross-references: search for docs linking to the deprecated/removed doc.
        Update link text with [LEGACY] or remove link as appropriate.
     5. Check appendices: if the deprecated/removed code registered hooks, shortcodes,
