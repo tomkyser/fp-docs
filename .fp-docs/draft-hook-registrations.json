@@ -1,0 +1,48 @@
+{
+  "_comment": "Hook registrations to merge into ~/.claude/settings.json. These are ADDITIONS to the existing hooks, not replacements.",
+
+  "PreToolUse": [
+    {
+      "matcher": "Agent",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node \"$HOME/.claude/hooks/team-agent-blocker.js\"",
+          "timeout": 5
+        }
+      ]
+    }
+  ],
+  "TeammateIdle": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node \"$HOME/.claude/hooks/team-workflow-enforce.js\"",
+          "timeout": 10
+        }
+      ]
+    }
+  ],
+  "TaskCompleted": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node \"$HOME/.claude/hooks/team-task-enforce.js\"",
+          "timeout": 10
+        }
+      ]
+    }
+  ],
+  "SessionStart": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node \"$HOME/.claude/hooks/team-session-init.js\""
+        }
+      ]
+    }
+  ]
+}

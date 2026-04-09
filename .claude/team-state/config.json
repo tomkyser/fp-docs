@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "teamName": "wave1-fp-docs-reorg",
+  "startedAt": "2026-04-09T17:03:45.192Z",
+  "updatedAt": "2026-04-09T18:35:34.734Z",
+  "status": "complete",
+  "displayMode": "auto",
+  "roles": {
+    "architect": {
+      "name": "Architect",
+      "focus": "structural thinking, design"
+    },
+    "engineer": {
+      "name": "Engineer",
+      "focus": "implementation, code, tests"
+    },
+    "lead": {
+      "name": "Lead",
+      "focus": "review, git, quality gate"
+    }
+  },
+  "phases": [
+    {
+      "number": 1,
+      "name": "Research & Design",
+      "status": "complete",
+      "startedAt": "2026-04-09T17:04:04.808Z",
+      "completedAt": "2026-04-09T17:12:13.537Z",
+      "reviewStatus": "pass_with_notes",
+      "taskCount": 0,
+      "tasksComplete": 0
+    },
+    {
+      "number": 2,
+      "name": "Implementation",
+      "status": "complete",
+      "startedAt": "2026-04-09T17:12:13.538Z",
+      "completedAt": "2026-04-09T17:27:09.165Z",
+      "reviewStatus": "pass_with_notes",
+      "taskCount": 0,
+      "tasksComplete": 0
+    },
+    {
+      "number": 3,
+      "name": "Merge System & Integration",
+      "status": "complete",
+      "startedAt": "2026-04-09T17:27:09.165Z",
+      "completedAt": "2026-04-09T18:34:41.696Z",
+      "reviewStatus": "pass",
+      "taskCount": 0,
+      "tasksComplete": 0
+    }
+  ],
+  "currentPhase": 3,
+  "totalPhases": 3,
+  "gitBranch": null,
+  "gitProtocol": {
+    "commitPrefix": "{type}(phase-{N})",
+    "onlyLeadCommits": true
+  }
+}

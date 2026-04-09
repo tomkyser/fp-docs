@@ -1,0 +1,56 @@
+{
+  "id": "tracker-6dee0b2d",
+  "operation": "unknown",
+  "complexity": "medium",
+  "status": "completed",
+  "created": "2026-04-08T16:30:10.221Z",
+  "updated": "2026-04-08T17:02:32.720Z",
+  "closed": "2026-04-08T17:02:32.720Z",
+  "targets": [],
+  "phases": {
+    "1": {
+      "status": "done",
+      "agent": "modifier-1",
+      "timestamp": "2026-04-08T16:45:02.221Z",
+      "result": null
+    },
+    "research": {
+      "status": "done",
+      "agent": "researcher-2",
+      "timestamp": "2026-04-08T16:35:53.417Z",
+      "result": null
+    },
+    "verbosity": {
+      "status": "done",
+      "agent": "fp-docs-verbosity-enforcer",
+      "timestamp": "2026-04-08T16:49:35.507Z",
+      "result": null
+    },
+    "citations": {
+      "status": "done",
+      "agent": "fp-docs-citations",
+      "timestamp": "2026-04-08T16:54:12.012Z",
+      "result": null
+    },
+    "api-refs": {
+      "status": "done",
+      "agent": "fp-docs-api-refs",
+      "timestamp": "2026-04-08T16:56:11.598Z",
+      "result": null
+    },
+    "review": {
+      "status": "done",
+      "agent": "fp-docs-validator",
+      "timestamp": "2026-04-08T17:01:09.692Z",
+      "result": null
+    },
+    "finalize": {
+      "status": "done",
+      "agent": "workflow",
+      "timestamp": "2026-04-08T17:02:29.549Z",
+      "result": null
+    }
+  },
+  "issues": [],
+  "notes": []
+}
