@@ -1,0 +1,29 @@
+{{- /* Video/recording embed shortcode for workflow walkthroughs */ -}}
+{{- /* Usage: {{< recording src="workflow.webm" caption="Publishing a post" >}} */ -}}
+{{- /* Optional params: autoplay (default true), loop (default true), poster */ -}}
+{{- $src := .Get "src" -}}
+{{- $caption := .Get "caption" -}}
+{{- $autoplay := .Get "autoplay" | default "true" -}}
+{{- $loop := .Get "loop" | default "true" -}}
+{{- $poster := .Get "poster" -}}
+{{- $page_resource := .Page.Resources.GetMatch $src -}}
+<figure class="recording">
+  <video
+    {{- if eq $autoplay "true" }} autoplay{{ end }}
+    {{- if eq $loop "true" }} loop{{ end }}
+    muted
+    playsinline
+    controls
+    {{- with $poster }} poster="{{ . }}"{{ end }}
+    preload="metadata">
+    {{- if $page_resource }}
+    <source src="{{ $page_resource.RelPermalink }}" type="video/{{ $page_resource.MediaType.SubType }}">
+    {{- else }}
+    <source src="{{ $src }}" type="video/{{ cond (strings.HasSuffix $src ".mp4") "mp4" "webm" }}">
+    {{- end }}
+    Your browser does not support the video tag.
+  </video>
+  {{- with $caption }}
+  <figcaption>{{ . }}</figcaption>
+  {{- end }}
+</figure>

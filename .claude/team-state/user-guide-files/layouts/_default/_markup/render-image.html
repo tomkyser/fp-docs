@@ -1,0 +1,19 @@
+{{- /* Responsive image render hook for user guide screenshots */ -}}
+{{- /* Automatically resizes page bundle images, adds lazy loading */ -}}
+{{- $img := .Page.Resources.GetMatch .Destination -}}
+{{- if $img -}}
+  {{- $resized := $img.Resize "1200x q85" -}}
+  <figure class="screenshot">
+    <img src="{{ $resized.RelPermalink }}"
+         alt="{{ .Text }}"
+         loading="lazy"
+         width="{{ $resized.Width }}"
+         height="{{ $resized.Height }}">
+    {{- with .Title }}
+    <figcaption>{{ . }}</figcaption>
+    {{- end }}
+  </figure>
+{{- else -}}
+  {{- /* Fallback for external or non-bundle images */ -}}
+  <img src="{{ .Destination | safeURL }}" alt="{{ .Text }}"{{ with .Title }} title="{{ . }}"{{ end }} loading="lazy">
+{{- end -}}

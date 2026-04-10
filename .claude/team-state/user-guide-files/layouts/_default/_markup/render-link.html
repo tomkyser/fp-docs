@@ -1,0 +1,13 @@
+{{- /* Clean URL render hook — strips .md extensions from internal links */ -}}
+{{- $url := .Destination -}}
+{{- if and (not (strings.HasPrefix $url "http")) (strings.HasSuffix $url ".md") -}}
+  {{- $url = strings.TrimSuffix ".md" $url -}}
+  {{- $url = printf "%s/" $url -}}
+{{- end -}}
+{{- /* Handle _index.md references */ -}}
+{{- if strings.HasSuffix $url "/_index/" -}}
+  {{- $url = strings.TrimSuffix "_index/" $url -}}
+{{- end -}}
+<a href="{{ $url | safeURL }}"{{ with .Title }} title="{{ . }}"{{ end }}{{ if strings.HasPrefix .Destination "http" }} target="_blank" rel="noopener"{{ end }}>
+  {{- .Text | safeHTML -}}
+</a>
