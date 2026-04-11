@@ -138,20 +138,62 @@
 
 ---
 
-## Current Phase: 4 -- Admin + Batch Commands (ug-preview, ug-batch)
+## Phase: 4 -- Admin + Batch Commands (ug-preview, ug-batch)
+**Status**: complete
+**Started**: 2026-04-11
+
+### Task Claims
+| # | Task | Owner | Status | Notes |
+|---|------|-------|--------|-------|
+| 28 | commands/ug-preview.md | team-architect | done | Admin op, --local/--deploy/--stop flags, Read in allowed-tools |
+| 29 | commands/ug-batch.md | team-architect | done | Batch op, 3 subcommands (validate/screenshot/update), --section/--all flags |
+| 30 | workflows/ug-preview.md | team-architect | done | 3-step: init, verify scaffold, execute preview action (fp-docs-system). Hugo server lifecycle. |
+| 31 | workflows/ug-batch.md | team-architect | done | 8-step: init, parse, enumerate, team-check, team-execute OR sequential, pipeline (write only), report. |
+| 32 | lib/routing.cjs — add 2 entries | team-engineer | done | ug-preview (admin, fp-docs-system) + ug-batch (batch, null). Table reaches plan target of 31. |
+| 33 | tests/specs/ug-preview.md | team-engineer | done | Admin-type, no pipeline, Hugo lifecycle, 6 error + 7 edge cases |
+| 34 | tests/specs/ug-batch.md | team-engineer | done | Batch-type, varies pipeline per wrapped op, Agent Teams, 6 error + 8 edge cases |
+
+### Discoveries
+- Routing table reaches plan target of 31 entries (23 original + 8 ug-*)
+- ug-batch pipeline varies: validate=read-only, screenshot/update=write with single aggregated commit
+- ug-batch workflow is the most sophisticated — 8 steps with Agent Teams/sequential branching
+
+### Phase Completion Summary
+- **Files created**: commands/ug-preview.md, commands/ug-batch.md, workflows/ug-preview.md, workflows/ug-batch.md, tests/specs/ug-preview.md, tests/specs/ug-batch.md
+- **Files modified**: lib/routing.cjs (added 2 routing entries + 2 descriptions, 31 total)
+- **Files deleted**:
+- **Decisions made**: ug-batch uses single aggregated commit for write ops (not per-page)
+- **Issues discovered**: None blocking
+- **Items for Lead review**: None
+
+### Lead Review
+- **Result**: PASS WITH NOTES
+- **Reviewed**: 2026-04-11
+- **Notes**:
+  1. **ug-preview command has `Read` in allowed-tools**: Other commands only have `Bash` and `Task`. The `Read` tool is not needed by the thin command dispatcher since it delegates everything via the workflow. Harmless but inconsistent ��� second-pass item.
+  2. **ug-batch workflow is excellent**: 8 steps with proper Agent Teams branching (step 5 for teams, step 6 for sequential fallback). Smart design: write ops get one pipeline run + one commit across all pages (not per-page). Matches the existing `parallel.md` pattern.
+  3. **Routing at plan target**: 31 entries confirmed via `node require`. Comments updated. ug-preview uses fp-docs-system (admin type), ug-batch uses null agent (batch type). Matches plan exactly.
+  4. **ug-preview workflow handles scaffold bootstrap**: Step 2 checks for scaffold and auto-bootstraps if missing — graceful degradation. Hugo server management (start/stop/deploy) is clean.
+  5. **Test specs cover both types well**: ug-preview covers Hugo lifecycle and deploy workflow trigger. ug-batch correctly documents variable pipeline behavior based on wrapped operation.
+  6. **ug-batch subcommand dispatch is correct**: validate=read (no pipeline, no commit), screenshot/update=write (pipeline + single commit). Test spec documents this clearly.
+- **Second-pass items**: #1 (ug-preview Read tool in allowed-tools — cosmetic)
+- **Commit**: ready
+
+---
+
+## Current Phase: 5 -- Integration (health, init, specs)
 **Status**: planning
 **Started**: 2026-04-11
 
 ### Task Claims
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
-| 28 | commands/ug-preview.md | team-architect | pending | YAML frontmatter + XML body, admin operation |
-| 29 | commands/ug-batch.md | team-architect | pending | YAML frontmatter + XML body, batch operation |
-| 30 | workflows/ug-preview.md | team-architect | pending | XML workflow, spawns fp-docs-system, Hugo server + deploy |
-| 31 | workflows/ug-batch.md | team-architect | pending | XML workflow, Agent Teams for parallel ops |
-| 32 | lib/routing.cjs — add 2 entries (ug-preview, ug-batch) | team-engineer | pending | admin + batch types, table to 31 |
-| 33 | tests/specs/ug-preview.md | team-engineer | pending | Behavioral test spec |
-| 34 | tests/specs/ug-batch.md | team-engineer | pending | Behavioral test spec |
+| 35 | lib/health.cjs — update expected counts | team-engineer | pending | routing: 23->31, commands: 23->31, workflows: 23->31, agents: 10->12 |
+| 36 | lib/init.cjs — user guide init functions | team-engineer | pending | initUserGuideWriteOp(), initUserGuideReadOp(), scaffold auto-check |
+| 37 | config.json — model_profile for new agents | team-engineer | pending | fp-docs-ug-writer mirrors modifier, fp-docs-ug-validator mirrors validator (from Phase 1 note) |
+| 38 | specs/architecture.md — document new system | team-architect | pending | New agents, commands, pipeline, routing entries |
+| 39 | specs/features-and-capabilities.md — document new commands | team-architect | pending | 8 commands, 2 agents, UG pipeline stages |
+| 40 | specs/usage-and-workflows.md — document user workflows | team-architect | pending | UG command reference, config options, workflows |
 
 ### Discoveries
 
