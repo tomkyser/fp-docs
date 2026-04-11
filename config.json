@@ -183,6 +183,68 @@
       "fp-docs-planner": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" }
     }
   },
+  "user_guide": {
+    "enabled": true,
+    "scaffold_name": "user-guide",
+    "content_dir": "user-guide/content",
+    "templates_dir": "user-guide/templates",
+    "sections": [
+      "getting-started",
+      "content-management",
+      "custom-features",
+      "workflows",
+      "site-features",
+      "troubleshooting"
+    ],
+    "page_types": [
+      "feature-guide",
+      "workflow-walkthrough",
+      "quick-start",
+      "reference",
+      "faq"
+    ],
+    "screenshot": {
+      "viewport_width": 1280,
+      "viewport_height": 900,
+      "format": "png",
+      "quality": 85,
+      "max_width": 1200,
+      "naming_pattern": "{NN}-{slug}.{ext}"
+    },
+    "playwright": {
+      "base_url": "https://foreignpolicy.local/wp-admin/",
+      "auth_strategy": "cookie-persistence",
+      "wait_after_navigate_ms": 2000,
+      "ignore_certificate_errors": true
+    }
+  },
+  "user_guide_pipeline": {
+    "enabled": true,
+    "stages": [
+      { "id": "ug-ui-verify", "name": "UI Behavior Verification", "phase": "write", "skip": false },
+      { "id": "ug-screenshots", "name": "Screenshot Currency", "phase": "write", "skip": false },
+      { "id": "ug-tone", "name": "Jargon & Tone Check", "phase": "finalize", "skip": false },
+      { "id": "ug-completeness", "name": "Completeness Check", "phase": "finalize", "skip": false },
+      { "id": "ug-commit", "name": "Changelog + Commit", "phase": "finalize", "skip": false }
+    ],
+    "playwright_required": false,
+    "playwright_preferred": true,
+    "screenshot_staleness_days": 30,
+    "jargon_banned_patterns": [
+      "\\$[a-z_]+",
+      "\\b(function|class|method|hook|filter|action|callback)\\b",
+      "\\b(wp_[a-z_]+|add_action|add_filter|do_action|apply_filters)\\b",
+      "\\b(array|string|int|bool|null|void)\\b",
+      "\\b(REST API|WP-CLI|PHPDoc|ACF)\\b"
+    ],
+    "required_sections_by_type": {
+      "feature-guide": ["what-is", "where-to-find", "how-it-works", "key-fields", "common-tasks"],
+      "workflow-walkthrough": ["overview", "before-you-begin", "steps", "what-happens-next", "troubleshooting"],
+      "quick-start": ["welcome", "what-youll-learn", "steps", "next-steps"],
+      "reference": ["overview", "sections", "notes"],
+      "faq": ["questions", "still-need-help"]
+    }
+  },
   "pipeline": {
     "stages": [
       { "id": 1, "name": "verbosity", "phase": "write", "agent": "fp-docs-verbosity-enforcer", "skippable": true },

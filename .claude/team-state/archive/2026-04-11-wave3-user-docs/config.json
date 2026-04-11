@@ -1,0 +1,51 @@
+{
+  "version": "1.0.0",
+  "teamName": "wave3-user-docs",
+  "startedAt": "2026-04-10T00:19:48.498Z",
+  "updatedAt": "2026-04-10T01:10:44.142Z",
+  "status": "archived",
+  "displayMode": "auto",
+  "roles": {
+    "architect": {
+      "name": "Architect",
+      "focus": "structural thinking, design"
+    },
+    "engineer": {
+      "name": "Engineer",
+      "focus": "implementation, code, tests"
+    },
+    "lead": {
+      "name": "Lead",
+      "focus": "review, git, quality gate"
+    }
+  },
+  "phases": [
+    {
+      "number": 1,
+      "name": "Research & Architecture",
+      "status": "complete",
+      "startedAt": "2026-04-10T00:19:52.800Z",
+      "completedAt": "2026-04-10T01:03:21.105Z",
+      "reviewStatus": "pass_with_notes",
+      "taskCount": 0,
+      "tasksComplete": 0
+    },
+    {
+      "number": 2,
+      "name": "Design & Implementation",
+      "status": "complete",
+      "startedAt": "2026-04-10T01:03:21.106Z",
+      "completedAt": "2026-04-10T01:09:39.199Z",
+      "reviewStatus": "pass_with_notes",
+      "taskCount": 0,
+      "tasksComplete": 0
+    }
+  ],
+  "currentPhase": 2,
+  "totalPhases": 2,
+  "gitBranch": null,
+  "gitProtocol": {
+    "commitPrefix": "{type}(phase-{N})",
+    "onlyLeadCommits": true
+  }
+}

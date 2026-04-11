@@ -1,9 +1,9 @@
 {
   "version": "1.0.0",
-  "teamName": "wave3-user-docs",
-  "startedAt": "2026-04-10T00:19:48.498Z",
-  "updatedAt": "2026-04-10T01:10:44.142Z",
-  "status": "complete",
+  "teamName": "wave4-ug-commands",
+  "startedAt": "2026-04-11T22:58:08.597Z",
+  "updatedAt": "2026-04-11T22:58:08.597Z",
+  "status": "init",
   "displayMode": "auto",
   "roles": {
     "architect": {
@@ -22,27 +22,57 @@
   "phases": [
     {
       "number": 1,
-      "name": "Research & Architecture",
-      "status": "complete",
-      "startedAt": "2026-04-10T00:19:52.800Z",
-      "completedAt": "2026-04-10T01:03:21.105Z",
-      "reviewStatus": "pass_with_notes",
+      "name": "Foundation (references + agents + config)",
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "reviewStatus": "pending",
       "taskCount": 0,
       "tasksComplete": 0
     },
     {
       "number": 2,
-      "name": "Design & Implementation",
-      "status": "complete",
-      "startedAt": "2026-04-10T01:03:21.106Z",
-      "completedAt": "2026-04-10T01:09:39.199Z",
-      "reviewStatus": "pass_with_notes",
+      "name": "Read-only commands (validate, audit, status)",
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "reviewStatus": "pending",
+      "taskCount": 0,
+      "tasksComplete": 0
+    },
+    {
+      "number": 3,
+      "name": "Write commands (generate, update, screenshot)",
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "reviewStatus": "pending",
+      "taskCount": 0,
+      "tasksComplete": 0
+    },
+    {
+      "number": 4,
+      "name": "Admin + batch commands (preview, batch)",
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "reviewStatus": "pending",
+      "taskCount": 0,
+      "tasksComplete": 0
+    },
+    {
+      "number": 5,
+      "name": "Integration (health, init, specs)",
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "reviewStatus": "pending",
       "taskCount": 0,
       "tasksComplete": 0
     }
   ],
-  "currentPhase": 2,
-  "totalPhases": 2,
+  "currentPhase": 1,
+  "totalPhases": 5,
   "gitBranch": null,
   "gitProtocol": {
     "commitPrefix": "{type}(phase-{N})",
