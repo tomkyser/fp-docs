@@ -47,23 +47,68 @@
 
 ---
 
-## Current Phase: 2 -- Read-Only Commands (ug-validate, ug-audit, ug-status)
+## Phase: 2 -- Read-Only Commands (ug-validate, ug-audit, ug-status)
+**Status**: complete
+**Started**: 2026-04-11
+
+### Task Claims
+| # | Task | Owner | Status | Notes |
+|---|------|-------|--------|-------|
+| 8 | commands/ug-validate.md | team-architect | done | YAML frontmatter + XML body, delegation protocol, @-reference to workflow |
+| 9 | commands/ug-audit.md | team-architect | done | YAML frontmatter + XML body, delegation protocol, @-reference to workflow |
+| 10 | commands/ug-status.md | team-architect | done | YAML frontmatter + XML body, delegation protocol, @-reference to workflow |
+| 11 | workflows/ug-validate.md | team-architect | done | 3-step: init, resolve targets, spawn ug-validator. Depth-gated checks (quick/standard/deep). Includes remediation commands. |
+| 12 | workflows/ug-audit.md | team-architect | done | 2-step: init, spawn ug-validator. Coverage gap detection with codebase scan + cross-reference. |
+| 13 | workflows/ug-status.md | team-architect | done | 2-step: init, spawn ug-validator. 6-part health metrics (scaffold, pages, screenshots, staleness, coverage, structure). |
+| 14 | lib/routing.cjs — add 3 read entries | team-engineer | done | 3 ROUTING_TABLE entries + 3 DESCRIPTIONS entries added, table now 26 entries |
+| 15 | tests/specs/ug-validate.md | team-engineer | done | Covers routing path, 4 internal validation stages, depth levels, flags, edge cases |
+| 16 | tests/specs/ug-audit.md | team-engineer | done | Covers routing path, coverage gap detection flow, --section flag, fallbacks, edge cases |
+| 17 | tests/specs/ug-status.md | team-engineer | done | Covers routing path, health metrics collection, --verbose flag, staleness bands, edge cases |
+
+### Discoveries
+- Routing table count goes from 23 to 26 with the 3 read commands (will reach 31 when all 8 ug-* commands are added in later phases)
+- ug-validate workflow includes ug-ui-verification.md in files_to_read (not just ug-standards + ug-validation-rules) — correct, validator needs Playwright/code-trace procedures for deep depth
+
+### Phase Completion Summary
+- **Files created**: commands/ug-validate.md, commands/ug-audit.md, commands/ug-status.md, workflows/ug-validate.md, workflows/ug-audit.md, workflows/ug-status.md, tests/specs/ug-validate.md, tests/specs/ug-audit.md, tests/specs/ug-status.md
+- **Files modified**: lib/routing.cjs (added 3 routing entries + 3 descriptions, count 23->26, comment updated)
+- **Files deleted**:
+- **Decisions made**: Workflows use `fp-tools init read-op` (not write-op) since these are all read operations
+- **Issues discovered**: Routing comment says 26 but plan targets 31 — correct, remaining 5 entries come in Phases 3-4
+- **Items for Lead review**: None blocking
+
+### Lead Review
+- **Result**: PASS
+- **Reviewed**: 2026-04-11
+- **Notes**:
+  1. **Commands match established pattern exactly**: All 3 commands are structurally identical to `commands/audit.md` — same delegation protocol block, same `@-reference` pattern, same context block. Clean.
+  2. **Workflows are well-structured**: ug-validate has 3 steps (init, resolve-targets, execute) with depth-gated validation logic. ug-audit has 2 steps with comprehensive codebase scanning patterns. ug-status has 2 steps with 6-part health metrics and a formatted report template. All include `<success_criteria>` sections.
+  3. **Routing entries verified**: `node require` confirms 26 entries. All 3 new entries have correct agent (`fp-docs-ug-validator`), correct type (`read`), correct workflow filenames. Descriptions are concise and match plan.
+  4. **Test specs are thorough**: Each covers routing path, pipeline behavior (none for read ops), expected markers, files touched, error paths, and edge cases. Good coverage of flag combinations and degraded-mode behavior (Playwright unavailable, codebase unavailable).
+  5. **ug-validate workflow correctly includes ug-ui-verification.md**: Unlike ug-audit and ug-status which only need ug-validation-rules + ug-standards + fp-project, ug-validate also loads ug-ui-verification.md because it needs the Playwright/code-trace procedures. Correct differentiation.
+  6. **No issues found**: Clean pass, no second-pass items from this phase.
+- **Second-pass items**: None
+- **Commit**: ready
+
+---
+
+## Current Phase: 3 -- Write Commands (ug-generate, ug-update, ug-screenshot)
 **Status**: planning
 **Started**: 2026-04-11
 
 ### Task Claims
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
-| 8 | commands/ug-validate.md | team-architect | pending | YAML frontmatter + XML body, read operation |
-| 9 | commands/ug-audit.md | team-architect | pending | YAML frontmatter + XML body, read operation |
-| 10 | commands/ug-status.md | team-architect | pending | YAML frontmatter + XML body, read operation |
-| 11 | workflows/ug-validate.md | team-architect | pending | XML workflow, spawns fp-docs-ug-validator |
-| 12 | workflows/ug-audit.md | team-architect | pending | XML workflow, spawns fp-docs-ug-validator |
-| 13 | workflows/ug-status.md | team-architect | pending | XML workflow, spawns fp-docs-ug-validator |
-| 14 | lib/routing.cjs — add 3 read entries | team-engineer | pending | ug-validate, ug-audit, ug-status routing + descriptions |
-| 15 | tests/specs/ug-validate.md | team-engineer | pending | Behavioral test spec |
-| 16 | tests/specs/ug-audit.md | team-engineer | pending | Behavioral test spec |
-| 17 | tests/specs/ug-status.md | team-engineer | pending | Behavioral test spec |
+| 18 | commands/ug-generate.md | team-architect | pending | YAML frontmatter + XML body, write operation |
+| 19 | commands/ug-update.md | team-architect | pending | YAML frontmatter + XML body, write operation |
+| 20 | commands/ug-screenshot.md | team-architect | pending | YAML frontmatter + XML body, write operation |
+| 21 | workflows/ug-generate.md | team-architect | pending | XML workflow, spawns fp-docs-ug-writer, 7-step (init through finalize) |
+| 22 | workflows/ug-update.md | team-architect | pending | XML workflow, spawns fp-docs-ug-writer, 7-step |
+| 23 | workflows/ug-screenshot.md | team-architect | pending | XML workflow, spawns fp-docs-ug-writer |
+| 24 | lib/routing.cjs — add 3 write entries | team-engineer | pending | ug-generate, ug-update, ug-screenshot routing + descriptions |
+| 25 | tests/specs/ug-generate.md | team-engineer | pending | Behavioral test spec |
+| 26 | tests/specs/ug-update.md | team-engineer | pending | Behavioral test spec |
+| 27 | tests/specs/ug-screenshot.md | team-engineer | pending | Behavioral test spec |
 
 ### Discoveries
 
