@@ -40,9 +40,9 @@
 - **Items for Lead review**: All 4 files + hugo.toml ignoreFiles change
 
 ### Lead Review
-- **Result**: PASS WITH NOTES
-- **Reviewer**: team-lead-2
-- **Date**: 2026-04-09
+- **Result**: pass_with_notes
+- **Notes**: Implementation + overlap reconciled
+- **Commit**: pending
 
 #### Architect — PASS
 - `hugo.toml`: Relearn theme is the right call — more visual, user-friendly, built-in search/tabs/badges. Config is clean. `contentDir` uses default (content/), `ignoreFiles` correctly excludes non-content files.
@@ -114,9 +114,9 @@ When merging Architect's staged files to docs repo, use Engineer's versions for 
 - **Items for Lead review**: `user-docs-strategy-report.md` (Architect) — full strategy report with 6 open questions for user
 
 ### Lead Review
-- **Result**: PASS WITH NOTES
-- **Reviewer**: team-lead-2
-- **Date**: 2026-04-09
+- **Result**: pass_with_notes
+- **Notes**: Docs strategy + visual tooling research
+- **Commit**: pending
 
 #### Architect Report (`user-docs-strategy-report.md`) — PASS
 - **Repo placement**: Subfolder (`user-guide/`) in existing docs repo — correct. Git LFS solves binary bloat.

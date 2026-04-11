@@ -78,7 +78,7 @@ The plugin's `.mcp.json` file configures the Playwright MCP server for visual ve
 /fp-docs:setup
 ```
 
-This command routes to the `fp-docs-system` agent and runs a 7-phase verification and installation:
+This command routes to the `fp-docs-system` agent and runs an 8-phase verification and installation:
 
 #### Phase 1: Plugin Structure Verification
 - Checks all required directories exist (agents/, commands/, workflows/, references/, hooks/, lib/)
@@ -114,6 +114,15 @@ This command routes to the `fp-docs-system` agent and runs a 7-phase verificatio
 - Runs `fp-tools drift shell-install --codebase-root {codebase-root}` to generate a shell integration script
 - Outputs the source line for the user to add to their `.zshrc`: `source "{codebase-root}/.fp-docs-shell.zsh"`
 - Informs user: "Add the line above to your .zshrc to see drift notifications in your terminal."
+
+#### Phase 7: Scaffold Bootstrap
+- Checks for bundled scaffolds via `fp-tools scaffold list`
+- For each scaffold, checks if the target exists in the docs repo via `fp-tools scaffold check <name>`
+- If missing: runs `fp-tools scaffold bootstrap <name>` to copy scaffold files into the docs repo
+- Currently bootstraps `user-guide/` (20 files: Hugo Relearn theme config, layouts, content stubs, page templates, Git LFS config, GitHub Actions deploy workflow)
+- `.github-workflows/` files are placed at `{docs-root}/.github/workflows/` (repo root, not inside the scaffold subdirectory)
+- Also patches the dev wiki's `hugo.toml` `ignoreFiles` to exclude `user-guide/` and runs `hugo mod get` + `git lfs install`
+- Safe for re-runs: only creates files that don't already exist
 
 #### Setup Output
 A structured report with per-phase pass/fail and installation health status (including git hook and shell integration results):
@@ -481,7 +490,7 @@ The "Agent" column refers to the specialist agent that receives the delegation. 
 
 | Command | Arguments | Agent | Description |
 |---------|-----------|-------|-------------|
-| `/fp-docs:setup` | (none) | fp-docs-system | Initialize or verify plugin installation (7 phases: structure, docs repo, gitignore, branch sync, git hooks, shell integration, update notification) |
+| `/fp-docs:setup` | (none) | fp-docs-system | Initialize or verify plugin installation (8 phases: structure, docs repo, gitignore, branch sync, git hooks, shell integration, scaffold bootstrap, update notification) |
 | `/fp-docs:sync` | `[merge] [--force]` | fp-docs-system | Synchronize docs repo branch with codebase branch |
 | `/fp-docs:update` | `[--check]` | fp-docs-system | Check for and install plugin updates via GitHub Releases API. `--check` for version check only. |
 | `/fp-docs:update-index` | `update\|full` | fp-docs-indexer | Refresh the PROJECT-INDEX.md codebase reference |
@@ -976,6 +985,23 @@ node {plugin-root}/fp-tools.cjs source-map generate
 # Dump full source-map.json
 node {plugin-root}/fp-tools.cjs source-map dump
 ```
+
+### Scaffold CLI
+
+Scaffold management for auto-bootstrapping docs repo structures from bundled plugin assets:
+
+```bash
+# List available scaffolds (name, file count, has workflows)
+node {plugin-root}/fp-tools.cjs scaffold list
+
+# Check if scaffold target exists in docs repo
+node {plugin-root}/fp-tools.cjs scaffold check user-guide
+
+# Bootstrap scaffold into docs repo (only creates missing files)
+node {plugin-root}/fp-tools.cjs scaffold bootstrap user-guide
+```
+
+Bootstrap copies `scaffolds/{name}/` to `{docs-root}/{name}/`. The `.github-workflows/` directory within a scaffold is a naming convention -- bootstrap places those files at `{docs-root}/.github/workflows/` (repo root, not inside the scaffold subdirectory). Safe for re-runs: only creates files that don't already exist.
 
 **Representative mappings** (full mapping in source-map.json, 30+ directory entries):
 

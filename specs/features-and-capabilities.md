@@ -115,7 +115,7 @@ Route to the **fp-docs-system** agent.
 
 | Command | Description | Agent |
 |---------|-------------|-------|
-| `/fp-docs:setup` | Initialize or verify the fp-docs plugin installation. Runs seven phases: plugin structure verification, docs repo setup, codebase gitignore check, branch sync, git hook installation (post-merge/post-rewrite for drift detection), shell prompt integration, and update notification setup (statusline hook). | fp-docs-system |
+| `/fp-docs:setup` | Initialize or verify the fp-docs plugin installation. Runs eight phases: plugin structure verification, docs repo setup, codebase gitignore check, branch sync, git hook installation (post-merge/post-rewrite for drift detection), shell prompt integration, scaffold bootstrap (auto-creates missing docs repo structures like user-guide/ from bundled assets), and update notification setup (statusline hook). | fp-docs-system |
 | `/fp-docs:sync` | Synchronize the docs repo branch with the codebase branch. Creates or switches docs branches, generates diff reports, and optionally merges docs branches. | fp-docs-system |
 | `/fp-docs:update-skills` | Regenerate all plugin command files from current prompt definitions. Syncs command files with source-of-truth prompts. | fp-docs-system |
 | `/fp-docs:update` | Check for and install plugin updates. Queries the GitHub Releases API for the latest version, displays the changelog from release notes, confirms with the user, and executes a git-based update (`git fetch && git checkout <tag>`). Supports `--check` flag for version check only. | fp-docs-system |
@@ -206,7 +206,7 @@ Each agent is defined in `agents/` with GSD-style YAML frontmatter (name, descri
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
 - **References**: doc-standards.md, fp-project.md
 - **Model**: opus, maxTurns: 50
-- **Key behavior**: Setup runs 7 phases (plugin verification, docs repo setup, gitignore check, branch sync, git hook installation, shell prompt integration, update notification setup). Sync manages the three-repo branch mirroring model. Update-skills regenerates command files while preserving customizations. Update checks GitHub Releases API and executes git-based self-update.
+- **Key behavior**: Setup runs 8 phases (plugin verification, docs repo setup, gitignore check, branch sync, git hook installation, shell prompt integration, scaffold bootstrap, update notification setup). Sync manages the three-repo branch mirroring model. Update-skills regenerates command files while preserving customizations. Update checks GitHub Releases API and executes git-based self-update.
 
 ### 10. fp-docs-researcher
 - **Domain**: Pre-operation source code analysis
@@ -257,6 +257,28 @@ The source-map module provides the single source of truth for source-to-doc mapp
 | `fp-tools source-map dump` | Output full source-map.json contents | Debugging, agents |
 
 `lib/source-map.cjs` exports 7 functions: `loadSourceMap`, `saveSourceMap`, `lookupDoc`, `lookupSource`, `getUnmapped`, `generateSourceMap`, `cmdSourceMap`.
+
+---
+
+## Scaffold Bootstrap CLI Surface (`lib/scaffold.cjs`)
+
+The scaffold module auto-bootstraps docs repo structures from bundled assets in `scaffolds/`. When a workflow needs a structure that doesn't exist in the docs repo (e.g., `user-guide/`), the plugin detects the absence and copies from bundled scaffold assets. Users never manually copy files between repos.
+
+| Subcommand | Description | Used By |
+|------------|-------------|---------|
+| `fp-tools scaffold list` | List available scaffolds with name, file count, and whether they include GitHub Actions workflows. | Agents, users via CLI |
+| `fp-tools scaffold check <name>` | Check if the scaffold's target directory already exists in the docs repo. Returns `exists` or `missing`. | Workflows (pre-bootstrap check) |
+| `fp-tools scaffold bootstrap <name>` | Copy scaffold files to `{docs-root}/{name}/`. Only creates files that don't exist (safe for re-runs). `.github-workflows/` contents are placed at `{docs-root}/.github/workflows/` instead. Also patches dev wiki `hugo.toml` ignoreFiles and runs `hugo mod get` + `git lfs install`. | Workflows, `/fp-docs:setup` |
+
+### Available Scaffolds
+
+| Scaffold | Files | Contents |
+|----------|-------|----------|
+| `user-guide` | 20 | Hugo Relearn theme config (`hugo.toml`, `go.mod`), layouts (`render-image.html` with conditional resize, `render-link.html`, `recording.html` shortcode, `step.html` shortcode), 7 content stubs (`_index.md` for root + 6 sections), 5 page templates, `.gitattributes` for Git LFS, GitHub Actions deploy workflow |
+
+### Module Exports
+
+`lib/scaffold.cjs` exports 4 functions: `checkScaffold`, `bootstrap`, `listScaffolds`, `cmdScaffold`.
 
 ---
 
@@ -536,7 +558,10 @@ When `/fp-docs:sync` runs on codebase master, it detects recently merged branche
 ### 18. Three-Tier Data Layout and Migration (Wave 1)
 Operational state is organized into three tiers: (1) `{project-root}/.fp-docs/` for global persistent state (operation log, trackers, staleness, plans, merge intelligence) that survives branch switches, (2) `{docs-root}/.fp-docs-branch/` for branch-scoped data (changelog, diffs, flagged concerns, sync watermark, plugin version) that travels with the branch, (3) `.claude/.fp-docs-project/` for plugin cache only. Migration from old layout (all state in `{docs-root}/.fp-docs/`) is handled by `lib/migrate.cjs` with CLI `fp-tools migrate <check|run|status>`. Migration is user-triggered (SessionStart nudges but does not auto-migrate), uses copy-verify-delete pattern for safety.
 
-### 19. Git Exclusion via System Exclude (Wave 1)
+### 19. Auto-Bootstrap Scaffolding
+Docs repo structures are bundled as scaffold assets inside the plugin (`scaffolds/`) and bootstrapped automatically when missing. This ensures users never need to manually copy files between the plugin and docs repos. The scaffold system is idempotent (only creates files that don't exist), supports special placement rules (`.github-workflows/` maps to `{docs-root}/.github/workflows/`), and integrates post-bootstrap steps (patching dev wiki config, initializing Hugo modules, installing Git LFS). New scaffold sets can be added by placing a directory under `scaffolds/` with no code changes needed.
+
+### 20. Git Exclusion via System Exclude (Wave 1)
 `/fp-docs:setup` configures `.git/info/exclude` (not `.gitignore`) to exclude `themes/foreign-policy-2017/docs/`, `.claude/`, and `.fp-docs/` from the codebase git repo. System exclude protects all branches unconditionally (including branches that predate fp-docs), requires no codebase commits, and is per-clone (appropriate for user-specific tooling). Setup checks both `.gitignore` and system exclude and accepts either as valid exclusion.
 
 ---

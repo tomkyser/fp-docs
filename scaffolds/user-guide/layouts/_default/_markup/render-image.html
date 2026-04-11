@@ -1,14 +1,18 @@
 {{- /* Responsive image render hook for user guide screenshots */ -}}
-{{- /* Automatically resizes page bundle images, adds lazy loading */ -}}
+{{- /* Automatically resizes large page bundle images, adds lazy loading */ -}}
+{{- /* Only downsizes images wider than 1200px to prevent upscaling small images */ -}}
 {{- $img := .Page.Resources.GetMatch .Destination -}}
 {{- if $img -}}
-  {{- $resized := $img.Resize "1200x q85" -}}
+  {{- $processed := $img -}}
+  {{- if gt $img.Width 1200 -}}
+    {{- $processed = $img.Resize "1200x q85" -}}
+  {{- end -}}
   <figure class="screenshot">
-    <img src="{{ $resized.RelPermalink }}"
+    <img src="{{ $processed.RelPermalink }}"
          alt="{{ .Text }}"
          loading="lazy"
-         width="{{ $resized.Width }}"
-         height="{{ $resized.Height }}">
+         width="{{ $processed.Width }}"
+         height="{{ $processed.Height }}">
     {{- with .Title }}
     <figcaption>{{ . }}</figcaption>
     {{- end }}

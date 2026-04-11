@@ -29,6 +29,7 @@
  *   scope-assess - Pre-delegation scope assessment (command [args...])
  *   tracker    - Shared tracker doc management (create, read, update, list, complete, prune)
  *   resolve-model - Model resolution for agents (agent-name [--profile tier] | --list)
+ *   scaffold   - Scaffold management (list, check, bootstrap) -- auto-bootstrap docs repo structures
  *
  * Output protocol:
  *   Default: JSON to stdout
@@ -266,6 +267,12 @@ function main() {
     case 'migrate': {
       const migrate = require('./lib/migrate.cjs');
       migrate.cmdMigrate(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'scaffold': {
+      const scaffold = require('./lib/scaffold.cjs');
+      scaffold.cmdScaffold(args[1], args.slice(2), raw);
       break;
     }
 

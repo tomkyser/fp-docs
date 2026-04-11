@@ -13,7 +13,7 @@
  * Output: JSON with hookSpecificOutput to stdout.
  */
 
-const { handleInjectManifest, handleBranchSyncCheck, handleDriftNudge, handleMigrationNudge } = require('../lib/hooks.cjs');
+const { handleInjectManifest, handleBranchSyncCheck, handleDriftNudge, handleMigrationNudge, handleScaffoldCheck } = require('../lib/hooks.cjs');
 
 async function main() {
   let input = {};
@@ -71,6 +71,16 @@ async function main() {
     const migration = handleMigrationNudge(input);
     if (migration.additionalContext) {
       parts.push(migration.additionalContext);
+    }
+  } catch {
+    // Silent failure -- non-critical
+  }
+
+  try {
+    // 5. Scaffold check (auto-bootstrap missing docs repo structures)
+    const scaffold = handleScaffoldCheck(input);
+    if (scaffold.additionalContext) {
+      parts.push(scaffold.additionalContext);
     }
   } catch {
     // Silent failure -- non-critical
