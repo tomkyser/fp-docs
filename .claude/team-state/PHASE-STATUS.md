@@ -92,23 +92,66 @@
 
 ---
 
-## Current Phase: 3 -- Write Commands (ug-generate, ug-update, ug-screenshot)
+## Phase: 3 -- Write Commands (ug-generate, ug-update, ug-screenshot)
+**Status**: complete
+**Started**: 2026-04-11
+
+### Task Claims
+| # | Task | Owner | Status | Notes |
+|---|------|-------|--------|-------|
+| 18 | commands/ug-generate.md | team-architect | done | Write op, --type/--no-screenshots/--plan-only flags |
+| 19 | commands/ug-update.md | team-architect | done | Write op, --refresh-screenshots/--no-tone-check flags |
+| 20 | commands/ug-screenshot.md | team-architect | done | Write op, --all/--replace/--dry-run flags |
+| 21 | workflows/ug-generate.md | team-architect | done | 7-step: init, scope, research, write+UI, validate stages 3-4, fix violations, finalize |
+| 22 | workflows/ug-update.md | team-architect | done | 7-step: init, target, diff, impact, write, validate stages 3-4, finalize |
+| 23 | workflows/ug-screenshot.md | team-architect | done | 5-step: init, targets, capture, validate stages 3-4, finalize. --dry-run exits early |
+| 24 | lib/routing.cjs — add 3 write entries | team-engineer | done | 3 ROUTING_TABLE + 3 DESCRIPTIONS, table now 29 entries |
+| 25 | tests/specs/ug-generate.md | team-engineer | done | 5 UG pipeline stages, 7-step routing, 6 error + 6 edge cases |
+| 26 | tests/specs/ug-update.md | team-engineer | done | 5 UG pipeline stages, 8-step routing, 4 error + 6 edge cases |
+| 27 | tests/specs/ug-screenshot.md | team-engineer | done | 5 UG pipeline stages, Playwright-required, 4 error + 8 edge cases |
+
+### Discoveries
+- Routing table count goes from 26 to 29 with the 3 write commands (will reach 31 when ug-preview and ug-batch added in Phase 4)
+- Write workflows use multi-agent delegation: researcher -> ug-writer -> ug-validator -> conditional fix -> finalize
+- ug-screenshot has Playwright as a hard requirement (unlike ug-generate/ug-update which fall back to code trace)
+
+### Phase Completion Summary
+- **Files created**: commands/ug-generate.md, commands/ug-update.md, commands/ug-screenshot.md, workflows/ug-generate.md, workflows/ug-update.md, workflows/ug-screenshot.md, tests/specs/ug-generate.md, tests/specs/ug-update.md, tests/specs/ug-screenshot.md
+- **Files modified**: lib/routing.cjs (added 3 write routing entries + 3 descriptions, 29 total)
+- **Files deleted**:
+- **Decisions made**: ug-screenshot requires Playwright (no code-trace fallback for actual capture)
+- **Issues discovered**: None
+- **Items for Lead review**: None
+
+### Lead Review
+- **Result**: PASS
+- **Reviewed**: 2026-04-11
+- **Notes**:
+  1. **Commands match pattern exactly**: All 3 correctly say "Operation type: write (full pipeline required)". Structurally identical to existing write commands.
+  2. **Workflows are well-structured multi-agent pipelines**: ug-generate (7 steps, researcher -> writer -> validator -> conditional fix -> finalize). ug-update (7 steps with diff analysis and targeted edits). ug-screenshot (5 steps, appropriately simpler). All have `<success_criteria>`.
+  3. **Smart design: ug-screenshot requires Playwright**: Unlike generate/update which fall back to code trace, screenshot correctly treats Playwright as hard requirement. Test spec documents this as error path, not fallback.
+  4. **Conditional fix step prevents jargon leakage**: ug-generate step 6 re-spawns writer if validator finds FAIL issues. Good correction loop.
+  5. **Routing verified**: 29 entries confirmed via `node require`. Comments updated. All 3 write entries use `fp-docs-ug-writer` agent.
+  6. **Test specs correctly differentiate write from read**: Pipeline stages, git commit markers, delegation markers all present.
+- **Second-pass items**: None
+- **Commit**: ready
+
+---
+
+## Current Phase: 4 -- Admin + Batch Commands (ug-preview, ug-batch)
 **Status**: planning
 **Started**: 2026-04-11
 
 ### Task Claims
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
-| 18 | commands/ug-generate.md | team-architect | pending | YAML frontmatter + XML body, write operation |
-| 19 | commands/ug-update.md | team-architect | pending | YAML frontmatter + XML body, write operation |
-| 20 | commands/ug-screenshot.md | team-architect | pending | YAML frontmatter + XML body, write operation |
-| 21 | workflows/ug-generate.md | team-architect | pending | XML workflow, spawns fp-docs-ug-writer, 7-step (init through finalize) |
-| 22 | workflows/ug-update.md | team-architect | pending | XML workflow, spawns fp-docs-ug-writer, 7-step |
-| 23 | workflows/ug-screenshot.md | team-architect | pending | XML workflow, spawns fp-docs-ug-writer |
-| 24 | lib/routing.cjs — add 3 write entries | team-engineer | pending | ug-generate, ug-update, ug-screenshot routing + descriptions |
-| 25 | tests/specs/ug-generate.md | team-engineer | pending | Behavioral test spec |
-| 26 | tests/specs/ug-update.md | team-engineer | pending | Behavioral test spec |
-| 27 | tests/specs/ug-screenshot.md | team-engineer | pending | Behavioral test spec |
+| 28 | commands/ug-preview.md | team-architect | pending | YAML frontmatter + XML body, admin operation |
+| 29 | commands/ug-batch.md | team-architect | pending | YAML frontmatter + XML body, batch operation |
+| 30 | workflows/ug-preview.md | team-architect | pending | XML workflow, spawns fp-docs-system, Hugo server + deploy |
+| 31 | workflows/ug-batch.md | team-architect | pending | XML workflow, Agent Teams for parallel ops |
+| 32 | lib/routing.cjs — add 2 entries (ug-preview, ug-batch) | team-engineer | pending | admin + batch types, table to 31 |
+| 33 | tests/specs/ug-preview.md | team-engineer | pending | Behavioral test spec |
+| 34 | tests/specs/ug-batch.md | team-engineer | pending | Behavioral test spec |
 
 ### Discoveries
 
