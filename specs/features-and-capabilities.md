@@ -2,7 +2,7 @@
 
 <!-- Updated 2026-03-29: Full rewrite for GSD command-workflow-agent architecture (Phase 10 conversion) -->
 
-> **Updated 2026-03-30**: v2 workflow architecture with dedicated enforcement agents. 23 commands route through workflows that spawn specialized agents. References replace modules and algorithms. 11 agents (fp-docs-* prefix) including new fp-docs-verbosity-enforcer for pipeline stage 1. Scope assessment, tracker documents, and dynamic researcher scaling added.
+> **Updated 2026-04-11**: User guide command system added. 31 commands (23 dev docs + 8 user guide `/fp-docs:ug-*`). 13 agents (added fp-docs-ug-writer, fp-docs-ug-validator). 19 references (added ug-standards, ug-validation-rules, ug-ui-verification). Separate 5-stage user guide pipeline enforcing UI behavior accuracy instead of code citation accuracy.
 
 ## What fp-docs Is
 
@@ -31,11 +31,11 @@ The plugin is distributed via the `fp-tools` marketplace and operates through th
 
 ---
 
-## Complete Command Catalog (23 Commands)
+## Complete Command Catalog (31 Commands)
 
-All 23 commands live in `commands/` as thin YAML+XML routing files. Each command declares its workflow via `@-reference`, which orchestrates agent spawning and pipeline execution. Write operations spawn specialized agents through the write workflow template (6 steps: initialize, research, plan, write phase, review phase, finalize phase). Read operations use the read workflow template (4 steps: initialize, research, plan, execute standalone). Meta commands (`/fp-docs:do` and `/fp-docs:help`) use inline workflows that execute directly without agent spawning.
+All 31 commands live in `commands/` as thin YAML+XML routing files. Each command declares its workflow via `@-reference`, which orchestrates agent spawning and pipeline execution. Write operations spawn specialized agents through the write workflow template (6 steps: initialize, research, plan, write phase, review phase, finalize phase). Read operations use the read workflow template (4 steps: initialize, research, plan, execute standalone). Meta commands (`/fp-docs:do` and `/fp-docs:help`) use inline workflows that execute directly without agent spawning.
 
-All 23 commands are managed by the ROUTING_TABLE in `lib/routing.cjs`. Write operations use 5 agents (orchestrator + researcher + planner + specialist + validator); read-only operations use a 4-agent path (orchestrator + researcher + planner + specialist) with actionable output including per-issue command recommendations.
+All 31 commands are managed by the ROUTING_TABLE in `lib/routing.cjs` (23 dev docs + 8 user guide). Write operations use 5 agents (orchestrator + researcher + planner + specialist + validator); read-only operations use a 4-agent path (orchestrator + researcher + planner + specialist) with actionable output including per-issue command recommendations.
 
 ### Documentation Creation & Modification (5 commands)
 
@@ -121,6 +121,37 @@ Route to the **fp-docs-system** agent.
 | `/fp-docs:update` | Check for and install plugin updates. Queries the GitHub Releases API for the latest version, displays the changelog from release notes, confirms with the user, and executes a git-based update (`git fetch && git checkout <tag>`). Supports `--check` flag for version check only. | fp-docs-system |
 | `/fp-docs:parallel` | Run documentation operations in parallel across multiple files using Agent Teams. Batches files into groups of up to 5 and assigns each batch to a teammate. Falls back to sequential if Agent Teams are disabled or scope is small (<3 files). Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` env variable. | fp-docs-system |
 
+### User Guide Operations (8 commands)
+
+These commands manage user-facing documentation (non-technical WordPress admin guides). They use a separate 5-stage pipeline enforcing UI behavior accuracy rather than code citation accuracy. All are namespaced as `/fp-docs:ug-*`.
+
+**User Guide Write Commands (3)**
+
+Route to the **fp-docs-ug-writer** agent via write workflows with UG pipeline enforcement.
+
+| Command | Description | Agent |
+|---------|-------------|-------|
+| `/fp-docs:ug-generate` | Generate a new user guide page. Analyzes code, discovers UI paths via Playwright or code trace, captures screenshots, writes content using page templates. Supports `--type feature-guide\|workflow\|quick-start\|reference\|faq`, `--no-screenshots`, `--plan-only`. | fp-docs-ug-writer |
+| `/fp-docs:ug-update` | Update existing user guide page after codebase changes. Detects changes since `last_verified`, re-verifies UI paths, refreshes stale screenshots, updates affected sections only. Supports `--refresh-screenshots`, `--no-tone-check`. | fp-docs-ug-writer |
+| `/fp-docs:ug-screenshot` | Capture or refresh screenshots for user guide pages. Uses Playwright MCP to navigate WP admin and capture current UI state. Supports `--all`, `--replace`, `--dry-run`. | fp-docs-ug-writer |
+
+**User Guide Read Commands (3)**
+
+Route to the **fp-docs-ug-validator** agent. Strictly read-only (Write and Edit disallowed).
+
+| Command | Description | Agent |
+|---------|-------------|-------|
+| `/fp-docs:ug-validate` | Validate user guide accuracy against current UI state. Checks navigation paths, screenshot currency, tone compliance, completeness. Supports `--depth quick\|standard\|deep`, `--all`, `--no-tone-check`. | fp-docs-ug-validator |
+| `/fp-docs:ug-audit` | Audit coverage gaps. Scans codebase for user-visible features and compares against documented pages. Reports undocumented features with priority classification. Supports `--section <name>`. | fp-docs-ug-validator |
+| `/fp-docs:ug-status` | Report user guide health metrics: page counts, screenshot inventory, coverage percentage, staleness statistics, structural health. Supports `--verbose`. | fp-docs-ug-validator |
+
+**User Guide Admin & Batch Commands (2)**
+
+| Command | Description | Agent |
+|---------|-------------|-------|
+| `/fp-docs:ug-preview` | Start local Hugo dev server or trigger preview deploy. Supports `--local` (default), `--deploy` (GitHub Actions), `--stop`. Bootstraps scaffold if missing. | fp-docs-system |
+| `/fp-docs:ug-batch` | Batch operations across multiple user guide pages. Takes sub-operation (`validate\|screenshot\|update`) with `--section` or `--all` scope. Uses Agent Teams when enabled, falls back to sequential. | (varies by sub-operation) |
+
 ### Meta-Commands (2 commands)
 
 These commands use inline meta workflows that execute directly without agent spawning. They appear in the ROUTING_TABLE with type `meta`.
@@ -132,7 +163,7 @@ These commands use inline meta workflows that execute directly without agent spa
 
 ---
 
-## The 11 Agents
+## The 13 Agents
 
 Each agent is defined in `agents/` with GSD-style YAML frontmatter (name, description, tools, model) and an XML system prompt body. Agents load shared knowledge via `@-reference` to files in `references/`. All agents use CJS tooling (`fp-tools.cjs`) for git operations, pipeline sequencing, state management, and configuration access. Workflows contain literal `fp-tools.cjs` commands to prevent agent improvisation.
 
@@ -224,6 +255,22 @@ Each agent is defined in `agents/` with GSD-style YAML frontmatter (name, descri
 - **Model**: sonnet, maxTurns: 75
 - **Key behavior**: Receives researcher analysis and user command, designs execution strategy, creates persistent plan files at `.fp-docs/plans/` via `fp-tools.cjs plans save`. Classifies commands as write/read/admin/batch and creates appropriately structured plans. All operations produce plan files for consistent architecture and full audit trail. Plans auto-execute by default unless `--plan-only` flag is passed. Always invoked in DELEGATED mode -- never runs standalone.
 
+### 12. fp-docs-ug-writer
+- **Domain**: User guide content creation and modification
+- **Operations**: ug-generate (write phase), ug-update (write phase), ug-screenshot
+- **Tools**: Read, Write, Edit, Bash, Grep, Glob (full write access)
+- **References**: ug-standards.md, ug-ui-verification.md, fp-project.md
+- **Model**: opus
+- **Key behavior**: Creates and updates user-facing documentation from the non-technical editor's perspective. Uses Playwright MCP (`browser_navigate`, `browser_screenshot`, `browser_click`) for UI discovery and screenshot capture when available; falls back to code analysis (traces admin menu hooks, form field registrations). Writes Hugo page bundles (`content/{section}/{page-name}/index.md` + co-located screenshots). Uses page templates from `scaffolds/user-guide/templates/`. Enforces plain language -- never includes code identifiers in output. Updates `last_verified` and `screenshot_count` frontmatter. Executes UG pipeline stages 1-2 (UI verification, screenshot currency) inline after writing.
+
+### 13. fp-docs-ug-validator
+- **Domain**: User guide accuracy validation
+- **Operations**: ug-validate, ug-audit, ug-status, UG pipeline stages 1-4
+- **Tools**: Read, Bash, Grep, Glob (Write and Edit disallowed)
+- **References**: ug-validation-rules.md, ug-standards.md, fp-project.md
+- **Model**: opus
+- **Key behavior**: Strictly read-only. Validates user guide pages against current UI state via Playwright MCP or code trace. Four operations: ug-validate walks documented steps against UI (supports quick/standard/deep depth); ug-audit cross-references codebase features against documented pages for coverage gaps; ug-status reports health metrics (page counts, staleness, coverage percentage); pipeline stages 3-4 validate jargon/tone and completeness. Produces structured validation reports with per-page PASS/WARN/FAIL and remediation commands pointing to `/fp-docs:ug-*` commands.
+
 ---
 
 ## Drift Detection CLI Surface (`lib/drift.cjs`)
@@ -282,9 +329,9 @@ The scaffold module auto-bootstraps docs repo structures from bundled assets in 
 
 ---
 
-## The 16 References
+## The 19 References
 
-References are shared knowledge files in `references/` loaded by agents and workflows via `@-reference` in execution context. Per user Decision 2 (GSD explicit style), `doc-standards.md` and `fp-project.md` are repeated as `@-reference` in every command's `<execution_context>`. Each rule lives in exactly one reference (no duplication).
+References are shared knowledge files in `references/` loaded by agents and workflows via `@-reference` in execution context. Per user Decision 2 (GSD explicit style), `doc-standards.md` and `fp-project.md` are repeated as `@-reference` in every dev docs command's `<execution_context>`. User guide commands load `ug-standards.md` and `fp-project.md` instead. Each rule lives in exactly one reference (no duplication).
 
 ### Rule References (10 files, converted from modules)
 
@@ -312,6 +359,14 @@ References are shared knowledge files in `references/` loaded by agents and work
 | git-sync-rules.md | Branch synchronization procedure, three-repo coordination, conflict resolution | Pipeline stage 8 (docs commit), sync workflow |
 | codebase-analysis-guide.md | Source code scanning patterns, dependency mapping, change detection procedures | fp-docs-researcher (pre-pipeline) |
 
+### User Guide References (3 files, added for ug-* command system)
+
+| Reference | Domain | Used By |
+|-----------|--------|---------|
+| ug-standards.md | User guide page structure (content types, page bundles, frontmatter, screenshots, tone, links, shortcodes, sections, integrity), Hugo page bundle conventions, 5 content types (feature-guide, workflow-walkthrough, quick-start, reference, faq) | fp-docs-ug-writer, fp-docs-ug-validator |
+| ug-validation-rules.md | UI path verification checks, screenshot currency checks, jargon detection (regex patterns + banned terms + allowed exceptions), completeness matrix per content type, coverage gap detection, validation report format (per-page PASS/WARN/FAIL) | fp-docs-ug-validator |
+| ug-ui-verification.md | Playwright MCP verification flow (auth, navigation, element checks, screenshot capture, admin URLs), code-based fallback verification (menus, CPTs, taxonomies, meta boxes, fields, settings, shortcodes), documented-path-to-admin-URL mapping, capture protocol (viewport, wait conditions) | fp-docs-ug-writer, fp-docs-ug-validator |
+
 ---
 
 ## The Post-Modification Pipeline (8 Stages)
@@ -337,6 +392,27 @@ Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: P
 ```
 
 Pipeline actions now include `gate_failed` in addition to `spawn`, `execute`, `complete`, `blocked` (Phase 17). When a gate fails, the orchestrator receives a diagnostic with the specific violation(s) and decides whether to retry or abort. Stage output is recorded via `fp-tools pipeline record-output <stage-id>`.
+
+### The User Guide Pipeline (5 Stages)
+
+Separate from the dev docs pipeline. Enforces **UI behavior accuracy** -- does the documented workflow match what users actually see? Configured via `user_guide_pipeline` in `config.json`.
+
+| Stage | Name | Phase | What It Does | Skip Condition |
+|-------|------|-------|-------------|----------------|
+| 1 | UI Behavior Verification | Write | Verifies every documented navigation path and UI interaction against actual WordPress admin. Uses Playwright MCP when available, code analysis as fallback. | Never |
+| 2 | Screenshot Currency | Write | Checks that referenced screenshots exist as page bundle resources. Flags stale screenshots when source files changed after `last_verified`. | Never |
+| 3 | Jargon & Tone | Finalize | Scans for PHP/JS identifiers, dev jargon, function names, hook names. Audience is non-technical WordPress editors. Banned patterns configurable in `user_guide_pipeline.jargon_banned_patterns`. | `--no-tone-check` flag |
+| 4 | Completeness | Finalize | Validates required sections per content type against `user_guide_pipeline.required_sections_by_type`. Checks frontmatter completeness and structural quality. | Never |
+| 5 | Changelog + Commit | Finalize | Updates user-guide changelog (if exists), sets `last_verified` to today on all modified pages, commits to docs repo. | Never |
+
+**Delegation**: Stages 1-2 are executed inline by fp-docs-ug-writer during the write phase. Stages 3-4 are executed by fp-docs-ug-validator (read-only, spawned by workflow). Stage 5 is handled by the workflow via `fp-tools pipeline init/next/run-stage`. If stages 3-4 report FAIL, the workflow re-spawns fp-docs-ug-writer to fix violations before committing.
+
+**Content types and required sections** (from config):
+- **feature-guide**: what-is, where-to-find, how-it-works, key-fields, common-tasks
+- **workflow-walkthrough**: overview, before-you-begin, steps, what-happens-next, troubleshooting
+- **quick-start**: welcome, what-youll-learn, steps, next-steps
+- **reference**: overview, sections, notes
+- **faq**: questions, still-need-help
 
 ---
 
@@ -382,6 +458,16 @@ fp-docs enables a complete documentation lifecycle:
 
 ### 4. Deprecate
 - `/fp-docs:deprecate` -- Mark docs as deprecated with notices, update trackers
+
+### User Guide Lifecycle
+
+The user guide has its own parallel lifecycle:
+- **Create**: `/fp-docs:ug-generate` -- Generate user guide pages for features or workflows
+- **Maintain**: `/fp-docs:ug-update` -- Update pages after codebase changes; `/fp-docs:ug-screenshot` -- Refresh screenshots
+- **Validate**: `/fp-docs:ug-validate` -- Verify accuracy against current UI; `/fp-docs:ug-audit` -- Find coverage gaps
+- **Monitor**: `/fp-docs:ug-status` -- Health metrics dashboard
+- **Preview**: `/fp-docs:ug-preview` -- Local Hugo server or deploy preview
+- **Batch**: `/fp-docs:ug-batch` -- Run validate/screenshot/update across multiple pages
 
 ---
 

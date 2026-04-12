@@ -182,33 +182,43 @@
 ---
 
 ## Current Phase: 5 -- Integration (health, init, specs)
-**Status**: planning
+**Status**: complete
 **Started**: 2026-04-11
 
 ### Task Claims
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
-| 35 | lib/health.cjs — update expected counts | team-engineer | pending | routing: 23->31, commands: 23->31, workflows: 23->31, agents: 10->12 |
-| 36 | lib/init.cjs — user guide init functions | team-engineer | pending | initUserGuideWriteOp(), initUserGuideReadOp(), scaffold auto-check |
-| 37 | config.json — model_profile for new agents | team-engineer | pending | fp-docs-ug-writer mirrors modifier, fp-docs-ug-validator mirrors validator (from Phase 1 note) |
-| 38 | specs/architecture.md — document new system | team-architect | pending | New agents, commands, pipeline, routing entries |
-| 39 | specs/features-and-capabilities.md — document new commands | team-architect | pending | 8 commands, 2 agents, UG pipeline stages |
-| 40 | specs/usage-and-workflows.md — document user workflows | team-architect | pending | UG command reference, config options, workflows |
+| 35 | lib/health.cjs — update expected counts | team-engineer | done | routing 31, commands 31, workflows 31, agents 12. Added user-guide-scaffold check (#9). |
+| 36 | lib/init.cjs — user guide init functions | team-engineer | done | 5 new functions: getUserGuidePipelineConfig, getUserGuideConfig, checkUserGuideScaffold, initUserGuideWriteOp, initUserGuideReadOp. CLI router extended with ug-write-op and ug-read-op. |
+| 37 | config.json — model_profile for new agents | team-engineer | done | fp-docs-ug-writer: opus/opus/sonnet (mirrors modifier). fp-docs-ug-validator: opus/sonnet/sonnet (mirrors validator). |
+| 38 | specs/architecture.md — document new system | team-architect | done | 19 UG references added: agents, commands, pipeline, routing, scaffold, config sections |
+| 39 | specs/features-and-capabilities.md — document new commands | team-architect | done | 23 UG references added: 8 commands, 2 agents, 5-stage pipeline, content types, templates |
+| 40 | specs/usage-and-workflows.md — document user workflows | team-architect | done | 62 UG references added: command reference, config options, workflows G-J, gotchas, best practices |
 
 ### Discoveries
+- health.cjs runs clean in plugin dev mode: 10 pass, 1 warn (codebase-root), 2 skip (docs-root, ug-scaffold). Overall: healthy.
+- init.cjs scaffold auto-check uses lazy require of scaffold.cjs — graceful degradation if scaffold module not ready
+- Model profile entries confirmed: writer=modifier pattern, validator=validator pattern (resolves Phase 1 second-pass item)
 
 ### Phase Completion Summary
-- **Files created**:
-- **Files modified**:
-- **Files deleted**:
-- **Decisions made**:
-- **Issues discovered**:
-- **Items for Lead review**:
+- **Files created**: None
+- **Files modified**: lib/health.cjs, lib/init.cjs, config.json, specs/architecture.md, specs/features-and-capabilities.md, specs/usage-and-workflows.md
+- **Files deleted**: None
+- **Decisions made**: health.cjs checks scaffolds dir for .md files (currently 0) — pass status since no expected count set for scaffolds
+- **Issues discovered**: None
+- **Items for Lead review**: Phase 1 second-pass item (model_profile) resolved
 
 ### Lead Review
-- **Result**: pending
+- **Result**: PASS
+- **Reviewed**: 2026-04-11
 - **Notes**:
-- **Commit**: pending
+  1. **health.cjs verified**: Counts updated correctly (31/31/31/12). New check #9 (user-guide-scaffold) gracefully handles all states: pass/warn/skip. Health check runs clean — overall healthy.
+  2. **init.cjs verified**: 5 new functions follow established patterns. `initUserGuideWriteOp` loads UG pipeline config + scaffold auto-check. `initUserGuideReadOp` loads UG validation config (jargon patterns, required sections, staleness). CLI router properly extended with ug-write-op and ug-read-op subcommands. Error messages include full usage strings.
+  3. **config.json model_profile verified**: fp-docs-ug-writer mirrors modifier (opus/opus/sonnet), fp-docs-ug-validator mirrors validator (opus/sonnet/sonnet). Resolves Phase 1 second-pass item #1. JSON validity confirmed.
+  4. **Spec files verified**: architecture.md (19 UG refs), features-and-capabilities.md (23 UG refs), usage-and-workflows.md (62 UG refs). All three have "Updated 2026-04-11" version stamps. Counts match (31 entries, 12 agents, etc.).
+  5. **Phase 1 second-pass item resolved**: model_profile for new agents now present and correct. No remaining second-pass items from Phase 1.
+- **Second-pass items**: None new. Phase 4 item (ug-preview Read tool) still pending for second pass.
+- **Commit**: ready
 
 ---
 

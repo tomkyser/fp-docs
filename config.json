@@ -180,7 +180,9 @@
       "fp-docs-indexer": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
       "fp-docs-system": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
       "fp-docs-researcher": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
-      "fp-docs-planner": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" }
+      "fp-docs-planner": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-ug-writer": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
+      "fp-docs-ug-validator": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" }
     }
   },
   "user_guide": {

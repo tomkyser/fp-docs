@@ -2,9 +2,11 @@
 
 <!-- Updated 2026-03-29: Full rewrite for GSD command-workflow-agent architecture (Phase 10 conversion) -->
 
-> **Updated 2026-03-30**: v2 workflow architecture with dedicated enforcement agents, scope assessment, tracker documents, and dynamic researcher scaling. 23 commands route through workflows that spawn specialized agents. 11 agents including fp-docs-verbosity-enforcer.
+> **Updated 2026-03-30**: v2 workflow architecture with dedicated enforcement agents, scope assessment, tracker documents, and dynamic researcher scaling.
 
-> Research compiled from reading all 23 command files, 11 agents, workflows, hooks, CJS modules, configuration files, and references. This document covers installation, setup, daily workflows, command reference, branch sync, configuration, best practices, and gotchas.
+> **Updated 2026-04-11**: Added User Guide command system (8 ug-* commands), UG pipeline (5 stages), UG agents (fp-docs-ug-writer, fp-docs-ug-validator), and UG configuration. Total: 31 commands, 13 agents, 19 references.
+
+> Research compiled from reading all 31 command files, 13 agents, workflows, hooks, CJS modules, configuration files, and references. This document covers installation, setup, daily workflows, command reference, branch sync, configuration, best practices, and gotchas.
 
 ---
 
@@ -445,14 +447,37 @@ Run /fp-docs:auto-revise to update affected docs, or /fp-docs:drift status for d
 
 ## 4. Complete Command Reference
 
-All 23 commands live in `commands/` as thin YAML+XML routing files. Each command declares its workflow via `@-reference`, which orchestrates agent spawning and pipeline execution.
+All 31 commands live in `commands/` as thin YAML+XML routing files. Each command declares its workflow via `@-reference`, which orchestrates agent spawning and pipeline execution.
+
+### User Guide Write Commands (fp-docs-ug-writer via write workflow, full UG pipeline)
+
+| Command | Arguments | Description |
+|---------|-----------|-------------|
+| `/fp-docs:ug-generate` | `"page description" [--type feature-guide\|workflow-walkthrough\|quick-start\|reference\|faq] [--no-screenshots] [--plan-only]` | Generate a new user guide page from codebase analysis. Infers section, creates Hugo page bundle with co-located screenshots. |
+| `/fp-docs:ug-update` | `"page path or section" [--refresh-screenshots] [--no-tone-check]` | Update existing user guide pages when UI or features change. Diffs code changes since `last_verified` frontmatter date. |
+| `/fp-docs:ug-screenshot` | `"page path or section" [--all] [--replace] [--dry-run]` | Capture or refresh screenshots for user guide pages using Playwright MCP. Creates/updates co-located images in Hugo page bundles. |
+
+### User Guide Read Commands (fp-docs-ug-validator via read workflow, read-only)
+
+| Command | Arguments | Description |
+|---------|-----------|-------------|
+| `/fp-docs:ug-validate` | `"page path or section" [--depth quick\|standard\|deep] [--all] [--no-tone-check]` | Validate user guide accuracy against current UI state. Depth levels: quick (tone+completeness only), standard (all code-based checks), deep (all + Playwright UI verification). |
+| `/fp-docs:ug-audit` | `"optional scope" [--section <name>]` | Audit user guide coverage gaps. Scans codebase for user-visible features (`add_menu_page`, `register_post_type`, etc.), cross-references with documented pages, classifies as UNDOCUMENTED/STALE/PARTIAL/COVERED. |
+| `/fp-docs:ug-status` | `[--verbose]` | Dashboard of user guide health metrics: page inventory, screenshot inventory, staleness stats, coverage metrics, structural health. |
+
+### User Guide Admin & Batch Commands
+
+| Command | Arguments | Agent | Description |
+|---------|-----------|-------|-------------|
+| `/fp-docs:ug-preview` | `[--local] [--deploy] [--stop]` | fp-docs-system | Manage Hugo dev server for local user guide preview, or trigger GitHub Actions deploy for staging/production. |
+| `/fp-docs:ug-batch` | `validate\|screenshot\|update [--section <name>] [--all]` | (varies) | Run UG operations in batch across multiple pages. Uses Agent Teams when available (falls back to sequential). Read sub-ops skip pipeline; write sub-ops run full UG pipeline. |
 
 ### Meta-Commands (inline workflows, no agent spawning)
 
 | Command | Arguments | Description |
 |---------|-----------|-------------|
 | `/fp-docs:do` | `"natural language description"` | Route natural language to the right fp-docs command. The smart router evaluates your intent against a routing rules table, disambiguates when needed, and auto-dispatches the matched command. |
-| `/fp-docs:help` | (none) | Display all 23 commands grouped by type (write/read/admin/batch/meta) with descriptions and agents. CJS-generated from routing data. |
+| `/fp-docs:help` | (none) | Display all 31 commands grouped by type (write/read/admin/batch/meta) with descriptions and agents. CJS-generated from routing data. |
 
 ### Routing-Table Commands
 
@@ -528,6 +553,25 @@ The "Agent" column refers to the specialist agent that receives the delegation. 
 | `--plan-only` | Stop after Plan Phase. Display plan summary. Do not execute Write/Review/Finalize phases. Available on all operations (remediate: save remediation plan without executing). |
 | `--no-research` | Skip the Research Phase entirely. Planner works without source analysis. Useful for quick operations when latency matters. |
 | `--visual` | Enable visual verification via browser automation (Playwright MCP). Available on modify operations. |
+
+### User Guide Command Flags
+
+| Flag | Commands | Effect |
+|------|----------|--------|
+| `--type <type>` | `ug-generate` | Page type: `feature-guide`, `workflow-walkthrough`, `quick-start`, `reference`, `faq`. Determines required sections. |
+| `--no-screenshots` | `ug-generate` | Skip Playwright screenshot capture during generation. Page created with placeholder annotations. |
+| `--plan-only` | `ug-generate` | Show generation plan (section, type, page structure) without creating the page. |
+| `--refresh-screenshots` | `ug-update` | Re-capture all screenshots for the updated page, not just stale ones. |
+| `--no-tone-check` | `ug-update`, `ug-validate` | Skip the Jargon & Tone stage (UG pipeline stage 3). |
+| `--depth <level>` | `ug-validate` | Validation depth: `quick` (tone+completeness only), `standard` (all code-based), `deep` (all + Playwright). |
+| `--all` | `ug-validate`, `ug-screenshot`, `ug-batch` | Process all pages instead of a targeted scope. |
+| `--replace` | `ug-screenshot` | Replace existing screenshots even if current. Default behavior skips screenshots newer than `screenshot_staleness_days`. |
+| `--dry-run` | `ug-screenshot` | Preview which screenshots would be captured without actually capturing or committing. |
+| `--section <name>` | `ug-audit`, `ug-batch` | Restrict scope to a specific user guide section (e.g., `content-management`). |
+| `--verbose` | `ug-status` | Include per-page detail in the status dashboard instead of summary-only metrics. |
+| `--local` | `ug-preview` | Start local Hugo dev server for preview. |
+| `--deploy` | `ug-preview` | Trigger GitHub Actions deploy workflow. |
+| `--stop` | `ug-preview` | Stop running Hugo dev server. |
 
 ---
 
@@ -688,12 +732,42 @@ Feature flags, thresholds, and defaults:
 | `plans.retention_days` | `30` | Days to retain completed plan files before auto-pruning |
 | `plans.max_plans` | `200` | Maximum plan files to retain (oldest completed plans pruned first) |
 
+#### User Guide Configuration
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `user_guide.enabled` | `true` | Master switch for all ug-* commands |
+| `user_guide.scaffold_name` | `user-guide` | Scaffold asset name for auto-bootstrap |
+| `user_guide.content_dir` | `user-guide/content` | Hugo content directory (relative to docs root) |
+| `user_guide.templates_dir` | `user-guide/templates` | Page templates directory (relative to docs root) |
+| `user_guide.sections` | `["getting-started", "content-management", "custom-features", "workflows", "site-features", "troubleshooting"]` | Valid section names for page organization |
+| `user_guide.page_types` | `["feature-guide", "workflow-walkthrough", "quick-start", "reference", "faq"]` | Valid page types (each has required sections) |
+| `user_guide.screenshot.viewport_width` | `1280` | Playwright viewport width for screenshots |
+| `user_guide.screenshot.viewport_height` | `900` | Playwright viewport height for screenshots |
+| `user_guide.screenshot.format` | `png` | Screenshot image format |
+| `user_guide.screenshot.max_width` | `1200` | Maximum rendered width in docs |
+| `user_guide.screenshot.naming_pattern` | `{NN}-{slug}.{ext}` | Screenshot file naming convention |
+| `user_guide.playwright.base_url` | `https://foreignpolicy.local/wp-admin/` | Playwright navigation base URL |
+| `user_guide.playwright.auth_strategy` | `cookie-persistence` | How Playwright maintains WP admin login |
+| `user_guide.playwright.wait_after_navigate_ms` | `2000` | Delay after navigation before capture |
+| `user_guide.playwright.ignore_certificate_errors` | `true` | Bypass self-signed cert errors (ddev) |
+
+#### User Guide Pipeline Configuration
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `user_guide_pipeline.enabled` | `true` | Master switch for UG pipeline enforcement |
+| `user_guide_pipeline.playwright_required` | `false` | Whether Playwright is mandatory (vs preferred) |
+| `user_guide_pipeline.playwright_preferred` | `true` | Use Playwright when available, fall back to code-based checks |
+| `user_guide_pipeline.screenshot_staleness_days` | `30` | Days before a screenshot is considered stale |
+| `user_guide_pipeline.jargon_banned_patterns` | (regex list) | Patterns that flag developer jargon in user-facing prose (PHP variables, WP functions, type annotations, etc.) |
+| `user_guide_pipeline.required_sections_by_type` | (object) | Maps each page type to its mandatory sections (e.g., `feature-guide` requires `what-is`, `where-to-find`, `how-it-works`, `key-fields`, `common-tasks`) |
+
 ### How to Customize Behavior
 
 To customize fp-docs behavior:
 1. Modify `config.json` to change thresholds, feature flags, model profiles, and project settings
 2. Use `fp-tools source-map generate` to refresh source-to-doc mappings in `source-map.json`
 3. Use per-command flags (`--no-citations`, `--no-sanity-check`, etc.) for one-off overrides
+4. Use UG-specific flags (`--no-tone-check`, `--no-screenshots`, `--depth`) for user guide one-off overrides
 
 ---
 
@@ -739,6 +813,29 @@ Gate checks per stage:
 | 4 (Sanity Check) | No HALLUCINATION markers, confidence level present |
 | 5 (Verification) | Checklist completion marker |
 | 6-8 | CJS-deterministic (no LLM gate check) |
+
+### User Guide Pipeline (5 Stages, 2 Phases)
+
+User guide write operations (`ug-generate`, `ug-update`, `ug-screenshot`) run a separate 5-stage pipeline optimized for UI behavior accuracy instead of code citation accuracy. The UG pipeline runs independently of the dev docs pipeline -- they never mix.
+
+| Stage | Name | Phase | Agent | Description | Skippable? |
+|-------|------|-------|-------|-------------|------------|
+| 1 | UI Behavior Verification | Write | fp-docs-ug-writer | Verify every UI claim matches actual behavior (Playwright preferred, code-based fallback) | No |
+| 2 | Screenshot Currency | Write | fp-docs-ug-writer | Check screenshot staleness, capture/refresh as needed | No |
+| 3 | Jargon & Tone Check | Finalize | fp-docs-ug-validator | Scan for developer jargon (PHP variables, WP function names, type annotations) in user-facing prose | Yes (`--no-tone-check`) |
+| 4 | Completeness Check | Finalize | fp-docs-ug-validator | Verify all required sections for the page type are present and non-empty | No |
+| 5 | Changelog + Commit | Finalize | workflow | Append to changelog, `git -C {docs-root} add -A && commit` | Never |
+
+**Phase delegation model**:
+- **Write Phase** (stages 1-2): Handled by fp-docs-ug-writer during the content creation/update step
+- **Finalize Phase** (stages 3-4): Spawns fp-docs-ug-validator for quality checks; stage 5 executed by the workflow itself
+
+**Key differences from dev docs pipeline**:
+- No verbosity/citations/API-refs stages -- user guide content is prose, not code documentation
+- UI Behavior Verification replaces Sanity Check -- validates against rendered UI state, not source code claims
+- Screenshot Currency has no dev docs equivalent -- manages co-located images in Hugo page bundles
+- Jargon & Tone enforces end-user language -- developer terminology triggers violations
+- Playwright MCP preferred but not required (`playwright_preferred: true`, `playwright_required: false` in config)
 
 ---
 
@@ -902,7 +999,7 @@ The biggest pitfall is confusing the three git repos. The docs directory is a SE
 - This means validation commands run without permission prompts, but modification commands will ask
 
 ### Multi-Agent Orchestration
-- All 23 commands route through workflows that orchestrate agent spawning and pipeline execution
+- All 31 commands route through workflows that orchestrate agent spawning and pipeline execution
 - Write operations proceed through a 7-phase model: Scope-Assess -> Research (1-N) -> Plan -> Write (primary only) -> Enforce (stages 1-3, dedicated agents) -> Review (stages 4-5) -> Finalize (stages 6-8)
 - Write operations use up to 8 agents: workflow + researcher(s) + planner + specialist + verbosity-enforcer + citations + api-refs + validator
 - Read-only operations use a 5-step path: init + scope-assess + research (1-N) + plan + specialist (with actionable output)
@@ -937,8 +1034,9 @@ The biggest pitfall is confusing the three git repos. The docs directory is a SE
 - If git hooks are not installed, drift detection is passive-only (no automatic analysis on pull) -- run `/fp-docs:setup` to install hooks
 
 ### Model Allocation
-- fp-docs-modifier, fp-docs-validator, fp-docs-citations, fp-docs-api-refs, fp-docs-locals, and fp-docs-researcher use Opus (the most capable model)
+- fp-docs-modifier, fp-docs-validator, fp-docs-citations, fp-docs-api-refs, fp-docs-locals, fp-docs-researcher, and fp-docs-ug-writer use Opus (the most capable model)
 - fp-docs-verbosity, fp-docs-indexer, fp-docs-system, and fp-docs-planner use Sonnet (sufficient for their structured tasks)
+- fp-docs-ug-validator uses Opus in quality profile, Sonnet in balanced/budget profiles
 - fp-docs-researcher uses opus for deep code analysis; fp-docs-planner uses sonnet since planning is structured/formulaic
 
 ### Visual Verification SSL Errors
@@ -961,6 +1059,37 @@ If `fp-tools pipeline next` returns `action: gate_failed`, do NOT ignore it and 
 - Use `browser_snapshot` (accessibility tree) for structural verification -- this is the primary verification tool
 - Screenshots are for visual evidence where snapshot alone is insufficient (e.g., styling, positioning, visual hierarchy)
 - The visual scope prioritizes snapshots over screenshots to minimize token usage
+
+### User Guide Scaffold Must Exist
+- UG write commands (`ug-generate`, `ug-update`, `ug-screenshot`) require the `user-guide/` scaffold in the docs repo
+- If missing, the workflow auto-bootstraps from `scaffolds/user-guide/` -- no manual file copying needed
+- Run `/fp-docs:setup` or any ug-* write command to trigger bootstrap; `/fp-docs:ug-status` reports scaffold health
+
+### UG Pipeline vs Dev Docs Pipeline
+- UG commands use a separate 5-stage pipeline (`user_guide_pipeline` in config), not the dev docs 8-stage pipeline
+- Never mix them: `/fp-docs:revise` runs the dev pipeline; `/fp-docs:ug-update` runs the UG pipeline
+- The two pipelines enforce different accuracy guarantees: code citations (dev) vs UI behavior (UG)
+
+### Playwright is Preferred, Not Required
+- UG pipeline stages 1-2 prefer Playwright MCP for UI verification and screenshot capture
+- If Playwright is unavailable (no MCP server, no ddev), stages fall back to code-based inference
+- Set `user_guide_pipeline.playwright_required: true` in config to make Playwright mandatory (stages fail instead of falling back)
+- The `--depth deep` flag on `ug-validate` specifically requires Playwright -- it will skip UI verification if unavailable
+
+### Jargon Detection May Over-Flag
+- The Jargon & Tone stage (UG stage 3) uses regex patterns from `user_guide_pipeline.jargon_banned_patterns`
+- Technical terms inside code blocks and frontmatter are exempt, but inline backtick code references may still flag
+- Use `--no-tone-check` to skip this stage when writing intentionally technical user guide content (e.g., a troubleshooting reference)
+
+### Hugo Page Bundles
+- User guide pages are Hugo page bundles: `content/{section}/{page-name}/index.md` with co-located screenshots
+- Screenshots live alongside `index.md`, not in a centralized media directory -- this is intentional for Hugo's asset pipeline
+- The `{NN}-{slug}.{ext}` naming pattern (e.g., `01-dashboard-overview.png`) ensures consistent ordering
+
+### UG Model Allocation
+- fp-docs-ug-writer uses Opus (needs strong reasoning for UI behavior verification and content synthesis)
+- fp-docs-ug-validator uses Opus in quality profile, Sonnet in balanced/budget profiles
+- Both agents are configured in `config.json` under `model.profiles.*.agents`
 
 ---
 

@@ -1,8 +1,8 @@
 # fp-docs Architecture
 
-<!-- Updated 2026-03-30: v2 workflow architecture (Round 2 conversion) — dedicated enforcement agents, scope assessment, tracker docs, dynamic research -->
+<!-- Updated 2026-04-11: User guide command system — 8 new commands, 2 new agents, UG pipeline, 3 new references -->
 
-> **Updated 2026-03-30**: v2 workflow architecture. Dedicated enforcement agents for pipeline stages 1-3 (fp-docs-verbosity-enforcer, fp-docs-citations, fp-docs-api-refs). Scope assessment and tracker document system for dynamic delegation. 11 agents (added fp-docs-verbosity-enforcer). Write workflows now 10-step with isolated enforcement phases.
+> **Updated 2026-04-11**: User guide command system. 8 new `/fp-docs:ug-*` commands for user guide operations (generate, update, screenshot, validate, audit, preview, status, batch). 2 new agents (fp-docs-ug-writer, fp-docs-ug-validator). Separate 5-stage user guide pipeline enforcing UI behavior accuracy. 3 new references (ug-standards, ug-validation-rules, ug-ui-verification). Routing table expanded from 23 to 31 entries. Total: 13 agents, 31 commands, 19 references.
 
 Thorough analysis of the fp-docs Claude Code plugin internals: command-workflow-agent routing, reference system, pipeline, hooks, git model, permissions, and configuration.
 
@@ -26,7 +26,7 @@ fp-docs/                              # Git root (independent repo, submodule of
 │   ├── fp-docs-subagent-stop.js
 │   ├── fp-docs-teammate-idle.js
 │   └── fp-docs-task-completed.js
-├── agents/                           # 11 GSD-style agent definitions
+├── agents/                           # 13 GSD-style agent definitions
 │   ├── fp-docs-modifier.md
 │   ├── fp-docs-validator.md
 │   ├── fp-docs-citations.md
@@ -37,8 +37,10 @@ fp-docs/                              # Git root (independent repo, submodule of
 │   ├── fp-docs-indexer.md
 │   ├── fp-docs-system.md
 │   ├── fp-docs-researcher.md
-│   └── fp-docs-planner.md
-├── commands/                 # 23 user-facing commands (YAML frontmatter + XML body)
+│   ├── fp-docs-planner.md
+│   ├── fp-docs-ug-writer.md          # User guide content writer (Playwright MCP)
+│   └── fp-docs-ug-validator.md       # User guide validation (read-only)
+├── commands/                 # 31 user-facing commands (YAML frontmatter + XML body)
 │   ├── revise.md
 │   ├── add.md
 │   ├── auto-update.md
@@ -61,8 +63,16 @@ fp-docs/                              # Git root (independent repo, submodule of
 │   ├── parallel.md
 │   ├── remediate.md
 │   ├── do.md
-│   └── help.md
-├── workflows/                        # 23 workflow orchestrators (one per command)
+│   ├── help.md
+│   ├── ug-generate.md                # User guide write commands
+│   ├── ug-update.md
+│   ├── ug-screenshot.md
+│   ├── ug-validate.md                # User guide read commands
+│   ├── ug-audit.md
+│   ├── ug-status.md
+│   ├── ug-preview.md                 # User guide admin command
+│   └── ug-batch.md                   # User guide batch command
+├── workflows/                        # 31 workflow orchestrators (one per command)
 │   ├── revise.md                     # Write workflow (10-step v2 template)
 │   ├── add.md
 │   ├── auto-update.md
@@ -85,8 +95,16 @@ fp-docs/                              # Git root (independent repo, submodule of
 │   ├── parallel.md                   # Batch workflow
 │   ├── remediate.md
 │   ├── do.md                         # Meta workflow (inline, no agent spawning)
-│   └── help.md
-├── references/                       # 16 shared reference files (loaded via @-reference)
+│   ├── help.md
+│   ├── ug-generate.md                # UG write workflows (7-step with UG pipeline)
+│   ├── ug-update.md
+│   ├── ug-screenshot.md              # UG write workflow (5-step)
+│   ├── ug-validate.md                # UG read workflows
+│   ├── ug-audit.md
+│   ├── ug-status.md
+│   ├── ug-preview.md                 # UG admin workflow (3-step)
+│   └── ug-batch.md                   # UG batch workflow (8-step)
+├── references/                       # 19 shared reference files (loaded via @-reference)
 │   ├── doc-standards.md              # Formatting, naming, structural, depth rules
 │   ├── fp-project.md                 # FP-specific paths, source-map CLI reference
 │   ├── pipeline-enforcement.md       # 8-stage pipeline definition
@@ -97,6 +115,9 @@ fp-docs/                              # Git root (independent repo, submodule of
 │   ├── locals-rules.md               # $locals contract format, shapes
 │   ├── verbosity-rules.md            # Anti-brevity rules, banned phrases
 │   ├── validation-rules.md           # 10-point checklist, sanity-check
+│   ├── ug-standards.md               # User guide page structure, frontmatter, tone rules
+│   ├── ug-validation-rules.md        # UG validation checks, jargon patterns, completeness matrix
+│   ├── ug-ui-verification.md         # Playwright + code-based UI path verification
 │   ├── verbosity-algorithm.md        # Verbosity enforcement procedure (pipeline stage 1)
 │   ├── citation-algorithm.md         # Citation generation procedure (pipeline stage 2)
 │   ├── api-ref-algorithm.md          # API Reference sync procedure (pipeline stage 3)
@@ -123,7 +144,7 @@ fp-docs/                              # Git root (independent repo, submodule of
 │   ├── paths.cjs                     # Three-repo path resolution
 │   ├── security.cjs                  # Input validation and injection scanning
 │   ├── config.cjs                    # Configuration access
-│   ├── routing.cjs                   # Command routing table (23 entries)
+│   ├── routing.cjs                   # Command routing table (31 entries)
 │   ├── health.cjs                    # System health checks
 │   ├── state.cjs                     # Operation state management
 │   ├── git.cjs                       # Three-repo git operations
@@ -212,7 +233,7 @@ Contains model profile mappings for agents:
 
 ## 3. Command-Workflow-Agent Routing Pattern
 
-This is the core architectural pattern. All 23 user commands follow the GSD command-workflow-agent chain:
+This is the core architectural pattern. All 31 user commands follow the GSD command-workflow-agent chain (23 dev docs + 8 user guide):
 
 ```
 User types: /fp-docs:revise "fix the posts helper"
@@ -364,7 +385,7 @@ Executes inline -- no agent spawning. The workflow itself handles routing or dis
 
 ---
 
-## 4. The 11 Agents
+## 4. The 13 Agents
 
 Each agent is a markdown file in `agents/` with GSD-style YAML frontmatter and an XML body.
 
@@ -380,12 +401,14 @@ Each agent is a markdown file in `agents/` with GSD-style YAML frontmatter and a
 | fp-docs-verbosity | fp-docs-verbosity.md | Read-only verbosity audit | NO (disallowed) |
 | fp-docs-verbosity-enforcer | fp-docs-verbosity-enforcer.md | Pipeline stage 1 enforcement (write-capable verbosity) | YES |
 | fp-docs-indexer | fp-docs-indexer.md | update-index, update-claude primary | YES |
-| fp-docs-system | fp-docs-system.md | setup, sync, update, update-skills | YES |
+| fp-docs-system | fp-docs-system.md | setup, sync, update, update-skills, ug-preview | YES |
 | fp-docs-researcher | fp-docs-researcher.md | Pre-operation codebase analysis (1-N per scope) | YES |
 | fp-docs-planner | fp-docs-planner.md | Operation planning and strategy | YES |
+| fp-docs-ug-writer | fp-docs-ug-writer.md | User guide content creation/modification (ug-generate, ug-update, ug-screenshot) | YES |
+| fp-docs-ug-validator | fp-docs-ug-validator.md | User guide validation (ug-validate, ug-audit, ug-status, UG pipeline stages 1-4) | NO (disallowed) |
 
-**Write-capable agents**: fp-docs-modifier, fp-docs-citations, fp-docs-api-refs, fp-docs-locals, fp-docs-verbosity-enforcer, fp-docs-indexer, fp-docs-system, fp-docs-researcher, fp-docs-planner
-**Read-only agents**: fp-docs-validator, fp-docs-verbosity (explicitly disallow Write and Edit)
+**Write-capable agents**: fp-docs-modifier, fp-docs-citations, fp-docs-api-refs, fp-docs-locals, fp-docs-verbosity-enforcer, fp-docs-indexer, fp-docs-system, fp-docs-researcher, fp-docs-planner, fp-docs-ug-writer
+**Read-only agents**: fp-docs-validator, fp-docs-verbosity, fp-docs-ug-validator (explicitly disallow Write and Edit)
 
 ### Permission Model
 
@@ -426,6 +449,13 @@ References replace the previous module and algorithm systems. All shared knowled
 | codebase-analysis-guide.md | Source file scanning | Any agent scanning PHP/JS source |
 | git-sync-rules.md | /fp-docs:sync or SessionStart | fp-docs-system, lib/hooks.cjs |
 
+**User Guide References** (3 files, added for ug-* command system):
+| Reference | Domain | Used By |
+|-----------|--------|---------|
+| ug-standards.md | User guide page structure (10 sections), Hugo page bundles, frontmatter fields, screenshot naming, tone rules, shortcode usage, link conventions | fp-docs-ug-writer, fp-docs-ug-validator |
+| ug-validation-rules.md | UI path verification checks, screenshot currency, jargon detection patterns, completeness matrix per content type, coverage gap detection, validation report format | fp-docs-ug-validator |
+| ug-ui-verification.md | Playwright MCP verification flow (auth, nav, elements, capture, URLs), code-based fallback verification (menus, CPTs, taxonomies, meta boxes, fields, settings, shortcodes), path-to-target mapping | fp-docs-ug-writer, fp-docs-ug-validator |
+
 ### How References Are Loaded
 
 Commands load references via `@-reference` in `<execution_context>`:
@@ -440,7 +470,7 @@ ${CLAUDE_PLUGIN_ROOT}/references/verbosity-algorithm.md
 </files_to_read>
 ```
 
-Every command includes `doc-standards.md` and `fp-project.md` (GSD explicit style). Operation-specific references are loaded as needed.
+Every command includes `doc-standards.md` and `fp-project.md` (GSD explicit style). Operation-specific references are loaded as needed. User guide commands load `ug-standards.md` and `fp-project.md` instead of `doc-standards.md`.
 
 ---
 
@@ -488,6 +518,34 @@ Scope-Assess -> Research (1-N) -> Plan -> Write (primary only) -> Enforce (stage
 **Tracker documents** (via `fp-tools tracker`) provide cross-agent state tracking in JSON format. Created when scope assessment determines the operation is complex enough. Each agent updates tracker at phase completion.
 
 For **read-only commands**, the workflow uses a streamlined 5-step path: init, scope-assess, research (1-N), plan, execute -- no enforcement pipeline.
+
+### User Guide Pipeline (5 Stages, 2 Phases)
+
+The user guide system has its own pipeline, separate from the dev docs pipeline. It enforces **UI behavior accuracy** rather than code citation accuracy. Configured via the `user_guide_pipeline` section of `config.json`.
+
+| Stage | Name | Phase | What It Checks | Skip Condition |
+|-------|------|-------|----------------|----------------|
+| 1 | UI Behavior Verification | Write | Every documented step corresponds to a real UI path. Verified via Playwright MCP or code analysis fallback. | Never |
+| 2 | Screenshot Currency | Write | Referenced screenshots exist as page bundle resources. Flags stale screenshots based on source file modification dates vs `last_verified`. | Never |
+| 3 | Jargon & Tone | Finalize | No PHP/JS identifiers, no dev jargon, no function names, no hook names. Audience: non-technical editors. | `--no-tone-check` flag |
+| 4 | Completeness | Finalize | Required sections present per content type (feature-guide, workflow-walkthrough, quick-start, reference, faq). Structural quality validated. | Never |
+| 5 | Changelog + Commit | Finalize | Update user-guide changelog, update `last_verified` frontmatter, commit to docs repo. | Never |
+
+**UG pipeline delegation model**:
+
+| Phase | Stages | Owner |
+|-------|--------|-------|
+| Write Phase | Stages 1-2 | fp-docs-ug-writer (executes inline after content creation/modification) |
+| Finalize Phase | Stages 3-4 | fp-docs-ug-validator (spawned by workflow for validation) |
+| Finalize Phase | Stage 5 | Workflow itself via `fp-tools pipeline init/next/run-stage` |
+
+Key differences from dev docs pipeline:
+- No verbosity, citation, or API ref enforcement stages (user docs don't have code citations)
+- UI path verification replaces sanity-check (user perspective vs code perspective)
+- Screenshot currency replaces the 10-point verification checklist
+- Write-phase stages (1-2) are executed by the writer agent inline, not by dedicated enforcement agents
+- Finalize-phase validation (3-4) spawns fp-docs-ug-validator, which is read-only
+- If validator reports FAIL on jargon/tone, workflow re-spawns fp-docs-ug-writer to fix violations
 
 ### Pipeline Completion Marker
 
