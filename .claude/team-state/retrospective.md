@@ -2,13 +2,10 @@
 
 > Team: wave4-ug-commands
 > Date: 2026-04-11
-> Phases: 5 (all complete)
+> Duration: 1h 17m
+> Phases completed: 5
 
 ---
-
-## Outcome
-
-Built a complete 8-command user guide system (`/fp-docs:ug-*`) with 2 new specialist agents, 3 references, a 5-stage validation pipeline, full routing/init/health integration, and comprehensive spec documentation. All phases passed review (3 PASS, 2 PASS WITH NOTES). Zero BLOCKED reviews.
 
 ## What Went Well
 
@@ -40,29 +37,47 @@ Built a complete 8-command user guide system (`/fp-docs:ug-*`) with 2 new specia
 
 4. **Scaffold auto-check belongs in init, not health**: `init.cjs` checks and auto-bootstraps the scaffold before the operation starts. `health.cjs` just reports whether it exists. Different purposes, both useful.
 
-## Gotchas
+## Labor Division Notes
 
-1. **Context compaction during long team sessions**: The Lead role spans all 5 phases, which means the context window fills up. Re-reading files before editing after 10+ messages (per CLAUDE.md) is essential. The compaction summary preserved enough state to resume cleanly.
+- **Architect** (team-architect): All commands, workflows, references, agents, spec files. Domain-heavy work that required understanding the command-workflow-agent architecture and writing XML process steps.
+- **Engineer** (team-engineer): Routing table, config, health, init, test specs. Infrastructure-heavy work that required CJS module patterns and JSON config management.
+- **Lead** (team-lead): Phase reviews, commits, second pass, retrospective. Quality gate with cross-file verification (routing counts, model profiles, spec coverage).
 
-2. **Routing table count is a health check assertion**: `health.cjs` hardcodes the expected count (31). Any future command addition must update this number or health check will report failure. This is intentional (catches drift) but easy to forget.
+Division worked well -- Architect and Engineer tasks had clean boundaries with no overlap. Both could work fully in parallel within each phase.
 
-3. **Scaffold check uses lazy require**: `init.cjs` does `require('./scaffold.cjs')` inside a try/catch in `checkUserGuideScaffold()`. This means scaffold.cjs doesn't need to exist for init.cjs to load -- graceful degradation. But it also means scaffold.cjs errors are silently caught.
+## Gotchas for Next Time
 
-## Final Stats
+1. **Context compaction during long team sessions**: The Lead role spans all 5 phases, which means the context window fills up. Re-reading files before editing after 10+ messages (per CLAUDE.md) is essential.
 
-| Metric | Count |
-|--------|-------|
-| Phases completed | 5 |
-| Review results | 3 PASS, 2 PASS WITH NOTES, 0 BLOCKED |
-| Commands added | 8 (ug-generate, ug-update, ug-screenshot, ug-validate, ug-audit, ug-status, ug-preview, ug-batch) |
-| Agents added | 2 (fp-docs-ug-writer, fp-docs-ug-validator) |
-| References added | 3 (ug-standards, ug-validation-rules, ug-ui-verification) |
-| Workflows added | 8 |
-| Test specs added | 8 |
-| Routing entries | 23 -> 31 |
-| Config sections added | 2 (user_guide, user_guide_pipeline) + 2 model_profile entries |
-| Spec files updated | 3 (architecture, features, usage) |
-| Lib modules updated | 2 (health.cjs, init.cjs) |
-| Total files created | 21 |
-| Total files modified | 8 |
-| Commits | 5 (one per phase) |
+2. **Routing table count is a health check assertion**: `health.cjs` hardcodes the expected count (31). Any future command addition must update this number or health check will report failure.
+
+3. **Scaffold check uses lazy require**: `init.cjs` does `require('./scaffold.cjs')` inside a try/catch in `checkUserGuideScaffold()`. Scaffold.cjs errors are silently caught -- graceful degradation but errors won't surface.
+
+4. **Team-state complete command overwrites retrospective**: The `cmdTeamState('complete', [])` call replaces the retrospective file with a blank template. Write the real retrospective after calling complete, or write it to a different path.
+
+## Metrics
+
+| Phase | Review Result | Files Created | Files Modified |
+|-------|---------------|---------------|----------------|
+| 1 — Foundation | PASS WITH NOTES | 5 | 1 |
+| 2 — Read Commands | PASS | 9 | 1 |
+| 3 — Write Commands | PASS | 9 | 1 |
+| 4 — Admin + Batch | PASS WITH NOTES | 6 | 1 |
+| 5 — Integration | PASS | 0 | 6 |
+| **Total** | **3 PASS, 2 PASS WITH NOTES** | **29** | **10** |
+
+### Final Counts
+
+| Component | Before | After |
+|-----------|--------|-------|
+| Commands | 23 | 31 |
+| Workflows | 23 | 31 |
+| Routing entries | 23 | 31 |
+| Agents | 10 | 12 |
+| References | 16 | 19 |
+| Test specs | — | +8 |
+| Config sections | — | +2 (user_guide, user_guide_pipeline) |
+| Model profiles | — | +2 (ug-writer, ug-validator) |
+| Health checks | 8 | 9 |
+| Init subcommands | 5 | 7 |
+| Commits | — | 6 (5 phases + retrospective) |
