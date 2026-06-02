@@ -8,7 +8,7 @@ All notable changes to the fp-docs plugin will be documented in this file.
 
 #### Changed
 - **Architecture converted from skill-engine to GSD command-workflow-agent model** -- 10-phase migration preserving all domain logic while adopting GSD's structural patterns
-- Commands: 23 skill files (`skills/*/SKILL.md`) replaced with GSD-style command files (`commands/fp-docs/*.md`) using YAML frontmatter + XML body (`<objective>`, `<execution_context>`, `<process>`, `<success_criteria>`)
+- Commands: 23 skill files (`skills/*/SKILL.md`) replaced with GSD-style command files (`commands/*.md`) using YAML frontmatter + XML body (`<objective>`, `<execution_context>`, `<process>`, `<success_criteria>`)
 - Workflows: 23 instruction files (`framework/instructions/`) replaced with workflow orchestrators (`workflows/*.md`) using XML-structured multi-agent orchestration
 - Agents: 11 engine agents (`agents/*.md`) replaced with 10 specialist agents (`agents/fp-docs-*.md`) with XML-structured system prompts and model profile support
 - References: 11 modules (`modules/mod-*/SKILL.md`) + 6 algorithms (`framework/algorithms/`) consolidated into shared reference files (`references/*.md`) loaded via `@-reference`
@@ -20,8 +20,8 @@ All notable changes to the fp-docs plugin will be documented in this file.
 - `lib/init.cjs` -- Command initialization module (initWriteOp, initReadOp, initAdminOp, initParallel, initRemediate)
 - `lib/model-profiles.cjs` -- Agent model resolution from config.json model_profile section
 - `lib/health.cjs` -- Plugin health check (GSD directories, fp-docs-* agents, standalone hooks, routing table validation)
-- `commands/fp-docs/do.md` -- Smart router: natural language to command matching
-- `commands/fp-docs/help.md` -- Grouped command reference display
+- `commands/do.md` -- Smart router: natural language to command matching
+- `commands/help.md` -- Grouped command reference display
 - `tests/lib/lib-init-tests.cjs` -- Unit tests for init.cjs
 - `tests/lib/lib-model-profiles-tests.cjs` -- Unit tests for model-profiles.cjs
 - 10 agent model profiles in config.json (quality/balanced/budget tiers)
@@ -69,6 +69,28 @@ All notable changes to the fp-docs plugin will be documented in this file.
 - STAGE_AUTHORITY_MAP expanded to 17 entries (+2 for verbosity-enforcer)
 - 11 agent model profiles in config.json (+1 for verbosity-enforcer)
 - Test suite expanded from 412 to 495 lib tests + 68 marker tests (563 total, 0 failures)
+
+### Round 3 (2026-04-11): User Guide System
+
+#### Added
+- 8 new `/fp-docs:ug-*` commands: ug-generate, ug-update, ug-screenshot, ug-validate, ug-audit, ug-status, ug-preview, ug-batch
+- 2 new agents: `fp-docs-ug-writer` (user guide content writer with Playwright MCP), `fp-docs-ug-validator` (user guide validation, read-only)
+- 3 new references: `ug-standards.md`, `ug-validation-rules.md`, `ug-ui-verification.md`
+- `lib/scaffold.cjs` -- Scaffold bootstrap module (4 exports: checkScaffold, bootstrap, listScaffolds, cmdScaffold)
+- `lib/merge-intel.cjs` -- Docs branch merge intelligence (9 exports)
+- `lib/migrate.cjs` -- Data layout migration (8 exports)
+- `scaffolds/user-guide/` -- Bundled Hugo Relearn scaffold (config, layouts, content stubs, templates, LFS, GitHub Actions)
+- Separate 5-stage user guide pipeline in `config.json` (`user_guide_pipeline` section)
+- 13 agent model profiles in `config.json` (+2 for UG agents)
+
+#### Changed
+- Routing table expanded from 23 to 31 entries (8 UG commands added)
+- Agent count expanded from 11 to 13
+- Reference count expanded from 16 to 19
+- CJS module count expanded to 24
+- `specs/architecture.md` updated with UG command system
+- `specs/features-and-capabilities.md` updated with UG agents, commands, pipeline
+- `specs/usage-and-workflows.md` updated with UG installation and workflows
 
 ## [1.0.0] - 2026-03-26
 

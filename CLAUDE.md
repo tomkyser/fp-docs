@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-**fp-docs** is a Claude Code plugin — a documentation management system for the Foreign Policy (FP) WordPress codebase. It automates creation, maintenance, validation, and deprecation of developer documentation by reading actual source code. Built entirely on Claude Code's native plugin primitives (agents, skills, hooks, modules) with a GSD-style command-workflow-agent architecture.
+**fp-docs** is a Claude Code plugin — a documentation management system for the Foreign Policy (FP) WordPress codebase. It automates creation, maintenance, validation, and deprecation of developer documentation by reading actual source code. Built entirely on Claude Code's native plugin primitives (commands, workflows, agents, references, hooks) with a GSD-style command-workflow-agent architecture.
 
 **Core Value:** Every documentation claim is verified against actual source code — zero tolerance for hallucination. If the accuracy guarantee breaks, nothing else matters.
 
@@ -17,7 +17,7 @@ The `specs/` directory is the **authoritative reference** for this plugin. These
 | File | Scope |
 |------|-------|
 | `specs/architecture.md` | Internal design: routing, agents, references, pipeline, hooks, git model, config, end-to-end traces |
-| `specs/features-and-capabilities.md` | Feature catalog: 23 commands, 10 agents, pipeline stages, templates, verification checklist |
+| `specs/features-and-capabilities.md` | Feature catalog: 31 commands, 13 agents, pipeline stages, templates, verification checklist |
 | `specs/usage-and-workflows.md` | User-facing: installation, workflows A-F, command reference, config, gotchas |
 
 **Before any development work**, read the relevant spec file(s). During development, verify changes align with established patterns. After changes, update affected spec files — Claude is solely responsible for keeping specs current and internally consistent.
@@ -71,20 +71,23 @@ feature/task branch -> dev -> tag + dev release -> merge dev into master -> tag 
 fp-docs/                             # Plugin root (git root: tomkyser/fp-docs)
 ├── .claude-plugin/
 │   └── plugin.json                  # Plugin manifest (v1.0.0)
-├── agents/                          # 10 specialist agents (fp-docs-*)
-│   ├── fp-docs-modifier.md
-│   ├── fp-docs-validator.md
-│   ├── fp-docs-citations.md
+├── agents/                          # 13 specialist agents (fp-docs-*)
 │   ├── fp-docs-api-refs.md
-│   ├── fp-docs-locals.md
-│   ├── fp-docs-verbosity.md
+│   ├── fp-docs-citations.md
 │   ├── fp-docs-indexer.md
-│   ├── fp-docs-system.md
+│   ├── fp-docs-locals.md
+│   ├── fp-docs-modifier.md
+│   ├── fp-docs-planner.md
 │   ├── fp-docs-researcher.md
-│   └── fp-docs-planner.md
-├── commands/                        # 23 GSD command files (namespaced /fp-docs:*)
-├── workflows/                       # 23 workflow orchestrators (XML-structured)
-├── references/                      # 16 shared reference files (@-loaded by workflows)
+│   ├── fp-docs-system.md
+│   ├── fp-docs-ug-validator.md
+│   ├── fp-docs-ug-writer.md
+│   ├── fp-docs-validator.md
+│   ├── fp-docs-verbosity.md
+│   └── fp-docs-verbosity-enforcer.md
+├── commands/                        # 31 command files (namespaced /fp-docs:*)
+├── workflows/                       # 31 workflow orchestrators (XML-structured)
+├── references/                      # 19 shared reference files (@-loaded by workflows)
 ├── hooks/                           # 6 standalone JS hook files
 │   ├── fp-docs-session-start.js
 │   ├── fp-docs-check-update.js
@@ -92,15 +95,15 @@ fp-docs/                             # Plugin root (git root: tomkyser/fp-docs)
 │   ├── fp-docs-subagent-stop.js
 │   ├── fp-docs-teammate-idle.js
 │   └── fp-docs-task-completed.js
-├── lib/                             # 23 CJS modules
+├── lib/                             # 24 CJS modules
 │   ├── core.cjs                     # Output helpers, safe I/O
 │   ├── paths.cjs                    # Three-repo path resolution
 │   ├── git.cjs                      # Git operations
-│   ├── routing.cjs                  # Command-to-agent routing table (23 entries)
+│   ├── routing.cjs                  # Command-to-agent routing table (31 entries)
 │   ├── health.cjs                   # System health checks
 │   ├── hooks.cjs                    # Hook handlers
 │   ├── config.cjs                   # Config reader
-│   └── ...                          # 16 more domain modules
+│   └── ...                          # 17 more domain modules
 ├── fp-tools.cjs                     # CLI entry point for all CJS modules
 ├── config.json                      # Unified config (system + project + model + pipeline)
 ├── settings.json                    # Default permissions and hook registrations
@@ -166,17 +169,17 @@ claude --plugin-dir /path/to/fp-docs
 
 **Core routing**: User command (`commands/{name}.md`) -> workflow (`workflows/{name}.md`) -> specialist agent(s) -> pipeline enforcement -> report
 
-**Routing table**: `lib/routing.cjs` is the single source of truth for command-to-agent mapping (23 entries).
+**Routing table**: `lib/routing.cjs` is the single source of truth for command-to-agent mapping (31 entries).
 
 **Pipeline**: 8 stages split into 3 phases:
-- **Write Phase** (stages 1-3): Primary engine + verbosity/citations/api-refs enforcement
+- **Write Phase** (stages 1-3): Primary specialist + verbosity/citations/api-refs enforcement
 - **Review Phase** (stages 4-5): Sanity-check + 10-point verification
 - **Finalize Phase** (stages 6-8): Changelog + index + git commit
 
-**Agents**: 10 specialists
-- Write-capable: fp-docs-modifier, fp-docs-citations, fp-docs-api-refs, fp-docs-locals, fp-docs-indexer, fp-docs-system
-- Read-only: fp-docs-validator, fp-docs-verbosity
-- Research/planning: fp-docs-researcher, fp-docs-planner
+**Agents**: 13 specialists
+- Write-capable (8): fp-docs-modifier, fp-docs-citations, fp-docs-api-refs, fp-docs-locals, fp-docs-verbosity-enforcer, fp-docs-indexer, fp-docs-system, fp-docs-ug-writer
+- Read-only (3): fp-docs-validator, fp-docs-verbosity, fp-docs-ug-validator
+- Research/planning (2): fp-docs-researcher, fp-docs-planner
 
 **Key constraints**:
 - Commands are thin YAML+XML files that load workflows via `@-reference`
@@ -235,7 +238,7 @@ This project uses `.claude/project-memory.md` for persistent memory across sessi
 ## Constraints
 
 - **Platform**: Claude Code plugin system — all capabilities bounded by plugin primitives
-- **Model**: All engines use Claude Opus with 50-100 maxTurns per engine
+- **Model**: All agents use Claude Opus with 50-100 maxTurns per agent
 - **Dependencies**: WordPress + ddev + WP-CLI required for runtime testing and locals extraction
 - **Git**: Three independent repos must stay coordinated; only orchestrator commits
 - **No build system**: Plugin is static markdown, YAML frontmatter, CJS modules, and JSON config

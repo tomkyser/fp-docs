@@ -2,7 +2,7 @@
 
 Documentation management system for the Foreign Policy WordPress codebase. fp-docs is a Claude Code plugin that automates the creation, revision, validation, and maintenance of technical documentation by reading your source code directly and keeping docs in sync with every change.
 
-fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships 23 commands, 10 specialized agents (fp-docs-* prefix), workflows that orchestrate multi-agent execution, and an automated 8-stage post-modification pipeline that runs after every documentation change.
+fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships 31 commands, 13 specialized agents (fp-docs-* prefix), workflows that orchestrate multi-agent execution, and an automated 8-stage post-modification pipeline that runs after every documentation change.
 
 ### What Problems It Solves
 
@@ -163,11 +163,19 @@ See [Plugin Not Updating to Latest Version](#plugin-not-updating-to-latest-versi
 | `/fp-docs:update-skills` | fp-docs-system | Regenerate command files from definitions |
 | `/fp-docs:setup` | fp-docs-system | Initialize or verify installation |
 | `/fp-docs:sync` | fp-docs-system | Synchronize docs branch with codebase branch |
-| `/fp-docs:parallel` | fp-docs-system | Run operations in parallel across files |
+| `/fp-docs:parallel` | (varies) | Run operations in parallel across files |
 | `/fp-docs:remediate` | (varies) | Resolve audit findings via batch remediation |
 | `/fp-docs:do` | (none) | Smart router: natural language to command |
 | `/fp-docs:help` | (none) | Grouped command reference |
 | `/fp-docs:update` | fp-docs-system | Check for and install plugin updates |
+| `/fp-docs:ug-generate` | fp-docs-ug-writer | Generate new user guide pages |
+| `/fp-docs:ug-update` | fp-docs-ug-writer | Update existing user guide pages |
+| `/fp-docs:ug-screenshot` | fp-docs-ug-writer | Capture UI screenshots for user guide |
+| `/fp-docs:ug-validate` | fp-docs-ug-validator | Validate user guide accuracy |
+| `/fp-docs:ug-audit` | fp-docs-ug-validator | Audit user guide coverage gaps |
+| `/fp-docs:ug-status` | fp-docs-ug-validator | Report user guide health metrics |
+| `/fp-docs:ug-preview` | fp-docs-system | Preview user guide locally or deploy |
+| `/fp-docs:ug-batch` | (varies) | Batch user guide operations |
 
 All commands route through workflows that orchestrate agent spawning and pipeline execution. Write operations use 5 agents (workflow + researcher + planner + specialist + validator). Read-only operations use 4 agents (workflow + researcher + planner + specialist).
 
@@ -357,7 +365,7 @@ Regenerate all plugin command files from their prompt definitions.
 
 #### `/fp-docs:setup`
 
-Initialize or verify the plugin installation. Runs a 7-phase check: plugin structure, docs repo, codebase gitignore, branch sync, git hooks, shell integration, and update notification.
+Initialize or verify the plugin installation. Runs an 8-phase check: plugin structure, docs repo, codebase gitignore, branch sync, git hooks, shell integration, scaffold bootstrap, and update notification.
 
 #### `/fp-docs:sync`
 
@@ -529,15 +537,15 @@ User invokes /fp-docs:revise → Command routes to workflow → Workflow spawns 
 
 Key architectural concepts:
 
-- **10 agents** with domain-specific knowledge (fp-docs-modifier, fp-docs-validator, fp-docs-citations, etc.)
-- **16 references** (10 rule files + 6 algorithm files) loaded via `@-reference` by commands and workflows
+- **13 agents** with domain-specific knowledge (fp-docs-modifier, fp-docs-validator, fp-docs-citations, etc.)
+- **19 references** (13 rule files + 4 algorithm files + 2 guide files) loaded via `@-reference` by commands and workflows
 - **8-stage post-modification pipeline** (verbosity, citations, API refs, sanity-check, verification, changelog, index, docs commit)
 - **Three independent git repos** (codebase, docs, plugin) with branch mirroring
 - **Hook system** (SessionStart, PreToolUse, SubagentStop, TeammateIdle, TaskCompleted) for lifecycle enforcement
 
 > For full architectural details, see the **specs/** directory:
 > - **[specs/architecture.md](specs/architecture.md)** -- Repository layout, routing, agents, references, pipeline internals, hook system, git model, configuration
-> - **[specs/features-and-capabilities.md](specs/features-and-capabilities.md)** -- All 23 commands, 10 agents, pipeline stages, design philosophy, reference system
+> - **[specs/features-and-capabilities.md](specs/features-and-capabilities.md)** -- All 31 commands, 13 agents, pipeline stages, design philosophy, reference system
 > - **[specs/usage-and-workflows.md](specs/usage-and-workflows.md)** -- Installation, workflows, configuration, troubleshooting, source-to-doc mapping
 
 ---
