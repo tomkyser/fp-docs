@@ -1,5 +1,9 @@
 # fp-docs
 
+> **Note:** This repository contains only the fp-docs plugin engine — the commands, agents, workflows, and modules that drive documentation operations. It does not contain any generated documentation, source code, or sensitive information from the Foreign Policy codebase. Those live in separate, access-controlled private repositories.
+>
+> fp-docs is prototyped against the [foreignpolicy.com](https://foreignpolicy.com) WordPress codebase, which serves as its immediate proving ground. However, the architecture is designed to be fully adaptable — any codebase, in any language or framework, can be documented using this same system. The FP integration is a reference implementation, not a hard dependency.
+
 Documentation management system for the Foreign Policy WordPress codebase. fp-docs is a Claude Code plugin that automates the creation, revision, validation, and maintenance of technical documentation by reading your source code directly and keeping docs in sync with every change.
 
 fp-docs enforces zero-tolerance verbosity (every source item must be documented), cross-references every claim against actual code, manages citations with provenance tracking, and maintains a separate docs git repo that branch-mirrors your codebase. It ships 31 commands, 13 specialized agents (fp-docs-* prefix), workflows that orchestrate multi-agent execution, and an automated 8-stage post-modification pipeline that runs after every documentation change.
