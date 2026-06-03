@@ -2,10 +2,9 @@
 command: update-index
 engine: index
 operation: update-project-index
-instruction: framework/instructions/index/update.md
-agent: orchestrate
-context: fork
-type: write
+workflow: workflows/update-index.md
+agent: fp-docs-indexer
+type: admin
 pipeline_stages: none
 subcommands: update, full
 flags: none
@@ -16,9 +15,9 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:update-index "update|full"`
-2. Skill SKILL.md passes `$ARGUMENTS` to orchestrate engine
-3. Orchestrate classifies as admin/write operation (engine: index)
-4. Orchestrate delegates directly to index engine
+2. Command file loads workflow `workflows/update-index.md` via `@-reference`
+3. Workflow initializes via `fp-tools init admin-op`
+4. Workflow spawns fp-docs-indexer for index generation
 5. No full pipeline triggered -- admin operation with direct execution
 
 ## Pipeline Stages

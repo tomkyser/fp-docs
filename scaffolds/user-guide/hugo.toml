@@ -1,0 +1,67 @@
+baseURL = "https://tomkyser.github.io/docs-foreignpolicy-com/user-guide/"
+languageCode = "en-us"
+title = "Foreign Policy — User Guide"
+
+# Content lives in content/ subdirectory (Hugo default)
+# This keeps user guide content separate from Hugo config files
+
+# Theme — Hugo Relearn: documentation-focused, visual, user-friendly
+# More approachable than Book for non-technical audiences
+# Built-in: search, print support, tabs, badges, mermaid, image effects
+[module]
+  [[module.imports]]
+    path = "github.com/McShelby/hugo-theme-relearn"
+
+[params]
+  # Relearn theme configuration
+  themeVariant = ["auto", "relearn-light", "relearn-dark"]
+  disableLandingPageButton = true
+  disableSearchHiddenPages = true
+  editURL = ""
+  showVisitedLinks = false
+  collapsibleMenu = true
+  alwaysopen = false
+
+  # Branding
+  description = "User guide for the Foreign Policy WordPress site"
+  author = "Foreign Policy"
+
+[params.imageEffects]
+  border = true
+  lightbox = true
+  shadow = true
+
+[markup.goldmark.renderer]
+  unsafe = true
+
+[markup.goldmark.extensions]
+  [markup.goldmark.extensions.passthrough]
+    enable = true
+
+# Exclude non-content files
+ignoreFiles = [
+  "\\.gitattributes$",
+  "templates/",
+  "README\\.md$"
+]
+
+# Clean URLs
+[permalinks]
+  [permalinks.page]
+    "/" = "/:slugorfilename/"
+
+# Output formats for search
+[outputs]
+  home = ["HTML", "RSS", "SEARCH", "SEARCHPAGE"]
+
+[outputFormats.SEARCH]
+  baseName = "search"
+  isPlainText = true
+  mediaType = "application/json"
+  notAlternative = true
+
+[outputFormats.SEARCHPAGE]
+  baseName = "searchpage"
+  isHTML = true
+  noUgly = true
+  notAlternative = true

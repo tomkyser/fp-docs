@@ -2,9 +2,8 @@
 command: setup
 engine: system
 operation: setup
-instruction: framework/instructions/system/setup.md
-agent: orchestrate
-context: fork
+workflow: workflows/setup.md
+agent: fp-docs-system
 type: admin
 pipeline_stages: none
 subcommands: none
@@ -16,9 +15,9 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:setup`
-2. Skill SKILL.md passes context to orchestrate engine (includes 4-phase verification plan)
-3. Orchestrate classifies as admin operation (engine: system)
-4. Orchestrate delegates directly to system engine
+2. Command file loads workflow `workflows/setup.md` via `@-reference`
+3. Workflow initializes via `fp-tools init admin-op`
+4. Workflow spawns fp-docs-system for setup execution
 5. No pipeline triggered -- admin operation with direct execution
 
 ## Pipeline Stages

@@ -1,10 +1,9 @@
 ---
 command: do
-engine: orchestrate
+engine: none
 operation: do
-instruction: framework/instructions/orchestrate/do.md
-agent: orchestrate
-context: fork
+workflow: workflows/do.md
+agent: none
 type: meta
 pipeline_stages: none
 subcommands: none
@@ -16,9 +15,9 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:do "natural language description"`
-2. Skill SKILL.md passes `$ARGUMENTS` to orchestrate engine
-3. Orchestrate reads instruction file `framework/instructions/orchestrate/do.md`
-4. Orchestrate evaluates `$ARGUMENTS` against routing rules table
+2. Command file loads workflow `workflows/do.md` via `@-reference`
+3. Workflow executes inline (no agent spawning)
+4. Workflow evaluates `$ARGUMENTS` against routing rules table
 5. First-match-wins: best matching command is selected
 6. If ambiguous: AskUserQuestion shows 2-3 candidates for user to choose
 7. Routing banner displayed showing input, chosen command, and reason

@@ -1,0 +1,13 @@
+{{- /* Numbered step shortcode for workflow walkthroughs */ -}}
+{{- /* Usage: {{< step number="1" title="Click Add New" >}} Step content here {{< /step >}} */ -}}
+{{- $number := .Get "number" -}}
+{{- $title := .Get "title" -}}
+<div class="step" id="step-{{ $number }}">
+  <div class="step-header">
+    <span class="step-number">{{ $number }}</span>
+    <h3 class="step-title">{{ $title }}</h3>
+  </div>
+  <div class="step-content">
+    {{ .Inner | markdownify }}
+  </div>
+</div>

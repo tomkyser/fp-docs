@@ -1,0 +1,111 @@
+name: Deploy User Guide Preview
+
+# Preview deploys: manual trigger from any branch, or automatic on PR with 'preview' label.
+# Production deploys are handled by deploy-user-guide.yml (master only).
+
+on:
+  # Manual trigger — opt-in control for staging previews
+  workflow_dispatch:
+    inputs:
+      environment_name:
+        description: 'Preview environment name (default: branch name)'
+        required: false
+        type: string
+
+  # Automatic on PR with 'user-guide-preview' label
+  pull_request:
+    types: [labeled, synchronize]
+    paths:
+      - 'user-guide/**'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  pull-requests: write
+
+concurrency:
+  group: "user-guide-preview-${{ github.ref_name }}"
+  cancel-in-progress: true
+
+jobs:
+  check-label:
+    # For PR triggers, only run if the 'user-guide-preview' label is present
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'user-guide-preview')
+    runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.check.outputs.deploy }}
+    steps:
+      - id: check
+        run: echo "deploy=true" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: check-label
+    if: needs.check-label.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: user-guide
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: '0.145.0'
+          extended: true
+
+      - name: Determine preview path
+        id: preview-path
+        run: |
+          PREVIEW_NAME="${{ github.event.inputs.environment_name || github.head_ref || github.ref_name }}"
+          # Sanitize branch name for URL path
+          PREVIEW_NAME=$(echo "$PREVIEW_NAME" | sed 's/[^a-zA-Z0-9-]/-/g' | tr '[:upper:]' '[:lower:]')
+          echo "name=$PREVIEW_NAME" >> "$GITHUB_OUTPUT"
+          echo "url_path=preview/$PREVIEW_NAME/user-guide" >> "$GITHUB_OUTPUT"
+
+      - name: Install Hugo modules
+        run: hugo mod get
+
+      - name: Build with preview base URL
+        run: |
+          hugo --minify \
+            --baseURL "https://tomkyser.github.io/docs-foreignpolicy-com/${{ steps.preview-path.outputs.url_path }}/"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: user-guide/public
+
+  deploy:
+    needs: [check-label, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: user-guide-preview-${{ github.event.inputs.environment_name || github.head_ref || github.ref_name }}
+      url: https://tomkyser.github.io/docs-foreignpolicy-com/preview/${{ needs.build.outputs.preview_name || github.head_ref || github.ref_name }}/user-guide/
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Comment preview URL on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const previewUrl = `https://tomkyser.github.io/docs-foreignpolicy-com/preview/${context.payload.pull_request.head.ref}/user-guide/`;
+            const body = `📖 **User Guide Preview** deployed: ${previewUrl}`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });

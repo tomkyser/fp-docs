@@ -25,6 +25,11 @@
  *   drift      - Drift detection and staleness tracking (analyze, status, clear, add-signal, list)
  *   update     - Version checking and self-update (check, status, run)
  *   plans      - Execution plan management (save, load, list, update, prune, save-analysis, load-analysis)
+ *   init       - Workflow bootstrapping (write-op, read-op, admin-op, parallel, remediate)
+ *   scope-assess - Pre-delegation scope assessment (command [args...])
+ *   tracker    - Shared tracker doc management (create, read, update, list, complete, prune)
+ *   resolve-model - Model resolution for agents (agent-name [--profile tier] | --list)
+ *   scaffold   - Scaffold management (list, check, bootstrap) -- auto-bootstrap docs repo structures
  *
  * Output protocol:
  *   Default: JSON to stdout
@@ -226,6 +231,48 @@ function main() {
     case 'plans': {
       const plans = require('./lib/plans.cjs');
       plans.cmdPlans(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'init': {
+      const init = require('./lib/init.cjs');
+      init.cmdInit(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'scope-assess': {
+      const scopeAssess = require('./lib/scope-assess.cjs');
+      scopeAssess.cmdScopeAssess(args.slice(1), raw);
+      break;
+    }
+
+    case 'tracker': {
+      const tracker = require('./lib/tracker.cjs');
+      tracker.cmdTracker(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'resolve-model': {
+      const modelProfiles = require('./lib/model-profiles.cjs');
+      modelProfiles.cmdResolveModel(args.slice(1), raw);
+      break;
+    }
+
+    case 'merge-intel': {
+      const mergeIntel = require('./lib/merge-intel.cjs');
+      mergeIntel.cmdMergeIntel(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'migrate': {
+      const migrate = require('./lib/migrate.cjs');
+      migrate.cmdMigrate(args[1], args.slice(2), raw);
+      break;
+    }
+
+    case 'scaffold': {
+      const scaffold = require('./lib/scaffold.cjs');
+      scaffold.cmdScaffold(args[1], args.slice(2), raw);
       break;
     }
 

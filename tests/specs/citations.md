@@ -2,10 +2,9 @@
 command: citations
 engine: citations
 operation: (subcommand)
-instruction: framework/instructions/citations/{subcommand}.md
-agent: orchestrate
-context: fork
-type: varies
+workflow: workflows/citations.md
+agent: fp-docs-citations
+type: write
 pipeline_stages: varies
 subcommands: generate, update, verify, audit
 flags: none
@@ -16,8 +15,8 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:citations "generate|update|verify|audit [scope]"`
-2. Skill SKILL.md parses first word as subcommand, passes to orchestrate engine
-3. Orchestrate classifies based on subcommand:
+2. Command file loads workflow `workflows/citations.md` via `@-reference`
+3. Workflow classifies based on subcommand:
    - `generate` / `update`: write operation with pipeline stages 4-8
    - `verify` / `audit`: read operation with no pipeline stages
 
@@ -52,7 +51,7 @@ flags: none
 
 ### Write subcommands
 - Target documentation file(s) with citation sections
-- docs/changelog.md (stage 6)
+- .fp-docs-branch/changelog.md (stage 6)
 
 ### Read subcommands
 - No files modified (read-only)

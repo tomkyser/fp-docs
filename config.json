@@ -111,8 +111,22 @@
     "locals": {
       "cli_enabled": true,
       "cli_auto_teardown": true,
-      "cli_source": "framework/tools/class-locals-cli.php",
+      "cli_source": "tools/class-locals-cli.php",
       "cli_target": "inc/cli/class-locals-cli.php"
+    },
+    "scope_assess": {
+      "enabled": true,
+      "high_threshold_files": 5,
+      "high_threshold_sections": 3,
+      "medium_threshold_files": 2,
+      "medium_threshold_sources": 3,
+      "max_researchers": 3
+    },
+    "tracker": {
+      "enabled": true,
+      "auto_create_threshold": "medium",
+      "retention_days": 30,
+      "max_trackers": 200
     }
   },
   "project": {
@@ -153,13 +167,93 @@
       }
     }
   },
+  "model_profile": {
+    "default": "quality",
+    "agents": {
+      "fp-docs-modifier": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
+      "fp-docs-validator": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-citations": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
+      "fp-docs-api-refs": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
+      "fp-docs-locals": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
+      "fp-docs-verbosity": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-verbosity-enforcer": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
+      "fp-docs-indexer": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-system": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-researcher": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-planner": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" },
+      "fp-docs-ug-writer": { "quality": "opus", "balanced": "opus", "budget": "sonnet" },
+      "fp-docs-ug-validator": { "quality": "opus", "balanced": "sonnet", "budget": "sonnet" }
+    }
+  },
+  "user_guide": {
+    "enabled": true,
+    "scaffold_name": "user-guide",
+    "content_dir": "user-guide/content",
+    "templates_dir": "user-guide/templates",
+    "sections": [
+      "getting-started",
+      "content-management",
+      "custom-features",
+      "workflows",
+      "site-features",
+      "troubleshooting"
+    ],
+    "page_types": [
+      "feature-guide",
+      "workflow-walkthrough",
+      "quick-start",
+      "reference",
+      "faq"
+    ],
+    "screenshot": {
+      "viewport_width": 1280,
+      "viewport_height": 900,
+      "format": "png",
+      "quality": 85,
+      "max_width": 1200,
+      "naming_pattern": "{NN}-{slug}.{ext}"
+    },
+    "playwright": {
+      "base_url": "https://foreignpolicy.local/wp-admin/",
+      "auth_strategy": "cookie-persistence",
+      "wait_after_navigate_ms": 2000,
+      "ignore_certificate_errors": true
+    }
+  },
+  "user_guide_pipeline": {
+    "enabled": true,
+    "stages": [
+      { "id": "ug-ui-verify", "name": "UI Behavior Verification", "phase": "write", "skip": false },
+      { "id": "ug-screenshots", "name": "Screenshot Currency", "phase": "write", "skip": false },
+      { "id": "ug-tone", "name": "Jargon & Tone Check", "phase": "finalize", "skip": false },
+      { "id": "ug-completeness", "name": "Completeness Check", "phase": "finalize", "skip": false },
+      { "id": "ug-commit", "name": "Changelog + Commit", "phase": "finalize", "skip": false }
+    ],
+    "playwright_required": false,
+    "playwright_preferred": true,
+    "screenshot_staleness_days": 30,
+    "jargon_banned_patterns": [
+      "\\$[a-z_]+",
+      "\\b(function|class|method|hook|filter|action|callback)\\b",
+      "\\b(wp_[a-z_]+|add_action|add_filter|do_action|apply_filters)\\b",
+      "\\b(array|string|int|bool|null|void)\\b",
+      "\\b(REST API|WP-CLI|PHPDoc|ACF)\\b"
+    ],
+    "required_sections_by_type": {
+      "feature-guide": ["what-is", "where-to-find", "how-it-works", "key-fields", "common-tasks"],
+      "workflow-walkthrough": ["overview", "before-you-begin", "steps", "what-happens-next", "troubleshooting"],
+      "quick-start": ["welcome", "what-youll-learn", "steps", "next-steps"],
+      "reference": ["overview", "sections", "notes"],
+      "faq": ["questions", "still-need-help"]
+    }
+  },
   "pipeline": {
     "stages": [
-      { "id": 1, "name": "verbosity", "phase": "write", "agent": "primary", "skippable": true },
-      { "id": 2, "name": "citations", "phase": "write", "agent": "primary", "skippable": true },
-      { "id": 3, "name": "api-refs", "phase": "write", "agent": "primary", "skippable": true },
-      { "id": 4, "name": "sanity-check", "phase": "review", "agent": "validate", "skippable": false },
-      { "id": 5, "name": "verification", "phase": "review", "agent": "validate", "skippable": false },
+      { "id": 1, "name": "verbosity", "phase": "write", "agent": "fp-docs-verbosity-enforcer", "skippable": true },
+      { "id": 2, "name": "citations", "phase": "write", "agent": "fp-docs-citations", "skippable": true },
+      { "id": 3, "name": "api-refs", "phase": "write", "agent": "fp-docs-api-refs", "skippable": true },
+      { "id": 4, "name": "sanity-check", "phase": "review", "agent": "fp-docs-validator", "skippable": false },
+      { "id": 5, "name": "verification", "phase": "review", "agent": "fp-docs-validator", "skippable": false },
       { "id": 6, "name": "changelog", "phase": "finalize", "agent": "orchestrator", "skippable": false },
       { "id": 7, "name": "index", "phase": "finalize", "agent": "orchestrator", "skippable": true },
       { "id": 8, "name": "docs-commit", "phase": "finalize", "agent": "orchestrator", "skippable": false }

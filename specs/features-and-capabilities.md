@@ -1,32 +1,14 @@
-# fp-docs Features and Capabilities Research
+# fp-docs Features and Capabilities
 
-<!-- Updated 2026-03-29: Phase 17 — Runtime enforcement: PreToolUse hook, fatal SubagentStop, pipeline gating, enforcement.cjs module -->
-<!-- Updated 2026-03-29: Phase 16 — 11 engines, 5-phase delegation, --plan-only and --no-research flags -->
-<!-- Updated 2026-03-28: Phase 13 — MCP wiring confirmed, command count aligned, design choice added -->
+<!-- Updated 2026-03-29: Full rewrite for GSD command-workflow-agent architecture (Phase 10 conversion) -->
 
-> **Updated 2026-03-29**: Phase 17 -- Runtime enforcement: PreToolUse hook blocks raw git-write commands, fatal SubagentStop enforcement with structured violation diagnostics, CJS pipeline stage gating, `enforcement.cjs` module (6 exports). Hook events expanded from 4 to 5 (PreToolUse added), SubagentStop matchers from 3 to 8, handler count from 8 to 11.
->
-> Previously (2026-03-29): Phase 16 -- 11 engines (added researcher + planner), 5-phase delegation model (Research -> Plan -> Write -> Review -> Finalize), `--plan-only` and `--no-research` flags. Plans mandatory for all operations (D-07), auto-execute by default (D-08).
->
-> Previously (2026-03-28): Phase 13 -- MCP server declared in `.mcp.json` at plugin root (confirmed). Plugin compliance validated. Design choice #15 added for MCP declarations.
->
-> Previously (2026-03-28): Phase 11 -- Fixed pipeline init/next sequence in finalization. Added `update` to system engine operations. Fixed update instruction field alignment.
->
-> Previously (2026-03-26): Phase 10 -- Version reset to 1.0.0. Added `/fp-docs:update` command (21st routing-table entry). Update system: background check via GitHub Releases API, cache-based awareness, statusline hook template, git-based self-update. Plugin extracted as independent submodule.
->
-> Previously (2026-03-25): Phase 8 -- All 9 engines invoke CJS tooling (`fp-tools.cjs`) for git, pipeline, state, and config operations. Pipeline finalization stages 6-8 are fully CJS-executed via callback loop. SubagentStop hooks include CJS compliance checking. Added Design Choice #12 (explicit CJS invocation in instruction files).
->
-> Previously (2026-03-25): Phase 7 -- added drift detection system: proactive staleness detection via git hooks, SessionStart nudge, shell prompt integration, auto-clear after successful operations, `lib/drift.cjs` module with `fp-tools drift` CLI surface (7 subcommands), extended `/fp-docs:setup` with Phases 5-6.
->
-> Previously (2026-03-24): Phase 6.1 -- added `/fp-docs:remediate` command (20th document-operation command), subagent-always execution model, `--batch-mode` flags, actionable audit/verify/sanity-check output with per-issue command recommendations.
->
-> Previously (2026-03-23): Added meta-commands `/fp-docs:do` (smart router) and `/fp-docs:help` (grouped command reference). Command catalog now covers 20 document-operation commands + 2 meta-commands. Previously: Added ephemeral WP-CLI `fp-locals` tool integration.
+> **Updated 2026-04-11**: User guide command system added. 31 commands (23 dev docs + 8 user guide `/fp-docs:ug-*`). 13 agents (added fp-docs-ug-writer, fp-docs-ug-validator). 19 references (added ug-standards, ug-validation-rules, ug-ui-verification). Separate 5-stage user guide pipeline enforcing UI behavior accuracy instead of code citation accuracy.
 
 ## What fp-docs Is
 
 fp-docs is a Claude Code plugin that provides a complete documentation management system for the Foreign Policy (FP) WordPress codebase. It automates the creation, maintenance, validation, and deprecation of developer documentation by reading actual source code and producing structured, citation-backed docs that stay in sync with the codebase.
 
-The plugin is distributed via the `fp-tools` marketplace and operates entirely through Claude Code's native plugin primitives: subagents (engines), skills (commands), hooks (lifecycle events), and modules (shared rule sets).
+The plugin is distributed via the `fp-tools` marketplace and operates through the GSD command-workflow-agent architecture: commands (thin YAML+XML routing files), workflows (orchestrators that spawn agents), agents (domain-specialized workers), and references (shared knowledge loaded via @-reference).
 
 **Version**: 1.0.0
 **Author**: Tom Kyser
@@ -44,219 +26,264 @@ The plugin is distributed via the `fp-tools` marketplace and operates entirely t
 6. **Undocumented data contracts**: WordPress template components pass `$locals` arrays between files without formal contracts. fp-docs annotates source code with `@locals` PHPDoc blocks and generates contract tables.
 7. **Branch mismatch**: The docs repo and codebase repo can get out of sync on different branches. fp-docs detects this and synchronizes branches.
 8. **No documentation lifecycle**: Most codebases lack a systematic process from creation through maintenance to deprecation. fp-docs provides the full lifecycle.
-9. **Multi-agent coordination complexity**: Documentation operations involve multiple concerns (writing, validation, citations, git commits) that benefit from specialized agents. fp-docs uses a universal orchestrator that delegates to specialist engines, coordinates pipeline phases across agents, and serializes git commits — enabling multi-agent execution for every command by default.
+9. **Multi-agent coordination complexity**: Documentation operations involve multiple concerns (writing, validation, citations, git commits) that benefit from specialized agents. fp-docs uses workflows that orchestrate agent spawning, coordinate pipeline phases across agents, and serialize git commits -- enabling multi-agent execution for every command by default.
 10. **Invisible drift**: Code changes via git pull/merge go unnoticed until someone manually checks. fp-docs installs git hooks (post-merge, post-rewrite) that automatically analyze changed source files, map them to affected docs, and queue staleness signals. SessionStart nudges inside Claude Code and shell prompt notifications outside Claude Code ensure drift is always visible.
 
 ---
 
-## Complete Command Catalog (21 Routing-Table Commands + 2 Meta-Commands)
+## Complete Command Catalog (31 Commands)
 
-All commands are namespaced as `/fp-docs:*` and run in isolated subagent contexts (`context: fork`). Every command routes through the **orchestrate** engine, which acts as a pure dispatcher (D-06) -- it never executes fp-docs operations directly.
+All 31 commands live in `commands/` as thin YAML+XML routing files. Each command declares its workflow via `@-reference`, which orchestrates agent spawning and pipeline execution. Write operations spawn specialized agents through the write workflow template (6 steps: initialize, research, plan, write phase, review phase, finalize phase). Read operations use the read workflow template (4 steps: initialize, research, plan, execute standalone). Meta commands (`/fp-docs:do` and `/fp-docs:help`) use inline workflows that execute directly without agent spawning.
 
-The 21 routing-table commands are managed by the ROUTING_TABLE in `lib/routing.cjs` and delegate to specialist engines. Write operations use 5 agents (orchestrate + researcher + planner + specialist + validate); read-only operations use a 4-agent path (orchestrate + researcher + planner + specialist) with actionable output including per-issue command recommendations.
-
-The 2 meta-commands (`/fp-docs:do` and `/fp-docs:help`) bypass the standard delegation pattern -- they are handled directly by the orchestrate engine without entering the ROUTING_TABLE or delegating to specialist engines.
+All 31 commands are managed by the ROUTING_TABLE in `lib/routing.cjs` (23 dev docs + 8 user guide). Write operations use 5 agents (orchestrator + researcher + planner + specialist + validator); read-only operations use a 4-agent path (orchestrator + researcher + planner + specialist) with actionable output including per-issue command recommendations.
 
 ### Documentation Creation & Modification (5 commands)
 
-These commands route to the **modify** engine and execute the full 8-stage post-modification pipeline after their primary operation.
+These commands route to the **fp-docs-modifier** agent via the write workflow and execute the full 8-stage post-modification pipeline after their primary operation.
 
-| Command | Description | Engine |
+| Command | Description | Agent |
 |---------|-------------|--------|
-| `/fp-docs:add` | Create documentation for entirely new code that does not have docs yet. Describe the new code and the engine analyzes it and generates complete documentation. | modify |
-| `/fp-docs:revise` | Fix specific documentation you know is wrong or outdated. Provide a description of what needs fixing and the engine locates, updates, and validates the affected docs. | modify |
-| `/fp-docs:auto-update` | Auto-detect code changes since last documentation update. Scans `git diff` from the last 5 commits, identifies affected docs, and updates them automatically. | modify |
-| `/fp-docs:auto-revise` | Batch-process all items listed in the needs-revision-tracker. Reads the tracker, processes each item, and marks them complete. | modify |
-| `/fp-docs:deprecate` | Mark documentation as deprecated when code has been removed or replaced. Updates the doc with a deprecation notice and updates trackers. | modify |
+| `/fp-docs:add` | Create documentation for entirely new code that does not have docs yet. Describe the new code and the agent analyzes it and generates complete documentation. | fp-docs-modifier |
+| `/fp-docs:revise` | Fix specific documentation you know is wrong or outdated. Provide a description of what needs fixing and the agent locates, updates, and validates the affected docs. | fp-docs-modifier |
+| `/fp-docs:auto-update` | Auto-detect code changes since last documentation update. Scans `git diff` from the last 5 commits, identifies affected docs, and updates them automatically. | fp-docs-modifier |
+| `/fp-docs:auto-revise` | Batch-process all items listed in the needs-revision-tracker. Reads the tracker, processes each item, and marks them complete. | fp-docs-modifier |
+| `/fp-docs:deprecate` | Mark documentation as deprecated when code has been removed or replaced. Updates the doc with a deprecation notice and updates trackers. | fp-docs-modifier |
 
 ### Validation & Auditing (4 commands)
 
-These commands route to the **validate** engine and are strictly read-only (Write and Edit tools are disallowed). All validation commands produce **actionable output** with per-issue command recommendations and a Remediation Summary section grouping findings by the `/fp-docs:` command needed to resolve them.
+These commands route to the **fp-docs-validator** agent via the read workflow and are strictly read-only (Write and Edit tools are disallowed). All validation commands produce **actionable output** with per-issue command recommendations and a Remediation Summary section grouping findings by the `/fp-docs:` command needed to resolve them.
 
-| Command | Description | Engine |
-|---------|-------------|--------|
-| `/fp-docs:audit` | Compare documentation against source code and report discrepancies. Supports quick, standard, and deep audit depths. Output includes per-issue command recommendations and a Remediation Summary with severity-tiered execution order. | validate |
-| `/fp-docs:verify` | Run the 10-point verification checklist on documentation files without making changes. Reports pass/fail for each check with per-check remediation command recommendations. | validate |
-| `/fp-docs:sanity-check` | Validate that documentation claims match actual source code. Zero-tolerance mode flags any discrepancy with per-finding remediation command recommendations. | validate |
-| `/fp-docs:test` | Execute runtime validations against the local development environment. Tests REST endpoints, WP-CLI commands, template rendering, and visual verification. Scopes: rest-api, cli, templates, visual. | validate |
+| Command | Description | Agent |
+|---------|-------------|-------|
+| `/fp-docs:audit` | Compare documentation against source code and report discrepancies. Supports quick, standard, and deep audit depths. Output includes per-issue command recommendations and a Remediation Summary with severity-tiered execution order. | fp-docs-validator |
+| `/fp-docs:verify` | Run the 10-point verification checklist on documentation files without making changes. Reports pass/fail for each check with per-check remediation command recommendations. | fp-docs-validator |
+| `/fp-docs:sanity-check` | Validate that documentation claims match actual source code. Zero-tolerance mode flags any discrepancy with per-finding remediation command recommendations. | fp-docs-validator |
+| `/fp-docs:test` | Execute runtime validations against the local development environment. Tests REST endpoints, WP-CLI commands, template rendering, and visual verification. Scopes: rest-api, cli, templates, visual. | fp-docs-validator |
 
 ### Remediation (1 command)
 
-Routes to the **orchestrate** engine, which dispatches to the appropriate specialist engines based on the remediation plan.
+The workflow dispatches to the appropriate specialist agents based on the remediation plan.
 
-| Command | Description | Engine |
-|---------|-------------|--------|
-| `/fp-docs:remediate` | Resolve audit findings by dispatching to specialist engines. Takes audit output or a saved remediation plan and orchestrates batch remediation across multiple specialist engines. Supports `--plan-only` mode to save a plan without executing, enabling the audit -> clear -> remediate workflow. | orchestrate |
+| Command | Description | Agent |
+|---------|-------------|-------|
+| `/fp-docs:remediate` | Resolve audit findings by dispatching to specialist agents. Takes audit output or a saved remediation plan and orchestrates batch remediation across multiple specialist agents. Supports `--plan-only` mode to save a plan without executing, enabling the audit -> clear -> remediate workflow. | (varies by finding) |
 
 ### Citation Management (1 command with 4 subcommands)
 
-Routes to the dedicated **citations** engine.
+Routes to the dedicated **fp-docs-citations** agent.
 
-| Command | Subcommands | Description | Engine |
-|---------|-------------|-------------|--------|
-| `/fp-docs:citations` | `generate`, `update`, `verify`, `audit` | Manage code citations in documentation files. Generate creates new citation blocks, update refreshes stale ones, verify checks format validity, audit performs deep semantic accuracy checks. | citations |
+| Command | Subcommands | Description | Agent |
+|---------|-------------|-------------|-------|
+| `/fp-docs:citations` | `generate`, `update`, `verify`, `audit` | Manage code citations in documentation files. Generate creates new citation blocks, update refreshes stale ones, verify checks format validity, audit performs deep semantic accuracy checks. | fp-docs-citations |
 
 ### API Reference Management (1 command with 2 subcommands)
 
-Routes to the dedicated **api-refs** engine.
+Routes to the dedicated **fp-docs-api-refs** agent.
 
-| Command | Subcommands | Description | Engine |
-|---------|-------------|-------------|--------|
-| `/fp-docs:api-ref` | `generate`, `audit` | Generate or update API Reference sections in documentation files. Extracts function signatures from source code and creates formatted reference tables with provenance tracking. | api-refs |
+| Command | Subcommands | Description | Agent |
+|---------|-------------|-------------|-------|
+| `/fp-docs:api-ref` | `generate`, `audit` | Generate or update API Reference sections in documentation files. Extracts function signatures from source code and creates formatted reference tables with provenance tracking. | fp-docs-api-refs |
 
 ### Locals Contract Management (1 command with 6 subcommands)
 
-Routes to the dedicated **locals** engine.
+Routes to the dedicated **fp-docs-locals** agent.
 
-| Command | Subcommands | Description | Engine |
-|---------|-------------|-------------|--------|
-| `/fp-docs:locals` | `annotate`, `contracts`, `cross-ref`, `validate`, `shapes`, `coverage` | Manage `$locals` variable contract documentation for WordPress template components. Annotate adds `@locals` PHPDoc blocks to source code, contracts generates tables in docs, cross-ref traces caller chains, validate checks contracts against code, shapes manages shared data structures, coverage reports documentation coverage metrics. | locals |
+| Command | Subcommands | Description | Agent |
+|---------|-------------|-------------|-------|
+| `/fp-docs:locals` | `annotate`, `contracts`, `cross-ref`, `validate`, `shapes`, `coverage` | Manage `$locals` variable contract documentation for WordPress template components. Annotate adds `@locals` PHPDoc blocks to source code, contracts generates tables in docs, cross-ref traces caller chains, validate checks contracts against code, shapes manages shared data structures, coverage reports documentation coverage metrics. | fp-docs-locals |
 
 ### Verbosity Auditing (1 command)
 
-Routes to the dedicated **verbosity** engine (read-only, Write and Edit disallowed).
+Routes to the dedicated **fp-docs-verbosity** agent (read-only, Write and Edit disallowed).
 
-| Command | Description | Engine |
-|---------|-------------|--------|
-| `/fp-docs:verbosity-audit` | Scan existing documentation for verbosity gaps: missing items, summarization language, unexpanded enumerables. Supports quick, standard, and deep depths. | verbosity |
+| Command | Description | Agent |
+|---------|-------------|-------|
+| `/fp-docs:verbosity-audit` | Scan existing documentation for verbosity gaps: missing items, summarization language, unexpanded enumerables. Supports quick, standard, and deep depths. | fp-docs-verbosity |
 
 ### Index & Metadata Management (2 commands)
 
-Route to the **index** engine.
+Route to the **fp-docs-indexer** agent.
 
-| Command | Description | Engine |
-|---------|-------------|--------|
-| `/fp-docs:update-index` | Refresh the PROJECT-INDEX.md codebase reference. Supports update (incremental) and full (complete regeneration) modes. | index |
-| `/fp-docs:update-claude` | Regenerate the CLAUDE.md template with current skill inventory, documentation links, and project configuration. | index |
+| Command | Description | Agent |
+|---------|-------------|-------|
+| `/fp-docs:update-index` | Refresh the PROJECT-INDEX.md codebase reference. Supports update (incremental) and full (complete regeneration) modes. | fp-docs-indexer |
+| `/fp-docs:update-claude` | Regenerate the CLAUDE.md template with current command inventory, documentation links, and project configuration. | fp-docs-indexer |
 
 ### System & Maintenance (5 commands)
 
-Route to the **system** engine.
+Route to the **fp-docs-system** agent.
 
-| Command | Description | Engine |
-|---------|-------------|--------|
-| `/fp-docs:setup` | Initialize or verify the fp-docs plugin installation. Runs seven phases: plugin structure verification, docs repo setup, codebase gitignore check, branch sync, git hook installation (post-merge/post-rewrite for drift detection), shell prompt integration, and update notification setup (statusline hook). | system |
-| `/fp-docs:sync` | Synchronize the docs repo branch with the codebase branch. Creates or switches docs branches, generates diff reports, and optionally merges docs branches. | system |
-| `/fp-docs:update-skills` | Regenerate all plugin skills from current prompt definitions. Syncs skill files with source-of-truth prompts. | system |
-| `/fp-docs:update` | Check for and install plugin updates. Queries the GitHub Releases API for the latest version, displays the changelog from release notes, confirms with the user, and executes a git-based update (`git fetch && git checkout <tag>`). Supports `--check` flag for version check only. | system |
-| `/fp-docs:parallel` | Run documentation operations in parallel across multiple files using Agent Teams. Batches files into groups of up to 5 and assigns each batch to a teammate. Falls back to sequential if Agent Teams are disabled or scope is small (<3 files). Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` env variable. | system |
+| Command | Description | Agent |
+|---------|-------------|-------|
+| `/fp-docs:setup` | Initialize or verify the fp-docs plugin installation. Runs eight phases: plugin structure verification, docs repo setup, codebase gitignore check, branch sync, git hook installation (post-merge/post-rewrite for drift detection), shell prompt integration, scaffold bootstrap (auto-creates missing docs repo structures like user-guide/ from bundled assets), and update notification setup (statusline hook). | fp-docs-system |
+| `/fp-docs:sync` | Synchronize the docs repo branch with the codebase branch. Creates or switches docs branches, generates diff reports, and optionally merges docs branches. | fp-docs-system |
+| `/fp-docs:update-skills` | Regenerate all plugin command files from current prompt definitions. Syncs command files with source-of-truth prompts. | fp-docs-system |
+| `/fp-docs:update` | Check for and install plugin updates. Queries the GitHub Releases API for the latest version, displays the changelog from release notes, confirms with the user, and executes a git-based update (`git fetch && git checkout <tag>`). Supports `--check` flag for version check only. | fp-docs-system |
+| `/fp-docs:parallel` | Run documentation operations in parallel across multiple files using Agent Teams. Batches files into groups of up to 5 and assigns each batch to a teammate. Falls back to sequential if Agent Teams are disabled or scope is small (<3 files). Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` env variable. | fp-docs-system |
+
+### User Guide Operations (8 commands)
+
+These commands manage user-facing documentation (non-technical WordPress admin guides). They use a separate 5-stage pipeline enforcing UI behavior accuracy rather than code citation accuracy. All are namespaced as `/fp-docs:ug-*`.
+
+**User Guide Write Commands (3)**
+
+Route to the **fp-docs-ug-writer** agent via write workflows with UG pipeline enforcement.
+
+| Command | Description | Agent |
+|---------|-------------|-------|
+| `/fp-docs:ug-generate` | Generate a new user guide page. Analyzes code, discovers UI paths via Playwright or code trace, captures screenshots, writes content using page templates. Supports `--type feature-guide\|workflow\|quick-start\|reference\|faq`, `--no-screenshots`, `--plan-only`. | fp-docs-ug-writer |
+| `/fp-docs:ug-update` | Update existing user guide page after codebase changes. Detects changes since `last_verified`, re-verifies UI paths, refreshes stale screenshots, updates affected sections only. Supports `--refresh-screenshots`, `--no-tone-check`. | fp-docs-ug-writer |
+| `/fp-docs:ug-screenshot` | Capture or refresh screenshots for user guide pages. Uses Playwright MCP to navigate WP admin and capture current UI state. Supports `--all`, `--replace`, `--dry-run`. | fp-docs-ug-writer |
+
+**User Guide Read Commands (3)**
+
+Route to the **fp-docs-ug-validator** agent. Strictly read-only (Write and Edit disallowed).
+
+| Command | Description | Agent |
+|---------|-------------|-------|
+| `/fp-docs:ug-validate` | Validate user guide accuracy against current UI state. Checks navigation paths, screenshot currency, tone compliance, completeness. Supports `--depth quick\|standard\|deep`, `--all`, `--no-tone-check`. | fp-docs-ug-validator |
+| `/fp-docs:ug-audit` | Audit coverage gaps. Scans codebase for user-visible features and compares against documented pages. Reports undocumented features with priority classification. Supports `--section <name>`. | fp-docs-ug-validator |
+| `/fp-docs:ug-status` | Report user guide health metrics: page counts, screenshot inventory, coverage percentage, staleness statistics, structural health. Supports `--verbose`. | fp-docs-ug-validator |
+
+**User Guide Admin & Batch Commands (2)**
+
+| Command | Description | Agent |
+|---------|-------------|-------|
+| `/fp-docs:ug-preview` | Start local Hugo dev server or trigger preview deploy. Supports `--local` (default), `--deploy` (GitHub Actions), `--stop`. Bootstraps scaffold if missing. | fp-docs-system |
+| `/fp-docs:ug-batch` | Batch operations across multiple user guide pages. Takes sub-operation (`validate\|screenshot\|update`) with `--section` or `--all` scope. Uses Agent Teams when enabled, falls back to sequential. | (varies by sub-operation) |
 
 ### Meta-Commands (2 commands)
 
-These commands are handled directly by the orchestrate engine. They do NOT appear in the 21-entry ROUTING_TABLE and do not delegate to specialist engines.
+These commands use inline meta workflows that execute directly without agent spawning. They appear in the ROUTING_TABLE with type `meta`.
 
 | Command | Description | How It Works |
 |---------|-------------|-------------|
-| `/fp-docs:do` | Route natural language to the right fp-docs command. Describe what you want in plain English and the smart router matches your intent to the appropriate operation. | Uses an instruction file (`framework/instructions/orchestrate/do.md`) containing a routing rules table. Evaluates user input against rules top-to-bottom, disambiguates via AskUserQuestion for ambiguous intents, displays a routing banner, and auto-dispatches the matched command. |
-| `/fp-docs:help` | Display all fp-docs commands grouped by type (write/read/admin/batch) with descriptions and engines. Quick reference for discovering available operations. | Runs `fp-tools.cjs help grouped --raw` to generate markdown tables from CJS routing data. CJS-generated output means help never drifts from the routing table. Uses `Instruction: none` -- no separate instruction file needed for this display-only operation. |
+| `/fp-docs:do` | Route natural language to the right fp-docs command. Describe what you want in plain English and the smart router matches your intent to the appropriate operation. | Uses the do workflow (`workflows/do.md`) containing a routing rules table. Evaluates user input against rules top-to-bottom, disambiguates via AskUserQuestion for ambiguous intents, displays a routing banner, and auto-dispatches the matched command. |
+| `/fp-docs:help` | Display all fp-docs commands grouped by type (write/read/admin/batch/meta) with descriptions and agents. Quick reference for discovering available operations. | Runs `fp-tools.cjs help grouped --raw` to generate markdown tables from CJS routing data. CJS-generated output means help never drifts from the routing table. The help workflow requires no agent -- this is a display-only operation. |
 
 ---
 
-## The 11 Engines
+## The 13 Agents
 
-Each engine is a subagent definition with a specific domain, tool permissions, and preloaded modules. All 11 engines can operate in **Delegation Mode** (orchestrator-coordinated, executing assigned pipeline phases) or **Standalone Mode** (self-contained, full pipeline), except researcher and planner which are delegation-only (never standalone). All 11 engines use CJS tooling (`fp-tools.cjs`) for git operations, pipeline sequencing, state management, and configuration access. Instruction files contain literal `fp-tools.cjs` commands to prevent engine improvisation.
+Each agent is defined in `agents/` with GSD-style YAML frontmatter (name, description, tools, model) and an XML system prompt body. Agents load shared knowledge via `@-reference` to files in `references/`. All agents use CJS tooling (`fp-tools.cjs`) for git operations, pipeline sequencing, state management, and configuration access. Workflows contain literal `fp-tools.cjs` commands to prevent agent improvisation.
 
-### 1. orchestrate (color: white)
-- **Domain**: Universal command routing, multi-agent delegation, pipeline phase coordination, meta-command handling
-- **Operations**: All 21 routing-table commands route through orchestrate and delegate to specialist engines. The 2 meta-commands (`/fp-docs:do`, `/fp-docs:help`) are handled directly by the orchestrate engine without delegation.
-- **Tools**: Read, Write, Edit, Grep, Glob, Bash (full write access for Finalize Phase)
-- **Modules**: mod-standards, mod-project, mod-orchestration
-- **Model**: opus, maxTurns: 100
-- **Key behavior**: The universal entry point and pure dispatcher for all commands (D-06). Parses routing metadata from skills, classifies commands (write vs read-only), delegates to specialist engines with pipeline phase assignments, coordinates Review Phase via the validate engine, and handles the Finalize Phase (changelog, index, git commit) itself. Never executes fp-docs operations directly. Only the orchestrator commits to git in delegated mode. For read-only commands, uses a fast-path 2-agent delegation. Execution mode is controlled by the `--batch-mode` flag (subagent|team|sequential, D-08) rather than file count thresholds. Agent Teams require user confirmation unless explicitly flagged (D-07). Extracts only summary metrics from delegation results to keep context lean (D-09).
-
-### 2. modify (color: green)
+### 1. fp-docs-modifier
 - **Domain**: Documentation creation and modification
 - **Operations**: revise, add, auto-update, auto-revise, deprecate
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash (full write access)
-- **Modules**: mod-standards, mod-project, mod-pipeline, mod-changelog, mod-index
+- **References**: doc-standards.md, fp-project.md, pipeline-enforcement.md, changelog-rules.md, index-rules.md
 - **Model**: opus, maxTurns: 75
-- **Key behavior**: The only engine that executes the full 8-stage post-modification pipeline. Always reads actual source code before writing docs. Uses `[NEEDS INVESTIGATION]` instead of guessing.
+- **Key behavior**: The primary write agent. Executes the Write Phase (primary operation ONLY -- stages 1-3 are handled by dedicated enforcement agents). Always reads actual source code before writing docs. Uses `[NEEDS INVESTIGATION]` instead of guessing.
 
-### 3. validate (color: cyan)
+### 2. fp-docs-validator
 - **Domain**: Documentation validation and accuracy verification
 - **Operations**: audit, verify, sanity-check, test
 - **Tools**: Read, Grep, Glob, Bash (Write and Edit disallowed)
-- **Modules**: mod-standards, mod-project, mod-validation
+- **References**: doc-standards.md, fp-project.md, validation-rules.md
 - **Model**: opus, maxTurns: 75
-- **Key behavior**: Strictly read-only. Classifies issues by severity (CRITICAL, HIGH, MEDIUM, LOW). For sanity-check, zero tolerance: every factual claim must be verified. For test, executes against the live local dev environment.
+- **Key behavior**: Strictly read-only. Executes the Review Phase (stages 4-5) in delegated mode. Classifies issues by severity (CRITICAL, HIGH, MEDIUM, LOW). For sanity-check, zero tolerance: every factual claim must be verified. For test, executes against the live local dev environment.
 
-### 4. citations (color: yellow)
+### 3. fp-docs-citations
 - **Domain**: Code citation generation, maintenance, and verification
 - **Operations**: generate, update, verify, audit
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
-- **Modules**: mod-standards, mod-project, mod-citations
+- **References**: doc-standards.md, fp-project.md, citation-rules.md
 - **Model**: opus, maxTurns: 75
 - **Key behavior**: Three citation tiers based on function length (Full for <=15 lines, Signature for 16-100, Reference for >100). Tracks citation freshness (Fresh, Stale, Drifted, Broken, Missing). Generate/update run a subset of the pipeline; verify/audit are read-only.
 
-### 5. api-refs (color: yellow)
+### 4. fp-docs-api-refs
 - **Domain**: API Reference table generation and auditing
 - **Operations**: generate, audit
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
-- **Modules**: mod-standards, mod-project, mod-api-refs
+- **References**: doc-standards.md, fp-project.md, api-ref-rules.md
 - **Model**: opus, maxTurns: 75
 - **Key behavior**: Extracts actual function signatures from PHP/JS source. Mandatory provenance tracking (PHPDoc, Verified, Authored). Covers 7 layers: helpers, components, hooks, shortcodes, rest-api, cli, integrations. Audit is read-only.
 
-### 6. locals (color: magenta)
+### 5. fp-docs-locals
 - **Domain**: `$locals` variable contract documentation
 - **Operations**: annotate, contracts, cross-ref, validate, shapes, coverage
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
-- **Modules**: mod-standards, mod-project, mod-locals
+- **References**: doc-standards.md, fp-project.md, locals-rules.md
 - **Model**: opus, maxTurns: 75
-- **Key behavior**: WordPress-specific engine for documenting the data shapes passed between PHP template components. Classifies keys as Required (bare `$locals['key']` access) vs Optional (guarded with `isset`/`??`/`empty`). Supports both named keys and integer-indexed `$locals[0]` patterns. Uses an **ephemeral WP-CLI tool** (`wp fp-locals`) that leverages PHP's `token_get_all()` for 100% accurate variable extraction — the CLI PHP source lives in the plugin (`framework/tools/class-locals-cli.php`), is ephemerally installed into the theme during operations via setup/teardown scripts, and auto-cleaned by a SubagentStop safety net hook. Falls back to manual Read/Grep extraction when ddev is unavailable.
+- **Key behavior**: WordPress-specific agent for documenting the data shapes passed between PHP template components. Classifies keys as Required (bare `$locals['key']` access) vs Optional (guarded with `isset`/`??`/`empty`). Supports both named keys and integer-indexed `$locals[0]` patterns. Uses an **ephemeral WP-CLI tool** (`wp fp-locals`) that leverages PHP's `token_get_all()` for 100% accurate variable extraction -- the CLI PHP source lives in the plugin (`tools/class-locals-cli.php`), is ephemerally installed into the theme during operations via setup/teardown scripts, and auto-cleaned by a SubagentStop safety net hook. Falls back to manual Read/Grep extraction when ddev is unavailable.
 
-### 7. verbosity (color: red)
+### 6. fp-docs-verbosity
 - **Domain**: Anti-brevity enforcement and verbosity gap detection
 - **Operations**: audit
 - **Tools**: Read, Grep, Glob, Bash (Write and Edit disallowed)
-- **Modules**: mod-standards, mod-project, mod-verbosity
+- **References**: doc-standards.md, fp-project.md, verbosity-rules.md
 - **Model**: opus, maxTurns: 50
 - **Key behavior**: Read-only scanner. Enforces a banned phrase list (e.g., "etc.", "and more", "various") and banned regex patterns. Reports violations at HIGH (banned phrases), MEDIUM (incomplete lists), LOW (style issues) severity. Deep scans also check scope manifests.
 
-### 8. index (color: blue)
+### 7. fp-docs-verbosity-enforcer
+- **Domain**: Write-capable verbosity enforcement for pipeline stage 1
+- **Operations**: (none -- always spawned as dedicated enforcement agent during pipeline stage 1)
+- **Tools**: Read, Write, Edit, Grep, Glob, Bash (full write access for fixing gaps)
+- **References**: doc-standards.md, fp-project.md, verbosity-rules.md, verbosity-algorithm.md
+- **Model**: opus, maxTurns: 50
+- **Key behavior**: Write-capable companion to the read-only fp-docs-verbosity agent. Spawned as a dedicated agent during pipeline stage 1 of every write workflow. Builds scope manifests, detects verbosity gaps and banned phrases, then **fixes** issues by expanding incomplete sections and adding missing items. Returns a Verbosity Enforcement Result with per-file PASS/FIXED/FAIL status. Created in v2 to isolate enforcement from primary specialists.
+
+### 8. fp-docs-indexer
 - **Domain**: Documentation index maintenance and metadata synchronization
 - **Operations**: update-project-index, update-doc-links, update-example-claude
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
-- **Modules**: mod-standards, mod-project, mod-index
+- **References**: doc-standards.md, fp-project.md, index-rules.md
 - **Model**: opus, maxTurns: 50
 - **Key behavior**: Uses `git ls-files` as source of truth, not filesystem listing. Supports incremental (update), quick, and full regeneration modes. CLAUDE.md regeneration only touches documentation sections.
 
-### 9. system (color: blue)
+### 9. fp-docs-system
 - **Domain**: Plugin self-maintenance and configuration
 - **Operations**: update-skills, setup, sync, update
 - **Tools**: Read, Write, Edit, Grep, Glob, Bash
-- **Modules**: mod-standards, mod-project
+- **References**: doc-standards.md, fp-project.md
 - **Model**: opus, maxTurns: 50
-- **Key behavior**: Setup runs 6 phases (plugin verification, docs repo setup, gitignore check, branch sync, git hook installation, shell prompt integration). Sync manages the three-repo branch mirroring model. Update-skills regenerates skill files while preserving customizations. Update checks GitHub Releases API and executes git-based self-update.
+- **Key behavior**: Setup runs 8 phases (plugin verification, docs repo setup, gitignore check, branch sync, git hook installation, shell prompt integration, scaffold bootstrap, update notification setup). Sync manages the three-repo branch mirroring model. Update-skills regenerates command files while preserving customizations. Update checks GitHub Releases API and executes git-based self-update.
 
-### 10. researcher (color: orange) -- Phase 16
+### 10. fp-docs-researcher
 - **Domain**: Pre-operation source code analysis
 - **Operations**: (none -- always invoked as pre-pipeline phase, not via user command)
 - **Tools**: Read, Write, Grep, Glob, Bash (no Edit -- analysis only, no file modification)
-- **Modules**: mod-standards, mod-project
+- **References**: doc-standards.md, fp-project.md, codebase-analysis-guide.md
 - **Model**: opus, maxTurns: 75
-- **Key behavior**: Runs before specialist engines to read source code, map dependencies, identify changes, and produce structured analysis documents at `.fp-docs/analyses/`. Uses `codebase-analysis-guide.md` for scanning patterns and `source-map.json` for target-to-source mapping. Calibrates analysis depth by operation type: full (write operations), summary (read-only), minimal (admin). Always invoked in DELEGATED mode by the orchestrator -- never runs standalone. Returns a Research Result with analysis file path, source files analyzed, key findings, and complexity assessment.
+- **Key behavior**: Runs before specialist agents to read source code, map dependencies, identify changes, and produce structured analysis documents at `.fp-docs/analyses/`. Uses `codebase-analysis-guide.md` for scanning patterns and `source-map.json` for target-to-source mapping. Calibrates analysis depth by operation type: full (write operations), summary (read-only), minimal (admin). Always invoked in DELEGATED mode -- never runs standalone. Returns a Research Result with analysis file path, source files analyzed, key findings, and complexity assessment.
 
-### 11. planner (color: purple) -- Phase 16
+### 11. fp-docs-planner
 - **Domain**: Operation strategy design and plan creation
 - **Operations**: (none -- always invoked as pre-pipeline phase, not via user command)
 - **Tools**: Read, Write, Grep, Glob, Bash (no Edit -- creates plan files, never modifies existing)
-- **Modules**: mod-standards, mod-project, mod-orchestration
+- **References**: doc-standards.md, fp-project.md, pipeline-enforcement.md
 - **Model**: sonnet, maxTurns: 75
-- **Key behavior**: Receives researcher analysis and user command, designs execution strategy, creates persistent plan files at `.fp-docs/plans/` via `fp-tools.cjs plans save`. Uses mod-orchestration thresholds for batching decisions. Classifies commands as write/read/admin/batch and creates appropriately structured plans. All operations produce plan files (D-07) for consistent architecture and full audit trail. Plans auto-execute by default (D-08) unless `--plan-only` flag is passed. Always invoked in DELEGATED mode by the orchestrator -- never runs standalone.
+- **Key behavior**: Receives researcher analysis and user command, designs execution strategy, creates persistent plan files at `.fp-docs/plans/` via `fp-tools.cjs plans save`. Classifies commands as write/read/admin/batch and creates appropriately structured plans. All operations produce plan files for consistent architecture and full audit trail. Plans auto-execute by default unless `--plan-only` flag is passed. Always invoked in DELEGATED mode -- never runs standalone.
+
+### 12. fp-docs-ug-writer
+- **Domain**: User guide content creation and modification
+- **Operations**: ug-generate (write phase), ug-update (write phase), ug-screenshot
+- **Tools**: Read, Write, Edit, Bash, Grep, Glob (full write access)
+- **References**: ug-standards.md, ug-ui-verification.md, fp-project.md
+- **Model**: opus
+- **Key behavior**: Creates and updates user-facing documentation from the non-technical editor's perspective. Uses Playwright MCP (`browser_navigate`, `browser_screenshot`, `browser_click`) for UI discovery and screenshot capture when available; falls back to code analysis (traces admin menu hooks, form field registrations). Writes Hugo page bundles (`content/{section}/{page-name}/index.md` + co-located screenshots). Uses page templates from `scaffolds/user-guide/templates/`. Enforces plain language -- never includes code identifiers in output. Updates `last_verified` and `screenshot_count` frontmatter. Executes UG pipeline stages 1-2 (UI verification, screenshot currency) inline after writing.
+
+### 13. fp-docs-ug-validator
+- **Domain**: User guide accuracy validation
+- **Operations**: ug-validate, ug-audit, ug-status, UG pipeline stages 1-4
+- **Tools**: Read, Bash, Grep, Glob (Write and Edit disallowed)
+- **References**: ug-validation-rules.md, ug-standards.md, fp-project.md
+- **Model**: opus
+- **Key behavior**: Strictly read-only. Validates user guide pages against current UI state via Playwright MCP or code trace. Four operations: ug-validate walks documented steps against UI (supports quick/standard/deep depth); ug-audit cross-references codebase features against documented pages for coverage gaps; ug-status reports health metrics (page counts, staleness, coverage percentage); pipeline stages 3-4 validate jargon/tone and completeness. Produces structured validation reports with per-page PASS/WARN/FAIL and remediation commands pointing to `/fp-docs:ug-*` commands.
 
 ---
 
 ## Drift Detection CLI Surface (`lib/drift.cjs`)
 
-The drift detection module provides a full CLI surface via `fp-tools drift <subcommand>`. This is a CJS module (not a user-facing `/fp-docs:*` skill) used by git hooks, SessionStart handlers, and engines.
+The drift detection module provides a full CLI surface via `fp-tools drift <subcommand>`. This is a CJS module (not a user-facing `/fp-docs:*` command) used by git hooks, SessionStart handlers, and agents.
 
 | Subcommand | Description | Used By |
 |------------|-------------|---------|
 | `fp-tools drift analyze` | Analyze git diff against `source-map.json` mapping (via `lib/source-map.cjs`). Maps changed source files to affected documentation targets and generates staleness signals. | Git hooks (post-merge, post-rewrite) |
-| `fp-tools drift status` | Show current staleness signals from staleness.json. | Engines, users via CLI |
+| `fp-tools drift status` | Show current staleness signals from staleness.json. | Agents, users via CLI |
 | `fp-tools drift clear [doc_path]` | Clear staleness signals. Clears specific doc_path or all signals. | SubagentStop hooks (auto-clear), users via CLI |
-| `fp-tools drift add-signal` | Manually add a staleness signal with doc_path, source, reason, severity. | Audit engines, manual testing |
-| `fp-tools drift list` | List signal summaries (doc_path, severity, source, timestamp, changed count). | Engines, users via CLI |
+| `fp-tools drift add-signal` | Manually add a staleness signal with doc_path, source, reason, severity. | fp-docs-validator (audit), manual testing |
+| `fp-tools drift list` | List signal summaries (doc_path, severity, source, timestamp, changed count). | Agents, users via CLI |
 | `fp-tools drift install` | Install post-merge and post-rewrite git hooks in the codebase repo with baked paths. | `/fp-docs:setup` Phase 5 |
 | `fp-tools drift shell-install` | Generate shell integration script with baked paths at codebase root. | `/fp-docs:setup` Phase 6 |
 
@@ -270,33 +297,75 @@ The source-map module provides the single source of truth for source-to-doc mapp
 
 | Subcommand | Description | Used By |
 |------------|-------------|---------|
-| `fp-tools source-map lookup <source-path>` | Look up the doc target for a source path (exact match, then directory prefix) | Engines, instruction files |
-| `fp-tools source-map reverse-lookup <doc-path>` | Find source entries that map to a given doc path | Engines (reverse mapping for visual verification) |
-| `fp-tools source-map unmapped` | List all source files without doc targets | Audit engine, gap analysis |
+| `fp-tools source-map lookup <source-path>` | Look up the doc target for a source path (exact match, then directory prefix) | Agents, workflows |
+| `fp-tools source-map reverse-lookup <doc-path>` | Find source entries that map to a given doc path | Agents (reverse mapping for visual verification) |
+| `fp-tools source-map unmapped` | List all source files without doc targets | fp-docs-validator (audit), gap analysis |
 | `fp-tools source-map generate` | Scan codebase and docs trees to build/refresh source-map.json | Pipeline stage 7 (index update) |
-| `fp-tools source-map dump` | Output full source-map.json contents | Debugging, engines |
+| `fp-tools source-map dump` | Output full source-map.json contents | Debugging, agents |
 
 `lib/source-map.cjs` exports 7 functions: `loadSourceMap`, `saveSourceMap`, `lookupDoc`, `lookupSource`, `getUnmapped`, `generateSourceMap`, `cmdSourceMap`.
 
 ---
 
-## The 11 Shared Modules
+## Scaffold Bootstrap CLI Surface (`lib/scaffold.cjs`)
 
-Modules are preloaded into engines via the `skills:` frontmatter field. They are not user-invocable. Each rule lives in exactly one module (no duplication).
+The scaffold module auto-bootstraps docs repo structures from bundled assets in `scaffolds/`. When a workflow needs a structure that doesn't exist in the docs repo (e.g., `user-guide/`), the plugin detects the absence and copies from bundled scaffold assets. Users never manually copy files between repos.
 
-| Module | Domain | Preloaded By |
-|--------|--------|-------------|
-| mod-standards | File naming, directory structure, document templates (10 types), content rules, depth requirements, cross-reference requirements, integrity rules | All 11 engines |
-| mod-project | FP-specific paths, source-map.json CLI reference (5 example rows), appendix cross-references, environment settings | All 11 engines |
-| mod-pipeline | 8-stage post-modification pipeline definition, trigger matrix, skip conditions, completion markers | modify |
-| mod-changelog | Changelog entry format (date, files changed, summary), append-only rules | modify |
-| mod-index | PROJECT-INDEX.md update modes (quick/update/full), git consistency rules | modify, index |
-| mod-citations | Citation block format (3 tiers), marker grammar, placement rules, freshness model (5 states), excerpt rules | modify, citations |
-| mod-api-refs | API Reference table format (5 columns), provenance rules, scope by doc type, completeness rule, ordering | modify, api-refs |
-| mod-locals | @locals PHPDoc format, @controller format (HTMX), contract table columns, Required/Optional classification, shared shapes, ground truth engine (WP-CLI `wp fp-locals`), ephemeral CLI lifecycle, CLI subcommands, extraction capabilities, fallback rules | modify, locals |
-| mod-verbosity | Anti-compression directives, banned phrases (15+), banned patterns (4 regex), scope manifest format, self-audit protocol, context window management tiers | modify, verbosity |
-| mod-validation | 10-point verification checklist, sanity-check algorithm (zero-tolerance), confidence levels (HIGH/LOW), severity classification (CRITICAL/HIGH/MEDIUM/LOW) | modify, validate |
-| mod-orchestration | Orchestration rules: delegation thresholds, pipeline phase assignments (Research/Plan/Write/Review/Finalize), team protocol, git serialization rules, read-only fast-path classification, specialist-to-phase mapping, Research/Plan Result formats | orchestrate, planner |
+| Subcommand | Description | Used By |
+|------------|-------------|---------|
+| `fp-tools scaffold list` | List available scaffolds with name, file count, and whether they include GitHub Actions workflows. | Agents, users via CLI |
+| `fp-tools scaffold check <name>` | Check if the scaffold's target directory already exists in the docs repo. Returns `exists` or `missing`. | Workflows (pre-bootstrap check) |
+| `fp-tools scaffold bootstrap <name>` | Copy scaffold files to `{docs-root}/{name}/`. Only creates files that don't exist (safe for re-runs). `.github-workflows/` contents are placed at `{docs-root}/.github/workflows/` instead. Also patches dev wiki `hugo.toml` ignoreFiles and runs `hugo mod get` + `git lfs install`. | Workflows, `/fp-docs:setup` |
+
+### Available Scaffolds
+
+| Scaffold | Files | Contents |
+|----------|-------|----------|
+| `user-guide` | 20 | Hugo Relearn theme config (`hugo.toml`, `go.mod`), layouts (`render-image.html` with conditional resize, `render-link.html`, `recording.html` shortcode, `step.html` shortcode), 7 content stubs (`_index.md` for root + 6 sections), 5 page templates, `.gitattributes` for Git LFS, GitHub Actions deploy workflow |
+
+### Module Exports
+
+`lib/scaffold.cjs` exports 4 functions: `checkScaffold`, `bootstrap`, `listScaffolds`, `cmdScaffold`.
+
+---
+
+## The 19 References
+
+References are shared knowledge files in `references/` loaded by agents and workflows via `@-reference` in execution context. Per user Decision 2 (GSD explicit style), `doc-standards.md` and `fp-project.md` are repeated as `@-reference` in every dev docs command's `<execution_context>`. User guide commands load `ug-standards.md` and `fp-project.md` instead. Each rule lives in exactly one reference (no duplication).
+
+### Rule References (10 files, converted from modules)
+
+| Reference | Domain | Used By |
+|-----------|--------|---------|
+| doc-standards.md | File naming, directory structure, document templates (10 types), content rules, depth requirements, cross-reference requirements, integrity rules | All 11 agents (via every command) |
+| fp-project.md | FP-specific paths, source-map.json CLI reference (5 example rows), appendix cross-references, environment settings | All 11 agents (via every command) |
+| pipeline-enforcement.md | 8-stage post-modification pipeline definition, trigger matrix, skip conditions, completion markers | fp-docs-modifier, fp-docs-planner |
+| changelog-rules.md | Changelog entry format (date, files changed, summary), append-only rules | fp-docs-modifier |
+| index-rules.md | PROJECT-INDEX.md update modes (quick/update/full), git consistency rules | fp-docs-modifier, fp-docs-indexer |
+| citation-rules.md | Citation block format (3 tiers), marker grammar, placement rules, freshness model (5 states), excerpt rules | fp-docs-modifier, fp-docs-citations |
+| api-ref-rules.md | API Reference table format (5 columns), provenance rules, scope by doc type, completeness rule, ordering | fp-docs-modifier, fp-docs-api-refs |
+| locals-rules.md | @locals PHPDoc format, @controller format (HTMX), contract table columns, Required/Optional classification, shared shapes, ground truth engine (WP-CLI `wp fp-locals`), ephemeral CLI lifecycle, CLI subcommands, extraction capabilities, fallback rules | fp-docs-modifier, fp-docs-locals |
+| verbosity-rules.md | Anti-compression directives, banned phrases (15+), banned patterns (4 regex), scope manifest format, self-audit protocol, context window management tiers | fp-docs-modifier, fp-docs-verbosity, fp-docs-verbosity-enforcer |
+| validation-rules.md | 10-point verification checklist, sanity-check algorithm (zero-tolerance), confidence levels (HIGH/LOW), severity classification (CRITICAL/HIGH/MEDIUM/LOW) | fp-docs-modifier, fp-docs-validator |
+
+### Algorithm References (6 files, moved from framework/algorithms/)
+
+| Reference | Domain | Used By |
+|-----------|--------|---------|
+| verbosity-algorithm.md | Step-by-step verbosity enforcement procedure, scope manifest construction, gap detection | Pipeline stage 1 (verbosity enforcement) |
+| citation-algorithm.md | Citation generation procedure, tier selection, freshness evaluation, block formatting | Pipeline stage 2 (citation generation) |
+| api-ref-algorithm.md | API Reference extraction procedure, signature parsing, provenance assignment | Pipeline stage 3 (API ref sync) |
+| validation-algorithm.md | Sanity-check and verification procedures, claim classification, 10-point checklist execution | Pipeline stages 4-5 (sanity-check, verification) |
+| git-sync-rules.md | Branch synchronization procedure, three-repo coordination, conflict resolution | Pipeline stage 8 (docs commit), sync workflow |
+| codebase-analysis-guide.md | Source code scanning patterns, dependency mapping, change detection procedures | fp-docs-researcher (pre-pipeline) |
+
+### User Guide References (3 files, added for ug-* command system)
+
+| Reference | Domain | Used By |
+|-----------|--------|---------|
+| ug-standards.md | User guide page structure (content types, page bundles, frontmatter, screenshots, tone, links, shortcodes, sections, integrity), Hugo page bundle conventions, 5 content types (feature-guide, workflow-walkthrough, quick-start, reference, faq) | fp-docs-ug-writer, fp-docs-ug-validator |
+| ug-validation-rules.md | UI path verification checks, screenshot currency checks, jargon detection (regex patterns + banned terms + allowed exceptions), completeness matrix per content type, coverage gap detection, validation report format (per-page PASS/WARN/FAIL) | fp-docs-ug-validator |
+| ug-ui-verification.md | Playwright MCP verification flow (auth, navigation, element checks, screenshot capture, admin URLs), code-based fallback verification (menus, CPTs, taxonomies, meta boxes, fields, settings, shortcodes), documented-path-to-admin-URL mapping, capture protocol (viewport, wait conditions) | fp-docs-ug-writer, fp-docs-ug-validator |
 
 ---
 
@@ -304,7 +373,7 @@ Modules are preloaded into engines via the `skills:` frontmatter field. They are
 
 This is the core quality enforcement mechanism. It runs after every doc-modifying operation.
 
-Under the multi-agent orchestration architecture, all operations proceed through a **5-phase** delegation model: **Research Phase** (pre-pipeline, researcher engine), **Plan Phase** (pre-pipeline, planner engine), **Write Phase** (primary op + stages 1-3, assigned to specialist engine), **Review Phase** (stages 4-5, assigned to validate engine), and **Finalize Phase** (stages 6-8, fully CJS-executed via the pipeline callback loop -- `fp-tools.cjs pipeline init` then `fp-tools.cjs pipeline next` for each stage, handled by orchestrator). The existing 8 pipeline stages are unchanged -- Research and Plan are pre-pipeline phases. In Standalone Mode, a single engine executes all 8 stages as before.
+Under the v2 workflow architecture, write operations proceed through a **7-phase** delegation model: **Scope Assessment** (CJS, determines complexity/researcher count/tracker), **Research Phase** (1-N fp-docs-researcher spawns based on scope), **Plan Phase** (fp-docs-planner), **Write Phase** (primary operation ONLY -- specialist agent does NOT run enforcement stages), **Enforce Phase** (stages 1-3 each handled by a **dedicated** agent: fp-docs-verbosity-enforcer for stage 1, fp-docs-citations for stage 2, fp-docs-api-refs for stage 3), **Review Phase** (stages 4-5, fp-docs-validator), and **Finalize Phase** (stages 6-8 via `fp-tools pipeline init/next/run-stage`). Key v2 change: enforcement stages are isolated from the primary specialist, allowing each agent to focus on its domain.
 
 | Stage | Name | What It Does | Skip Condition |
 |-------|------|-------------|----------------|
@@ -313,7 +382,7 @@ Under the multi-agent orchestration architecture, all operations proceed through
 | 3 | API Reference Sync | Verifies API Ref section exists (for applicable doc types), updates table rows, ensures provenance column populated | `api_ref.enabled = false` |
 | 4 | Sanity Check | Cross-references every factual claim against source. Classifies as VERIFIED, MISMATCH, HALLUCINATION, or UNVERIFIED. LOW confidence blocks progression | `--no-sanity-check` flag |
 | 5 | Verification | 10-point checklist: file existence, orphan check, index completeness, appendix spot-check, link validation, changelog check, citation format, API ref provenance, locals contracts, verbosity compliance | Never skipped |
-| 6 | Changelog Update | Appends entry to `docs/changelog.md` listing every file changed and why | Never skipped |
+| 6 | Changelog Update | Appends entry to `.fp-docs-branch/changelog.md` listing every file changed and why | Never skipped |
 | 7 | Index Update | Updates PROJECT-INDEX.md when structural changes occurred (new sections, major reorganization) | Skipped for content-only changes |
 | 8 | Docs Repo Commit | `git -C {docs-root} add -A && git -C {docs-root} commit -m "fp-docs: {operation} -- {summary}"` | Never skipped (attempts if docs repo exists) |
 
@@ -323,6 +392,27 @@ Pipeline complete: [verbosity: PASS] [citations: PASS] [sanity: HIGH] [verify: P
 ```
 
 Pipeline actions now include `gate_failed` in addition to `spawn`, `execute`, `complete`, `blocked` (Phase 17). When a gate fails, the orchestrator receives a diagnostic with the specific violation(s) and decides whether to retry or abort. Stage output is recorded via `fp-tools pipeline record-output <stage-id>`.
+
+### The User Guide Pipeline (5 Stages)
+
+Separate from the dev docs pipeline. Enforces **UI behavior accuracy** -- does the documented workflow match what users actually see? Configured via `user_guide_pipeline` in `config.json`.
+
+| Stage | Name | Phase | What It Does | Skip Condition |
+|-------|------|-------|-------------|----------------|
+| 1 | UI Behavior Verification | Write | Verifies every documented navigation path and UI interaction against actual WordPress admin. Uses Playwright MCP when available, code analysis as fallback. | Never |
+| 2 | Screenshot Currency | Write | Checks that referenced screenshots exist as page bundle resources. Flags stale screenshots when source files changed after `last_verified`. | Never |
+| 3 | Jargon & Tone | Finalize | Scans for PHP/JS identifiers, dev jargon, function names, hook names. Audience is non-technical WordPress editors. Banned patterns configurable in `user_guide_pipeline.jargon_banned_patterns`. | `--no-tone-check` flag |
+| 4 | Completeness | Finalize | Validates required sections per content type against `user_guide_pipeline.required_sections_by_type`. Checks frontmatter completeness and structural quality. | Never |
+| 5 | Changelog + Commit | Finalize | Updates user-guide changelog (if exists), sets `last_verified` to today on all modified pages, commits to docs repo. | Never |
+
+**Delegation**: Stages 1-2 are executed inline by fp-docs-ug-writer during the write phase. Stages 3-4 are executed by fp-docs-ug-validator (read-only, spawned by workflow). Stage 5 is handled by the workflow via `fp-tools pipeline init/next/run-stage`. If stages 3-4 report FAIL, the workflow re-spawns fp-docs-ug-writer to fix violations before committing.
+
+**Content types and required sections** (from config):
+- **feature-guide**: what-is, where-to-find, how-it-works, key-fields, common-tasks
+- **workflow-walkthrough**: overview, before-you-begin, steps, what-happens-next, troubleshooting
+- **quick-start**: welcome, what-youll-learn, steps, next-steps
+- **reference**: overview, sections, notes
+- **faq**: questions, still-need-help
 
 ---
 
@@ -369,30 +459,40 @@ fp-docs enables a complete documentation lifecycle:
 ### 4. Deprecate
 - `/fp-docs:deprecate` -- Mark docs as deprecated with notices, update trackers
 
+### User Guide Lifecycle
+
+The user guide has its own parallel lifecycle:
+- **Create**: `/fp-docs:ug-generate` -- Generate user guide pages for features or workflows
+- **Maintain**: `/fp-docs:ug-update` -- Update pages after codebase changes; `/fp-docs:ug-screenshot` -- Refresh screenshots
+- **Validate**: `/fp-docs:ug-validate` -- Verify accuracy against current UI; `/fp-docs:ug-audit` -- Find coverage gaps
+- **Monitor**: `/fp-docs:ug-status` -- Health metrics dashboard
+- **Preview**: `/fp-docs:ug-preview` -- Local Hugo server or deploy preview
+- **Batch**: `/fp-docs:ug-batch` -- Run validate/screenshot/update across multiple pages
+
 ---
 
 ## Batch and Parallel Capabilities
 
 ### Multi-Agent Orchestration (Default)
-Every command now uses multi-agent execution by default via the orchestrate engine, which acts as a pure dispatcher (D-06):
-- **Write operations** use 5 agents: orchestrate (coordinator) + researcher (code analysis) + planner (strategy) + specialist engine (Write Phase) + validate engine (Review Phase)
-- **Read-only operations** use 4 agents: orchestrate (coordinator) + researcher (pre-analysis) + planner (minimal plan) + specialist engine (standalone, with actionable output)
-- The orchestrator handles all git commits (Finalize Phase), ensuring atomic documentation updates
-- The orchestrator extracts only summary metrics from delegation results (D-09) to keep context lean during large operations
+Every command uses multi-agent execution by default via the workflow orchestration layer:
+- **Write operations** use 5 agents: workflow (coordinator) + fp-docs-researcher (code analysis) + fp-docs-planner (strategy) + specialist agent (Write Phase) + fp-docs-validator (Review Phase)
+- **Read-only operations** use 4 agents: workflow (coordinator) + fp-docs-researcher (pre-analysis) + fp-docs-planner (minimal plan) + specialist agent (standalone, with actionable output)
+- The workflow handles all git commits (Finalize Phase), ensuring atomic documentation updates
+- The workflow extracts only summary metrics from delegation results to keep context lean during large operations
 
 ### Execution Mode Flag (`--batch-mode`)
-The `--batch-mode` flag (D-08) controls how the orchestrator dispatches work:
+The `--batch-mode` flag controls how the workflow dispatches work:
 - `--batch-mode subagent` (default): Smart subagent spawning via Agent tool. 1 file = single call, 2-8 = parallel fan-out, 9+ = batched waves of max 5 concurrent.
-- `--batch-mode team` (or `--use-agent-team`): Create Agent Team for inter-agent coordination. Requires user confirmation unless the flag is explicitly passed (D-07). Teammates work directly as specialists (cannot spawn sub-subagents).
+- `--batch-mode team` (or `--use-agent-team`): Create Agent Team for inter-agent coordination. Requires user confirmation unless the flag is explicitly passed. Teammates work directly as specialists (cannot spawn sub-subagents).
 - `--batch-mode sequential`: One-at-a-time Agent calls for operations requiring strict ordering.
 
 ### Parallel Operations (`/fp-docs:parallel`)
 - Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` environment variable
-- The orchestrator handles batch operations natively using the `--batch-mode` flag system
+- The workflow handles batch operations natively using the `--batch-mode` flag system
 - Groups target files into batches of up to 5
-- Creates Agent Team teammates for each batch, each running the appropriate specialist engine
+- Creates Agent Team teammates for each batch, each running the appropriate specialist agent
 - TeammateIdle and TaskCompleted hooks validate team member phase completion and task outputs
-- Orchestrator handles Finalize Phase (changelog, index, single atomic git commit) for all batches
+- Workflow handles Finalize Phase (changelog, index, single atomic git commit) for all batches
 - Aggregates results into a unified report
 
 ### Auto-Batch Operations
@@ -400,7 +500,7 @@ The `--batch-mode` flag (D-08) controls how the orchestrator dispatches work:
 - `/fp-docs:auto-revise` -- Processes all items in the needs-revision tracker
 
 ### Chunk-and-Delegate (Context Management)
-- When scope exceeds 50 functions or 8 doc files, the engine automatically delegates to sub-agents
+- When scope exceeds 50 functions or 8 doc files, the workflow automatically delegates to sub-agents
 - Max 8 docs per agent, max 50 functions per agent
 - Context pressure (>75% usage) triggers checkpoint-and-continue
 
@@ -425,7 +525,7 @@ Browser-based documentation verification using Playwright MCP for live environme
 
 **MCP server:** The Playwright MCP server is declared in `.mcp.json` at the plugin root. Claude Code automatically starts the server when the plugin is enabled. The server is version-pinned at `@playwright/mcp@0.0.68` with triple-layer SSL bypass for ddev's self-signed certificates.
 
-**Flag system:** Visual capabilities are gated by the `--visual` flag on modify operations and the `visual` scope on test. The `visual.enabled` feature flag in system-config provides a master override. Without the flag, engines never touch browser tools.
+**Flag system:** Visual capabilities are gated by the `--visual` flag on modify operations and the `visual` scope on test. The `visual.enabled` feature flag in system-config provides a master override. Without the flag, agents never touch browser tools.
 
 **Screenshot storage:**
 - Transient evidence: `.fp-docs/screenshots/` (not committed)
@@ -448,25 +548,25 @@ Key rules:
 - Always use `git -C {docs-root}` for docs operations, never the codebase git
 - Branch mirroring: when codebase is on branch `feature/xyz`, docs should mirror to the same branch name
 - `/fp-docs:sync` detects mismatches and handles branch creation/switching
-- Diff reports accumulate at `docs/diffs/` with date/branch naming
+- Diff reports accumulate at `.fp-docs-branch/diffs/` with date/branch naming
 
 ---
 
 ## Hook System
 
-fp-docs uses 5 hook events with 11 CJS handler functions (15 total hook entries in `hooks.json`), all in `lib/hooks.cjs`, invoked via `fp-tools.cjs hooks run <event> [matcher]`:
+fp-docs uses 5 hook events registered in `settings.json` (not the old `hooks.json`). Each hook invokes a standalone JS file in `hooks/`, which delegates to CJS handler functions in `lib/hooks.cjs` via `fp-tools.cjs hooks run <event> [matcher]`:
 
 | Event | Handler | CLI Command | Purpose |
 |-------|---------|-------------|---------|
-| PreToolUse (Bash) | `handlePreToolUseBashGitCheck` | `hooks run pre-tool-use bash` | Blocks raw git-write commands in non-orchestrator engines (D-01). Exit 2 = block, exit 0 = allow. CJS-mediated git (`fp-tools.cjs git`) is always exempt (D-03). |
-| SessionStart | `handleInjectManifest` | `hooks run session-start inject-manifest` | Injects the plugin root path and manifest into the session context so engines can locate their instruction files |
+| PreToolUse (Bash) | `handlePreToolUseBashGitCheck` | `hooks run pre-tool-use bash` | Blocks raw git-write commands in non-orchestrator agents. Exit 2 = block, exit 0 = allow. CJS-mediated git (`fp-tools.cjs git`) is always exempt. |
+| SessionStart | `handleInjectManifest` | `hooks run session-start inject-manifest` | Injects the plugin root path and manifest into the session context so agents can locate their workflows and references |
 | SessionStart | `handleBranchSyncCheck` | `hooks run session-start branch-sync` | Detects codebase/docs branch alignment and reads the sync watermark to report codebase change state (current, stale with commit count, invalid, or none) |
 | SessionStart | `handleDriftNudge` | `hooks run session-start drift-nudge` | Merges pending drift signals from git hooks, formats nudge summary if stale docs exist (top 3 + actionable commands) |
 | SessionStart | `handleUpdateCheck` | `hooks run session-start update-check` | Spawns background update version check |
-| SubagentStop (modify) | `handlePostModifyCheck` | `hooks run subagent-stop modify` | Validates modify engine delegation result structure and pipeline completion. Produces structured `ENFORCEMENT VIOLATION` diagnostics. Category A (upgraded from B in Phase 17, D-04). Auto-clears drift signals for modified docs. |
-| SubagentStop (orchestrate) | `handlePostOrchestrateCheck` | `hooks run subagent-stop orchestrate` | Validates orchestrate engine delegation cycle completion. Produces structured `ENFORCEMENT VIOLATION` diagnostics. Category A (upgraded from B in Phase 17, D-04). |
+| SubagentStop (modify) | `handlePostModifyCheck` | `hooks run subagent-stop modify` | Validates fp-docs-modifier delegation result structure and pipeline completion. Produces structured `ENFORCEMENT VIOLATION` diagnostics. Category A (upgraded from B in Phase 17, D-04). Auto-clears drift signals for modified docs. |
+| SubagentStop (orchestrate) | `handlePostOrchestrateCheck` | `hooks run subagent-stop orchestrate` | Validates workflow delegation cycle completion. Produces structured `ENFORCEMENT VIOLATION` diagnostics. Category A (upgraded from B in Phase 17, D-04). |
 | SubagentStop (locals) | `handleLocalsCLICleanup` | `hooks run subagent-stop locals` | Safety net for ephemeral WP-CLI tool -- detects and removes orphaned CLI artifacts |
-| SubagentStop (validate, citations, api-refs, researcher, planner) | `handleSubagentEnforcementCheck` | `hooks run subagent-stop <matcher>` | Validates specialist engine delegation results for structural compliance and stage authority. Single handler with agent_type-based validation. Category A. |
+| SubagentStop (validate, citations, api-refs, researcher, planner) | `handleSubagentEnforcementCheck` | `hooks run subagent-stop <matcher>` | Validates specialist agent delegation results for structural compliance and stage authority. Single handler with agent_type-based validation. Category A. |
 | TeammateIdle | `handleTeammateIdleCheck` | `hooks run teammate-idle` | Validates that teammates completed their assigned pipeline phases before going idle |
 | TaskCompleted | `handleTaskCompletedCheck` | `hooks run task-completed` | Validates task outputs -- checks for empty modifications, missing pipeline markers, and incomplete phase handoffs |
 
@@ -474,9 +574,9 @@ fp-docs uses 5 hook events with 11 CJS handler functions (15 total hook entries 
 
 The plugin enforces delegation architecture rules programmatically via `lib/enforcement.cjs` (6 exports, zero external dependencies):
 
-- **Git-write blocking**: PreToolUse hook on Bash tool blocks raw `git commit/push/tag/merge/rebase/checkout/reset/clean/rm/mv/stash/cherry-pick/revert/am/pull` commands. Only CJS-mediated git (`fp-tools.cjs git ...`) is allowed. Applies to all non-orchestrator engines.
+- **Git-write blocking**: PreToolUse hook on Bash tool blocks raw `git commit/push/tag/merge/rebase/checkout/reset/clean/rm/mv/stash/cherry-pick/revert/am/pull` commands. Only CJS-mediated git (`fp-tools.cjs git ...`) is allowed. Applies to all non-orchestrator agents.
 - **Delegation result validation**: SubagentStop hooks parse delegation results via `enforcement.parseDelegationResult()` for structural completeness (`## Delegation Result`, `### Files Modified`, `### Enforcement Stages`), enforcement stage markers, and completion indicators (`Delegation complete: ...`).
-- **Stage authority checking**: `enforcement.verifyStageAuthority()` verifies that the correct engine executed the correct pipeline phase (e.g., modify/citations/api-refs/locals = write phase, validate = review phase, orchestrate = finalize phase).
+- **Stage authority checking**: `enforcement.verifyStageAuthority()` verifies that the correct agent executed the correct pipeline phase (e.g., fp-docs-modifier/citations/api-refs/locals = write phase, fp-docs-validator = review phase, workflow = finalize phase).
 - **Pipeline gating**: CJS validates LLM-executed stage outputs (1-5) at each boundary before allowing progression. Failed gates return `action: gate_failed` with diagnostic. Stage output recorded via `fp-tools pipeline record-output <stage-id>`.
 
 All violations are fatal (D-04). No warnings, no exemptions. Violation output uses `ENFORCEMENT VIOLATION: N fatal violation(s)...` prefix for orchestrator detection.
@@ -487,11 +587,11 @@ Git operations (including docs-commit) are centralized in `lib/git.cjs` and invo
 
 ## Noteworthy Design Choices
 
-### 1. Engine-Skill Separation
-Skills are thin routers with no logic. They declare which engine to invoke and which instruction file to read. All behavior lives in engine agents and instruction files. This makes the system composable: new commands only need a SKILL.md file and an instruction file.
+### 1. Command-Workflow-Agent Chain
+Commands are thin YAML+XML routing files with no logic. They declare their workflow via `@-reference` and load shared knowledge (doc-standards.md, fp-project.md) into execution context. Workflows orchestrate agent spawning and pipeline phases. Agents do the domain work. This makes the system composable: new commands only need a command file in `commands/` and a workflow in `workflows/`.
 
 ### 2. Read-Only Validation
-The validate and verbosity engines explicitly disallow Write and Edit tools via `disallowedTools`. This makes it impossible for validation operations to accidentally modify documentation. Audit/verify results are reports only.
+The fp-docs-validator and fp-docs-verbosity agents explicitly disallow Write and Edit tools via `disallowedTools`. This makes it impossible for validation operations to accidentally modify documentation. Audit/verify results are reports only.
 
 ### 3. Anti-Compression Philosophy
 The verbosity system is philosophically opposed to LLM summarization tendencies. It maintains banned phrase lists and regex patterns, scope manifests that count every enumerable item, and zero-tolerance gap checking. "Length is not a concern. Completeness is the only concern."
@@ -502,26 +602,26 @@ Every documentable code claim requires a citation block linking to the exact sou
 ### 5. Provenance Tracking
 API Reference table rows include a `Src` column tracking how each entry was created: `PHPDoc` (extracted from docblocks), `Verified` (hand-verified against source), or `Authored` (manually written). This creates an audit trail for reference accuracy.
 
-### 6. Module Deduplication
-Each rule lives in exactly one module. Engines preload modules, but modules do not know about engines. This prevents rule conflicts and makes it clear where to modify any given rule.
+### 6. Reference Deduplication
+Each rule lives in exactly one reference file. Agents load references via `@-reference`, but references do not know about agents. This prevents rule conflicts and makes it clear where to modify any given rule.
 
 ### 7. Pipeline-as-Quality-Gate
 The 8-stage pipeline is not optional. Verification and changelog stages never skip. The SubagentStop hook validates completion. This ensures every doc modification goes through the full quality process.
 
 ### 8. On-Demand Algorithm Loading
-Six algorithm files in `framework/algorithms/` are loaded during pipeline stages, distinct from modules that are preloaded. This keeps engine context smaller until the algorithm is actually needed.
+Six algorithm reference files in `references/` are loaded during pipeline stages via `@-reference`, distinct from rule references loaded at command startup. This keeps agent context smaller until the algorithm is actually needed.
 
 ### 9. Memory Management
-Every engine includes memory management instructions: update agent memory when discovering recurring patterns, frequently-changing files, common false positives, and codebase-specific conventions. This enables learning across sessions.
+Every agent includes memory management instructions: update agent memory when discovering recurring patterns, frequently-changing files, common false positives, and codebase-specific conventions. This enables learning across sessions.
 
 ### 10. WordPress-Specific Locals Contracts
-The locals engine addresses a WordPress-specific pattern where template components communicate via `$locals` arrays without formal type contracts. The engine annotates source code, generates contract tables, traces caller chains, and reports coverage -- solving a real problem specific to the FP codebase's architecture. Uses an ephemeral WP-CLI tool (`wp fp-locals`) backed by PHP's `token_get_all()` for 100% accurate extraction of keys, types, required/optional status, and default values -- far superior to regex or AI inference. The CLI source lives in the plugin and is copied to the theme during operations, then removed after.
+The fp-docs-locals agent addresses a WordPress-specific pattern where template components communicate via `$locals` arrays without formal type contracts. The agent annotates source code, generates contract tables, traces caller chains, and reports coverage -- solving a real problem specific to the FP codebase's architecture. Uses an ephemeral WP-CLI tool (`wp fp-locals`) backed by PHP's `token_get_all()` for 100% accurate extraction of keys, types, required/optional status, and default values -- far superior to regex or AI inference. The CLI source lives in the plugin and is copied to the theme during operations, then removed after.
 
 ### 11. Universal Multi-Agent Orchestration
-All 21 routing-table commands route through the orchestrate engine, which acts as a pure dispatcher (D-06) that never executes fp-docs operations directly. All operations proceed through a 5-phase delegation model: Research Phase (researcher engine) -> Plan Phase (planner engine) -> Write Phase (specialist) -> Review Phase (validate engine) -> Finalize Phase (orchestrator). Read-only operations still route through Research + Plan for consistent architecture, but the specialist runs standalone without Write/Review/Finalize splitting. Execution mode is controlled by the `--batch-mode` flag (D-08): subagent (default), team (explicit request with confirmation per D-07), or sequential. The orchestrator extracts only summary metrics from delegation results (D-09). Engines support both Delegation Mode (orchestrator-coordinated) and Standalone Mode (self-contained) for backward compatibility. Researcher and planner are delegation-only (never standalone).
+All 23 commands route through workflows that orchestrate agent spawning and pipeline execution. Write operations proceed through a 5-phase delegation model: Research Phase (fp-docs-researcher) -> Plan Phase (fp-docs-planner) -> Write Phase (specialist agent) -> Review Phase (fp-docs-validator) -> Finalize Phase (workflow). Read-only operations still route through Research + Plan for consistent architecture, but the specialist runs standalone without Write/Review/Finalize splitting. Execution mode is controlled by the `--batch-mode` flag: subagent (default), team (explicit request with confirmation), or sequential. Agents support both Delegation Mode (workflow-coordinated) and Standalone Mode (self-contained) for backward compatibility. fp-docs-researcher and fp-docs-planner are delegation-only (never standalone).
 
-### 12. Explicit CJS Invocation in Instruction Files (Phase 8)
-Engines invoke CJS CLI commands explicitly -- instruction files contain literal `fp-tools.cjs` commands (e.g., `fp-tools.cjs pipeline init`, `fp-tools.cjs git commit`, `fp-tools.cjs locals-cli setup`) to prevent engine improvisation. This eliminates the risk of engines inventing ad-hoc git or pipeline commands, ensures deterministic execution of finalization stages, and provides a compliance verification layer via SubagentStop hooks that emit non-blocking warnings when write-capable engines skip expected CJS calls.
+### 12. Explicit CJS Invocation in Workflows
+Workflows contain literal `fp-tools.cjs` commands (e.g., `fp-tools.cjs pipeline init`, `fp-tools.cjs git commit`, `fp-tools.cjs locals-cli setup`) to prevent agent improvisation. This eliminates the risk of agents inventing ad-hoc git or pipeline commands, ensures deterministic execution of finalization stages, and provides a compliance verification layer via SubagentStop hooks that detect when write-capable agents skip expected CJS calls.
 
 ### 13. Update System with Background Check and Git-Based Self-Update (Phase 10)
 Plugin updates use a three-layer approach: (1) Background spawn during SessionStart writes version check results to `.fp-docs/update-cache.json` with 1-hour TTL -- never blocks session startup. (2) A user-level statusline hook (`fp-docs-statusline.js`, installed by `/fp-docs:setup`) reads the cache and displays a passive update nudge. (3) The `/fp-docs:update` command checks the GitHub Releases API, displays the changelog from release notes, confirms with the user, and executes a git-based update (`git fetch origin && git checkout <tag>`). This pattern was adapted from GSD's `gsd-check-update.js` background spawn.
@@ -538,29 +638,40 @@ Dedicated `.mcp.json` file at plugin root for MCP server declarations, separate 
 ### 16. Fatal Runtime Enforcement (Phase 17)
 Reverses Phase 8 D-05 (non-blocking compliance) and Phase 12 D-05 (documentation-only enforcement). All enforcement checks are now fatal: if a check triggers, the operation stops. This trades operational flexibility for architectural guarantee -- delegation rules cannot be silently violated. Three enforcement layers: PreToolUse hooks block raw git-write commands at the tool-call level, SubagentStop hooks produce structured violation diagnostics with `ENFORCEMENT VIOLATION` prefix that the orchestrator must act on, and pipeline gating validates LLM stage outputs before progression. Enforcement logic is centralized in `lib/enforcement.cjs` (6 exports: `isGitWriteCommand`, `isCjsMediatedGit`, `parseDelegationResult`, `verifyStageAuthority`, `validateStageOutput`, `STAGE_AUTHORITY_MAP`).
 
+### 17. Docs Branch Merge Intelligence (Wave 1)
+When `/fp-docs:sync` runs on codebase master, it detects recently merged branches that have matching fp-docs documentation branches. For each candidate: if docs are current (last docs commit >= last codebase commit before merge), auto-merge into docs master. If docs are stale (code changed after docs were last updated), defer to user with staleness details. Implemented in `lib/merge-intel.cjs` with CLI surface `fp-tools merge-intel <scan|status|history|clear>`. Merge decisions are recorded in `{project-root}/.fp-docs/merge-intel/history.json` for audit trail. Handles standard merges, GitHub PR merges, and squash merges via multiple subject-line pattern matching.
+
+### 18. Three-Tier Data Layout and Migration (Wave 1)
+Operational state is organized into three tiers: (1) `{project-root}/.fp-docs/` for global persistent state (operation log, trackers, staleness, plans, merge intelligence) that survives branch switches, (2) `{docs-root}/.fp-docs-branch/` for branch-scoped data (changelog, diffs, flagged concerns, sync watermark, plugin version) that travels with the branch, (3) `.claude/.fp-docs-project/` for plugin cache only. Migration from old layout (all state in `{docs-root}/.fp-docs/`) is handled by `lib/migrate.cjs` with CLI `fp-tools migrate <check|run|status>`. Migration is user-triggered (SessionStart nudges but does not auto-migrate), uses copy-verify-delete pattern for safety.
+
+### 19. Auto-Bootstrap Scaffolding
+Docs repo structures are bundled as scaffold assets inside the plugin (`scaffolds/`) and bootstrapped automatically when missing. This ensures users never need to manually copy files between the plugin and docs repos. The scaffold system is idempotent (only creates files that don't exist), supports special placement rules (`.github-workflows/` maps to `{docs-root}/.github/workflows/`), and integrates post-bootstrap steps (patching dev wiki config, initializing Hugo modules, installing Git LFS). New scaffold sets can be added by placing a directory under `scaffolds/` with no code changes needed.
+
+### 20. Git Exclusion via System Exclude (Wave 1)
+`/fp-docs:setup` configures `.git/info/exclude` (not `.gitignore`) to exclude `themes/foreign-policy-2017/docs/`, `.claude/`, and `.fp-docs/` from the codebase git repo. System exclude protects all branches unconditionally (including branches that predate fp-docs), requires no codebase commits, and is per-clone (appropriate for user-specific tooling). Setup checks both `.gitignore` and system exclude and accepts either as valid exclusion.
+
 ---
 
 ## Configuration System
 
-### system-config.md
-Controls configurable behavior for the plugin:
-- **Citations** (§1): Enabled/disabled, tier line thresholds (15/100 lines), line number inclusion, excerpt comment limit
-- **Sanity Check** (§2): Default enabled, multi-agent review thresholds (5 docs / 3 sections)
-- **API Reference** (§3): Enabled/disabled, valid provenance values, scope by doc type
-- **Verbosity** (§4): Enabled/disabled, gap tolerance (0 = zero tolerance), chunk-and-delegate thresholds, complete banned phrase and pattern lists
-- **Verification** (§5): 10-check count
-- **Orchestration** (§6): Enabled/disabled, delegation thresholds (docs and stages), max team size, git serialization mode, fast-path read-only classification, phase assignment rules
-- **Locals CLI Tool** (§7): Enabled/disabled, auto-teardown, CLI source path in plugin, CLI target path in theme, ephemeral lifecycle, subcommand-to-CLI mapping
-- **Agent Model Configuration** (§9): researcher.model (opus), planner.model (sonnet), researcher.enabled, planner.enabled, plans.auto_prune, plans.retention_days, plans.max_plans, Phase Skip Behavior table
+### config.json (Unified Configuration)
+All plugin configuration is centralized in `config.json` at the plugin root. Sections:
 
-### project-config.md
-FP-specific configuration:
-- Project identity (theme root, docs root, WP-CLI prefix, local URL)
-- Source-to-documentation mapping: **Extracted to `source-map.json`** (accessed via `lib/source-map.cjs`; project-config.md retains reference pointer only)
-- Appendix cross-references (7 appendix categories)
-- Key paths (changelog, revision tracker, index, shapes, flagged concerns)
-- Repository configuration (codebase repo, docs repo, plugin repo)
-- Feature enables (all 5 features enabled)
+- **system**: Feature flags and thresholds
+  - citations, sanity_check, api_reference, verbosity, verification, orchestration, locals_cli
+  - **scope_assess**: Complexity thresholds, max_researchers per tier
+  - **tracker**: Retention days, auto_create_threshold, prune settings
+- **project**: FP-specific identity and paths
+  - Theme root, docs root, WP-CLI prefix, local URL
+  - Appendix cross-references (7 categories)
+  - Key paths (changelog, revision tracker, index, shapes, flagged concerns)
+  - Repository configuration (codebase, docs, plugin repos)
+- **model_profile**: Per-agent model assignments (primary/enforcement/fallback)
+  - Entries for all 11 agents (e.g., fp-docs-modifier: opus/opus/sonnet)
+- **pipeline**: Stage definitions with gate validation
+  - 8 stages with assigned agents (stages 1-3 use dedicated GSD agent names)
+  - Gate validation flags per stage
+- **Source-to-documentation mapping**: Extracted to `source-map.json` (accessed via `lib/source-map.cjs`)
 
 ### settings.json
 Default tool permissions: Read, Grep, Glob are auto-allowed for all operations.
@@ -569,7 +680,7 @@ Default tool permissions: Read, Grep, Glob are auto-allowed for all operations.
 
 ## Document Format Templates
 
-fp-docs defines 10 document type templates in mod-standards:
+fp-docs defines 10 document type templates in `references/doc-standards.md`:
 
 1. **Post Type Doc**: Overview, Source File, Registration, Fields/Meta Keys, Hooks, Templates, Admin UI, Related Docs
 2. **Taxonomy Doc**: Overview, Source File, Registration Args, Term Meta, Admin UI, Query Modifications, Related Docs
@@ -586,8 +697,8 @@ fp-docs defines 10 document type templates in mod-standards:
 
 ## The 10-Point Verification Checklist
 
-1. **File Existence** -- Every link in About.md resolves to an actual file
-2. **Orphan Check** -- Every .md file in docs/ is linked from About.md or its parent _index.md
+1. **File Existence** -- Every link in README.md resolves to an actual file
+2. **Orphan Check** -- Every .md file in docs/ is linked from README.md or its parent _index.md
 3. **Index Completeness** -- Every _index.md links all its sibling .md files
 4. **Appendix Spot-Check** -- Operations touching hooks/shortcodes/REST/constants trigger appendix verification
 5. **Link Validation** -- All relative markdown links in modified docs resolve to real files
@@ -601,7 +712,7 @@ fp-docs defines 10 document type templates in mod-standards:
 
 ## Flags and Operation Modifiers
 
-### Skip Flags (used with modify and related engines)
+### Skip Flags (used with modify and related agents)
 - `--no-citations` -- Skip citation generation/update stage
 - `--no-sanity-check` -- Skip sanity-check stage
 - `--no-verbosity` -- Skip verbosity enforcement stage

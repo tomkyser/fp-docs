@@ -34,7 +34,7 @@ function cleanTempDir(dir) {
 
 /**
  * Write a state file at the expected path within a temp dir.
- * Simulates the state.json file that would exist at {docsRoot}/.fp-docs/state.json.
+ * Simulates the state.json file that would exist at {project-root}/.fp-docs/state.json.
  */
 function writeStateFile(tmpDir, state) {
   const fpDocsDir = path.join(tmpDir, '.fp-docs');
@@ -321,7 +321,7 @@ describe('lib/state.cjs', () => {
         failed: [],
       };
       const planPath = state.saveRemediationPlan(plan, tmpDir);
-      const expectedPath = path.join(tmpDir, '.fp-docs', 'remediation-plans', 'rem-test0001.json');
+      const expectedPath = path.join(tmpDir, 'remediation-plans', 'rem-test0001.json');
       assert.equal(planPath, expectedPath);
       assert.ok(fs.existsSync(planPath), 'Plan file should exist');
       const raw = fs.readFileSync(planPath, 'utf-8');
@@ -332,7 +332,7 @@ describe('lib/state.cjs', () => {
 
     it('saveRemediationPlan should create remediation-plans directory when missing', () => {
       const state = require(path.join(LIB_DIR, 'state.cjs'));
-      const plansDir = path.join(tmpDir, '.fp-docs', 'remediation-plans');
+      const plansDir = path.join(tmpDir, 'remediation-plans');
       assert.equal(fs.existsSync(plansDir), false, 'remediation-plans dir should not exist yet');
       state.saveRemediationPlan({ plan_id: 'rem-mkdir01', version: 1, status: 'pending', issues: [] }, tmpDir);
       assert.ok(fs.existsSync(plansDir), 'remediation-plans dir should exist after save');
@@ -372,7 +372,7 @@ describe('lib/state.cjs', () => {
 
     it('loadRemediationPlan should return null for invalid JSON', () => {
       const state = require(path.join(LIB_DIR, 'state.cjs'));
-      const plansDir = path.join(tmpDir, '.fp-docs', 'remediation-plans');
+      const plansDir = path.join(tmpDir, 'remediation-plans');
       fs.mkdirSync(plansDir, { recursive: true });
       fs.writeFileSync(path.join(plansDir, 'rem-badjson1.json'), 'not valid json {{{', 'utf-8');
       const loaded = state.loadRemediationPlan('rem-badjson1', tmpDir);

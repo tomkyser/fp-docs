@@ -2,9 +2,8 @@
 command: verbosity-audit
 engine: verbosity
 operation: audit
-instruction: framework/instructions/verbosity/audit.md
-agent: orchestrate
-context: fork
+workflow: workflows/verbosity-audit.md
+agent: fp-docs-verbosity
 type: read
 pipeline_stages: none
 subcommands: none
@@ -16,9 +15,9 @@ flags: --depth quick|standard|deep
 ## Routing Path
 
 1. User invokes `/fp-docs:verbosity-audit "--depth quick|standard|deep [scope]"`
-2. Skill SKILL.md passes `$ARGUMENTS` to orchestrate engine
-3. Orchestrate classifies as read operation (engine: verbosity)
-4. Orchestrate delegates to verbosity engine (2-agent fast path)
+2. Command file loads workflow `workflows/verbosity-audit.md` via `@-reference`
+3. Workflow initializes via `fp-tools init read-op`
+4. Workflow spawns fp-docs-verbosity in standalone mode
 5. No pipeline stages triggered -- read operations skip full pipeline
 
 ## Pipeline Stages

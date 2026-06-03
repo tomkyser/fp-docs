@@ -1,0 +1,51 @@
+{
+  "version": "1.0.0",
+  "teamName": "wave2-migration-wiki",
+  "startedAt": "2026-04-09T23:49:30.613Z",
+  "updatedAt": "2026-04-10T00:16:19.508Z",
+  "status": "archived",
+  "displayMode": "auto",
+  "roles": {
+    "architect": {
+      "name": "Architect",
+      "focus": "structural thinking, design"
+    },
+    "engineer": {
+      "name": "Engineer",
+      "focus": "implementation, code, tests"
+    },
+    "lead": {
+      "name": "Lead",
+      "focus": "review, git, quality gate"
+    }
+  },
+  "phases": [
+    {
+      "number": 1,
+      "name": "Research & Design",
+      "status": "complete",
+      "startedAt": "2026-04-09T23:49:34.032Z",
+      "completedAt": "2026-04-09T23:56:17.590Z",
+      "reviewStatus": "pass_with_notes",
+      "taskCount": 0,
+      "tasksComplete": 0
+    },
+    {
+      "number": 2,
+      "name": "Implementation",
+      "status": "complete",
+      "startedAt": "2026-04-09T23:56:17.591Z",
+      "completedAt": "2026-04-10T00:07:22.960Z",
+      "reviewStatus": "pass_with_notes",
+      "taskCount": 0,
+      "tasksComplete": 0
+    }
+  ],
+  "currentPhase": 2,
+  "totalPhases": 2,
+  "gitBranch": null,
+  "gitProtocol": {
+    "commitPrefix": "{type}(phase-{N})",
+    "onlyLeadCommits": true
+  }
+}

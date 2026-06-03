@@ -1,0 +1,81 @@
+{
+  "version": "1.0.0",
+  "teamName": "wave4-ug-commands",
+  "startedAt": "2026-04-11T22:58:08.597Z",
+  "updatedAt": "2026-04-12T00:15:25.806Z",
+  "status": "complete",
+  "displayMode": "auto",
+  "roles": {
+    "architect": {
+      "name": "Architect",
+      "focus": "structural thinking, design"
+    },
+    "engineer": {
+      "name": "Engineer",
+      "focus": "implementation, code, tests"
+    },
+    "lead": {
+      "name": "Lead",
+      "focus": "review, git, quality gate"
+    }
+  },
+  "phases": [
+    {
+      "number": 1,
+      "name": "Foundation (references + agents + config)",
+      "status": "complete",
+      "startedAt": null,
+      "completedAt": "2026-04-12T00:15:25.806Z",
+      "reviewStatus": "pending",
+      "taskCount": 0,
+      "tasksComplete": 0
+    },
+    {
+      "number": 2,
+      "name": "Read-only commands (validate, audit, status)",
+      "status": "complete",
+      "startedAt": null,
+      "completedAt": "2026-04-12T00:15:25.806Z",
+      "reviewStatus": "pending",
+      "taskCount": 0,
+      "tasksComplete": 0
+    },
+    {
+      "number": 3,
+      "name": "Write commands (generate, update, screenshot)",
+      "status": "complete",
+      "startedAt": null,
+      "completedAt": "2026-04-12T00:15:25.806Z",
+      "reviewStatus": "pending",
+      "taskCount": 0,
+      "tasksComplete": 0
+    },
+    {
+      "number": 4,
+      "name": "Admin + batch commands (preview, batch)",
+      "status": "complete",
+      "startedAt": null,
+      "completedAt": "2026-04-12T00:15:25.806Z",
+      "reviewStatus": "pending",
+      "taskCount": 0,
+      "tasksComplete": 0
+    },
+    {
+      "number": 5,
+      "name": "Integration (health, init, specs)",
+      "status": "complete",
+      "startedAt": null,
+      "completedAt": "2026-04-12T00:15:25.806Z",
+      "reviewStatus": "pending",
+      "taskCount": 0,
+      "tasksComplete": 0
+    }
+  ],
+  "currentPhase": 1,
+  "totalPhases": 5,
+  "gitBranch": null,
+  "gitProtocol": {
+    "commitPrefix": "{type}(phase-{N})",
+    "onlyLeadCommits": true
+  }
+}

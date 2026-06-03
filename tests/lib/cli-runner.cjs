@@ -90,18 +90,18 @@ describe('fp-tools CLI', () => {
   });
 
   describe('help', () => {
-    it('outputs JSON with commands array of length >= 21', () => {
+    it('outputs JSON with commands array of length >= 23', () => {
       const result = runCliJson('help');
       assert.ok(Array.isArray(result.commands), 'should have commands array');
-      assert.ok(result.commands.length >= 21, `expected >= 21 commands, got ${result.commands.length}`);
+      assert.ok(result.commands.length >= 23, `expected >= 23 commands, got ${result.commands.length}`);
     });
 
-    it('each command entry has command, description, engine, type', () => {
+    it('each command entry has command, description, type, agent', () => {
       const result = runCliJson('help');
       for (const cmd of result.commands) {
         assert.ok(cmd.command, 'entry should have command');
         assert.ok(typeof cmd.description === 'string', 'entry should have description');
-        assert.ok(cmd.engine, 'entry should have engine');
+        assert.ok('agent' in cmd, 'entry should have agent field');
         assert.ok(cmd.type, 'entry should have type');
       }
     });
@@ -157,32 +157,32 @@ describe('fp-tools CLI', () => {
   });
 
   describe('route', () => {
-    it('lookup revise returns modify engine', () => {
+    it('lookup revise returns fp-docs-modifier agent', () => {
       const result = runCliJson('route', 'lookup', 'revise');
-      assert.equal(result.engine, 'modify');
+      assert.equal(result.agent, 'fp-docs-modifier');
       assert.equal(result.operation, 'revise');
       assert.equal(result.type, 'write');
     });
 
-    it('lookup audit returns validate engine', () => {
+    it('lookup audit returns fp-docs-validator agent', () => {
       const result = runCliJson('route', 'lookup', 'audit');
-      assert.equal(result.engine, 'validate');
+      assert.equal(result.agent, 'fp-docs-validator');
       assert.equal(result.operation, 'audit');
       assert.equal(result.type, 'read');
     });
 
-    it('lookup parallel returns orchestrate engine with batch type', () => {
+    it('lookup parallel returns null agent with batch type', () => {
       const result = runCliJson('route', 'lookup', 'parallel');
-      assert.equal(result.engine, 'orchestrate');
+      assert.equal(result.agent, null);
       assert.equal(result.type, 'batch');
     });
 
-    it('table returns 21 entries', () => {
+    it('table returns 23 entries', () => {
       const result = runCliJson('route', 'table');
-      assert.equal(Object.keys(result).length, 21);
+      assert.equal(Object.keys(result).length, 23);
     });
 
-    it('validate confirms all 21 skills match routing table', () => {
+    it('validate confirms all 23 commands match routing table', () => {
       const result = runCliJson('route', 'validate');
       assert.strictEqual(result.valid, true, `Expected valid=true, got mismatches: ${JSON.stringify(result.mismatches)}`);
       assert.strictEqual(result.mismatches.length, 0, `Expected 0 mismatches, got: ${JSON.stringify(result.mismatches)}`);

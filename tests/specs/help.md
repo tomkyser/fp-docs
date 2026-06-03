@@ -1,10 +1,9 @@
 ---
 command: help
-engine: orchestrate
+engine: none
 operation: help
-instruction: none
-agent: orchestrate
-context: fork
+workflow: workflows/help.md
+agent: none
 type: meta
 pipeline_stages: none
 subcommands: none
@@ -16,16 +15,16 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:help`
-2. Skill SKILL.md passes to orchestrate engine
-3. Orchestrate runs `fp-tools.cjs help grouped --raw` via Bash
-4. Orchestrate presents the grouped markdown output to the user
-5. Orchestrate appends meta-command notes (/fp-docs:do, /fp-docs:help)
+2. Command file loads workflow `workflows/help.md` via `@-reference`
+3. Workflow executes inline (no agent spawning)
+4. Workflow runs `fp-tools.cjs help grouped --raw` via Bash
+5. Workflow presents the grouped markdown output to the user
 
 ## Expected Markers
 
 - Output contains `# fp-docs Command Reference` heading
-- Output contains type-group headings (Documentation Creation & Modification, Validation & Auditing, System & Maintenance, Batch Operations)
-- Output contains all 21 routing-table commands in markdown tables
+- Output contains type-group headings (Documentation Creation & Modification, Validation & Auditing, System & Maintenance, Batch Operations, Utility & Routing)
+- Output contains all 23 routing-table commands in markdown tables
 
 ## Error Paths
 

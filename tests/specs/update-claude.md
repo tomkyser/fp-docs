@@ -2,10 +2,9 @@
 command: update-claude
 engine: index
 operation: update-example-claude
-instruction: framework/instructions/index/update-example-claude.md
-agent: orchestrate
-context: fork
-type: write
+workflow: workflows/update-claude.md
+agent: fp-docs-indexer
+type: admin
 pipeline_stages: none
 subcommands: none
 flags: none
@@ -16,9 +15,9 @@ flags: none
 ## Routing Path
 
 1. User invokes `/fp-docs:update-claude`
-2. Skill SKILL.md passes context to orchestrate engine (reads project CLAUDE.md and manifest)
-3. Orchestrate classifies as admin/write operation (engine: index)
-4. Orchestrate delegates directly to index engine
+2. Command file loads workflow `workflows/update-claude.md` via `@-reference`
+3. Workflow initializes via `fp-tools init admin-op`
+4. Workflow spawns fp-docs-indexer for CLAUDE.md regeneration
 5. No full pipeline triggered -- admin operation with direct execution
 
 ## Pipeline Stages
@@ -33,7 +32,7 @@ None. Admin operations execute directly without the 8-stage pipeline.
 ## Files Typically Touched
 
 - Project CLAUDE.md (Documentation Skills section regenerated)
-- Reads framework/manifest.md for current plugin state
+- Reads plugin.json and routing table for current plugin state
 
 ## Error Paths
 
